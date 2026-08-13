@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -m pytest \"tests/M1_Item_Bank_Mgmt/test_e2e_teacher_excel_edit_with_image_to_pit_publication.py\" -v -s)",
+      "Bash(*)",
+      "PowerShell(*)",
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(python -m pytest --collect-only -q)",
+      "Bash(python -c ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(awk '$6==\"Jul\" && $7==\"3\"')",
+      "Bash(sort -k7,8)",
+      "Bash(python -m pytest --collect-only -q tests/M1_Item_Bank_Mgmt/test_qar_retry_flow.py)",
+      "Bash(python -m pytest tests/test_qar_retry_flow.py -q)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git branch -D*)",
+      "Bash(git checkout .*)",
+      "Bash(git checkout -- *)",
+      "Bash(git clean -f*)",
+      "Bash(rm -rf *)",
+      "PowerShell(Remove-Item -Recurse -Force*)"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}

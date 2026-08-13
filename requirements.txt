@@ -1,0 +1,8 @@
+selenium
+pytest
+pytest-html
+pytest-rerunfailures
+openpyxl
+webdriver-manager
+pillow
+allure-pytest

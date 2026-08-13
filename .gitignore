@@ -1,0 +1,58 @@
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Test-run artifacts
+logs/*
+!logs/.gitkeep
+screenshots/*
+!screenshots/.gitkeep
+tmp_uploads/
+tmp_upload_*.xlsx
+test_output.log
+test_run.log
+
+# Generated reports and intermediate results.
+# Every run writes a fresh report tree, and PYTEST_REPORTS_DIR lets a run pick
+# its own name (reports_smoke, reports_m1_verify, ...), so match the prefix
+# rather than listing directories that will keep appearing.
+reports/*
+!reports/.gitkeep
+reports_*/
+*_console.log
+allure-results/
+artifacts/
+output/
+outputs/
+tmp/
+scratch_*/
+scratch_*.xlsx
+
+# Large local fixtures. Regenerate these rather than version them:
+# utilities/item_bank_workbook_builder.py builds workbooks from the template
+# named by CBSE_UPLOAD_ITEM_FILE.
+test_large.xlsx
+sme_sheet*.xlsx
+test-images*.zip
+# ...except the vendored SME upload template, which CI needs: a Jenkins agent
+# has no ~/Downloads copy, so the Excel ingestion check has nothing to fill
+# without this. Refresh it from the app when the template version changes.
+!data/upload_templates/sme_sheet.xlsx
+
+# Claude Code: share the project permissions, keep machine-local overrides out
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Local backup copies (data/typology_templates.bak/ and friends)
+*.bak/
+*.bak
+
+# Local environments and editor files
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
