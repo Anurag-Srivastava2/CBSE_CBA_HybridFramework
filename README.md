@@ -157,6 +157,14 @@ pytest -v -s --html=reports/report.html --self-contained-html
 
 ## Output
 
+Set `PYTEST_REPORTS_DIR` to keep a run's artifacts separate from the last one.
+Put those under the single `test-reports/` parent rather than creating another
+`reports_*` folder at the repo root:
+
+```bash
+PYTEST_REPORTS_DIR=test-reports/smoke pytest -m smoke -n 6 --dist loadgroup
+```
+
 - HTML report: `reports/report.html`
 - Logs: `logs/automation_YYYY_MM_DD.log`
 - Failure screenshots: `screenshots/`

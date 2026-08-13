@@ -19,6 +19,10 @@ test_run.log
 # rather than listing directories that will keep appearing.
 reports/*
 !reports/.gitkeep
+# Per-run report trees live under one parent. Point a run at its own folder
+# with PYTEST_REPORTS_DIR=test-reports/<name> rather than creating another
+# reports_* directory at the repo root.
+test-reports/
 reports_*/
 *_console.log
 allure-results/
