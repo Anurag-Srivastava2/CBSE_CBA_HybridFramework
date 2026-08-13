@@ -41,6 +41,11 @@ pipeline {
     options {
         timeout(time: 40, unit: 'MINUTES')
         timestamps()
+        // Renders pytest's ANSI colour in the build console, so PASSED reads
+        // green and FAILED red instead of a wall of identical text. Needs the
+        // AnsiColor plugin installed, and --color=yes below: pytest turns
+        // colour off when its output is a pipe rather than a terminal.
+        ansiColor('xterm')
         buildDiscarder(logRotator(numToKeepStr: '30'))
         disableConcurrentBuilds()
     }
@@ -120,11 +125,11 @@ pipeline {
                             set -eu
                             . .venv/bin/activate
                             python -m pytest tests/M3_Item_Testing/test_smoke_m3_item_testing.py \
-                                -p no:cacheprovider --no-header -q
+                                --color=yes -p no:cacheprovider --no-header -q
                         ''',
                         '''
                             call .venv\\Scripts\\activate.bat || exit /b 1
-                            python -m pytest tests/M3_Item_Testing/test_smoke_m3_item_testing.py -p no:cacheprovider --no-header -q || exit /b 1
+                            python -m pytest tests/M3_Item_Testing/test_smoke_m3_item_testing.py --color=yes -p no:cacheprovider --no-header -q || exit /b 1
                         '''
                     )
                 }
@@ -144,14 +149,14 @@ pipeline {
                             set -eu
                             . .venv/bin/activate
                             python -m pytest -m smoke ${deselect} \
-                                -n ${params.WORKERS} --dist loadgroup \
+                                -n ${params.WORKERS} --dist loadgroup --color=yes \
                                 --junitxml=reports_smoke_ci/junit.xml \
                                 --html=reports_smoke_ci/report.html --self-contained-html \
                                 -p no:cacheprovider
                         """,
                         """
                             call .venv\\\\Scripts\\\\activate.bat || exit /b 1
-                            python -m pytest -m smoke ${deselect} -n ${params.WORKERS} --dist loadgroup --junitxml=reports_smoke_ci/junit.xml --html=reports_smoke_ci/report.html --self-contained-html -p no:cacheprovider
+                            python -m pytest -m smoke ${deselect} -n ${params.WORKERS} --dist loadgroup --color=yes --junitxml=reports_smoke_ci/junit.xml --html=reports_smoke_ci/report.html --self-contained-html -p no:cacheprovider
                         """
                     )
                 }

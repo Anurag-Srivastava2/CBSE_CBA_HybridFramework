@@ -12,6 +12,13 @@ from utilities.smoke_support import sign_in
 # Drives the shared primary teacher account, as test_teacher_login.py does.
 # `serial` puts both in one xdist group so neither signs the other out.
 @pytest.mark.serial
+# The first check here is dispatched in the run's opening wave, when every
+# xdist worker hits the login endpoint at once, and the portal intermittently
+# fails to complete a sign-in under that burst — observed on consecutive CI
+# builds, while the same account signs in fine seconds later once the surge
+# clears. One retry lands after the burst; the retry badge keeps the
+# occurrence visible rather than hiding it.
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.usefixtures("setup")
 class TestSmokeM5TeacherContribution:
     """M5 - Teacher Contribution smoke: a teacher can reach the contribution flows.
