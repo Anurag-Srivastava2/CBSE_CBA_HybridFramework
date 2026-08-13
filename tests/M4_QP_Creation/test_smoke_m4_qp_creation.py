@@ -12,6 +12,10 @@ from utilities.smoke_support import sign_in
 # Drives the same teacher account across both checks, and the portal keeps one
 # active session per account, so they share an xdist group.
 @pytest.mark.xdist_group("smoke-m4")
+# Same intermittent sign-in stall the other smoke classes carry a retry for:
+# the portal leaves the login form on screen until login_to_application()
+# exhausts its retries, and it lands on a different check each run.
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.usefixtures("setup")
 class TestSmokeM4QPCreation:
     """M4 - QP Creation smoke: the question-paper builder opens for a teacher.

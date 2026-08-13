@@ -8,9 +8,15 @@ from utilities.smoke_support import sign_in
 
 
 @pytest.mark.smoke
-# Shares the single admin account with the M3 smoke probe, so both sit in one
-# xdist group and run on the same worker under `--dist loadgroup`.
+# All three checks drive the single admin account, so they share an xdist
+# group and run on one worker under `--dist loadgroup`.
 @pytest.mark.xdist_group("smoke-admin")
+# The portal intermittently fails to complete a sign-in, leaving the login
+# form on screen until login_to_application() exhausts its retries. It lands
+# on a different check each run — observed on M5 twice and here once — so
+# every smoke class carries one retry rather than whichever one happened to
+# be hit last. The retry badge keeps each occurrence visible.
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.usefixtures("setup")
 class TestSmokeM2WebPortalAdmin:
     """M2 - Web Portal Admin smoke: the admin landing screens load and hold data.
