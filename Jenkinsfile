@@ -34,7 +34,7 @@ pipeline {
         booleanParam(
             name: 'SKIP_WRITE_CHECKS',
             defaultValue: false,
-            description: 'Skip the Excel ingestion check, which mints a real item set into the RWG queue. Leave off for a true gate; turn on for shared or pre-release environments.'
+            description: 'Skip the Excel ingestion check. It is the slowest check (~4 min) but discards its own upload and submits nothing, so leaving it on is normally right.'
         )
     }
 

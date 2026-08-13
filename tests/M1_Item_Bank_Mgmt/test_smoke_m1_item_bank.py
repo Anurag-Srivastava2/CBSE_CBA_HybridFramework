@@ -164,10 +164,15 @@ class TestSmokeM1ItemBank:
     def test_smoke_m1_04_excel_upload_creates_item_set(self, record_property, tmp_path):
         """An Excel workbook uploads, validates and mints an item set.
 
-        Unlike the checks above this one writes: the submitted set is real and
-        enters the RWG queue. It is the smoke suite's only end-to-end proof
-        that bulk ingestion — template fill, upload, validation, QAR
-        submission, ID minting — still works.
+        Stops at the review step, where the app has already assigned item IDs
+        and therefore the item set ID — that is the ingestion result worth
+        gating on. It deliberately does not press Submit for QAR: that waits on
+        server-side QAR analysis, which took 16 minutes of a 33-minute CI build
+        and pushed a set into the RWG queue on every run. The full
+        upload-through-QAR path stays covered by the M1 E2E suites.
+
+        Consequently nothing is submitted and the staged upload is discarded at
+        the end, so this check no longer leaves workflow data behind.
         """
         template_path = Path(ReadConfig.get_upload_item_file_path())
         assert template_path.exists(), (
@@ -182,25 +187,36 @@ class TestSmokeM1ItemBank:
         assert summaries, f"Generated workbook {workbook_path.name} has no item-data worksheet"
 
         upload_page = self.open_item_creation_workspace(slot=3, page_class=UploadItemFilePage)
-        _, upload_message, item_ids, qar_message = (
-            upload_page.upload_item_file_and_submit_for_qar(str(workbook_path))
-        )
-        item_set_id = upload_page.get_item_set_id_from_item_ids(item_ids)
+        try:
+            _, upload_message = upload_page.upload_item_file_and_validate(str(workbook_path))
 
-        record_property(
-            "result_description",
-            f"Excel upload of {self.EXCEL_ITEM_COUNT} item(s) created item set "
-            f"{item_set_id or 'UNKNOWN'} with items {item_ids}. "
-            f"Upload: {upload_message} | QAR: {qar_message}",
-        )
-        record_property("item_set_id", item_set_id)
-        record_property("manual_item_id", ", ".join(item_ids))
+            # Advance to the review step, where the app lists the items it
+            # ingested along with their assigned IDs.
+            upload_page.click_continue()
+            item_ids = upload_page.get_review_item_ids()
+            item_set_id = upload_page.get_item_set_id_from_item_ids(item_ids)
 
-        assert len(item_ids) == self.EXCEL_ITEM_COUNT, (
-            f"Expected {self.EXCEL_ITEM_COUNT} item ID(s) from the upload, got {len(item_ids)}: "
-            f"{item_ids}. Upload message: {upload_message}"
-        )
-        assert item_set_id, (
-            f"No item set ID could be derived from the minted item IDs {item_ids}, "
-            "so the upload did not produce a reviewable set"
-        )
+            record_property(
+                "result_description",
+                f"Excel upload of {self.EXCEL_ITEM_COUNT} item(s) validated and minted item set "
+                f"{item_set_id or 'UNKNOWN'} with items {item_ids}. Upload: {upload_message}",
+            )
+            record_property("item_set_id", item_set_id)
+            record_property("manual_item_id", ", ".join(item_ids))
+
+            assert len(item_ids) == self.EXCEL_ITEM_COUNT, (
+                f"Expected {self.EXCEL_ITEM_COUNT} item ID(s) from the upload, got {len(item_ids)}: "
+                f"{item_ids}. Upload message: {upload_message}"
+            )
+            assert item_set_id, (
+                f"No item set ID could be derived from the minted item IDs {item_ids}, "
+                "so the upload did not produce a reviewable set"
+            )
+        finally:
+            # Clear the staged upload even when the assertions fail, so the
+            # next run starts from a clean upload slot on this account.
+            try:
+                upload_page.discard_active_upload_if_present()
+                upload_page.discard_staged_upload_files()
+            except Exception:
+                pass

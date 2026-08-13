@@ -87,18 +87,18 @@ A single critical-path pass across all five modules — twelve checks that answe
 | M4 - QP Creation | teacher2 | QP Builder reaches Assessment Configuration with Manual + Automated modes; My QP listing opens |
 | M5 - Teacher Contribution | Primary teacher | Login lands on the dashboard and item creation opens; upload history table renders |
 
-All checks are read-only **except** the M1 Excel ingestion check, which
-uploads a generated 2-item workbook and submits it. That mints a real item set
-which enters the RWG review queue, so **each smoke run leaves one item set
-behind**. Everything else creates, edits and deletes nothing, so the rest of
-the suite is safe to re-run anywhere without seeding or cleanup.
+Every check cleans up after itself, so the suite is safe to re-run against any
+environment without seeding or manual cleanup. The two that write undo their
+own work: the manual authoring check deletes the item it stages, and the Excel
+ingestion check discards its staged upload and stops at the review step
+without submitting for QAR — so nothing reaches the review workflow.
 
-To run the read-only subset only — for example against a shared or
-pre-release environment where the extra sets are unwelcome:
-
-```bash
-pytest -m smoke -k "not excel_upload_creates_item_set" -n 4 --dist loadgroup
-```
+That stop point is deliberate. Submitting for QAR waits on server-side
+analysis, which cost 16 minutes of a 33-minute CI build and pushed a fresh
+item set into the RWG queue on every run. The item IDs and set ID are already
+assigned at the review step, which is the ingestion result worth gating on.
+The full upload-through-QAR-to-publication path stays covered by the M1 and M5
+end-to-end suites, which are the right place for a long, stateful workflow.
 
 Each module drives its own account and carries an `xdist_group`, because the
 portal keeps one active session per account — always pass `--dist loadgroup`

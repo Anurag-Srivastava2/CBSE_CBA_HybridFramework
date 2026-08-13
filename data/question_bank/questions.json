@@ -2554,7 +2554,13 @@
     "explanation": "60 + 28 = 88, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:23f19e78ab24ca62998e5ce65ecef51af60e51fda921b861e1b89a8f63078415",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-13T15:12:05.981334+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000090",
@@ -2575,7 +2581,13 @@
     "explanation": "466 - 242 = 224, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:97b8e1bce139ca42932ea905ff74ccd8369c5c7bd620f46cdfb078a96bcfd895",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-13T15:17:35.769829+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000091",
@@ -6770,7 +6782,13 @@
     "explanation": "3 x 11 = 33, recalled from the multiplication table of 3.",
     "marks": 1,
     "content_hash": "sha256:82f4563a36e12c718d2578395691ac2877b9bcca79bf512f5d09ba2ca83796b7",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-13T15:12:05.981334+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000289",
@@ -6786,7 +6804,13 @@
     "explanation": "3 x 12 = 36, recalled from the multiplication table of 3.",
     "marks": 1,
     "content_hash": "sha256:13643b34ab1f5914c52fe15f4701ea1a49d4d80271f1a207d80bb2edffc61be6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-13T15:17:35.769829+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000290",
