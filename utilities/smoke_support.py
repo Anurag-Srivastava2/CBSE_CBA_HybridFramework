@@ -48,6 +48,26 @@ def sign_in(driver, username):
     )
 
 
+def reset_session(driver):
+    """Drop the current login so another account can sign in.
+
+    The portal keeps one active session per account and treats a cleared
+    cookie/storage state as signed out. Used when a check walks several
+    accounts in one browser — without it the next sign_in() lands on the
+    previous user's authenticated page instead of the login form.
+    """
+    try:
+        driver.delete_all_cookies()
+    except Exception:
+        pass
+    try:
+        driver.execute_script("window.localStorage.clear(); window.sessionStorage.clear();")
+    except Exception:
+        # A blank or non-http document has no accessible storage; the cookie
+        # clear above is enough for the app to treat the session as gone.
+        pass
+
+
 def body_text(driver):
     return driver.find_element(By.TAG_NAME, "body").text
 

@@ -7,7 +7,7 @@ from pages.pit.review_queue_page import PITReviewQueuePage
 from pages.rwg.review_queue_page import RWGReviewQueuePage
 from pages.sr_rwg.review_queue_page import SRRWGReviewQueuePage
 from utilities.read_config import ReadConfig
-from utilities.smoke_support import body_text, sign_in
+from utilities.smoke_support import body_text, reset_session, sign_in
 
 
 # Item set IDs as they render in a queue listing, e.g. IS808-G1-Mathematics-Ch29.
@@ -45,10 +45,10 @@ class TestSmokeM1ReviewerQueues:
     """
 
     @staticmethod
-    def reviewer_username(role_key):
+    def reviewer_usernames(role_key):
         usernames = ReadConfig.get_role_usernames(role_key)
         assert usernames, f"No accounts configured in CBSE_{role_key.upper()}_USERNAMES"
-        return usernames[0]
+        return usernames
 
     @staticmethod
     def visible_item_set_ids(queue_text):
@@ -71,60 +71,78 @@ class TestSmokeM1ReviewerQueues:
         self, record_property, role_key, page_class, role_name
     ):
         """A reviewer signs in, lands on their dashboard, opens the review
-        queue and opens one item set assigned to them."""
-        username = self.reviewer_username(role_key)
-        sign_in(self.driver, username)
+        queue and opens one item set assigned to them.
 
+        Tries each account configured for the role rather than only the first.
+        Review work is allotted per reviewer, so whether any one account holds
+        an actionable set is workflow state that changes run to run — checking
+        one account made the result depend on which reviewer happened to be
+        holding work. The check passes as soon as any account of this role can
+        open an assigned set.
+        """
+        usernames = self.reviewer_usernames(role_key)
         page = page_class(self.driver)
-        dashboard_text = body_text(self.driver)
-        assert dashboard_text.strip(), f"{role_name} {username} landed on an empty page after login"
+        attempts = []
 
-        page.open_queue_module()
-        queue_text = page.get_queue_body_text()
-        item_set_ids = self.visible_item_set_ids(queue_text)
+        for index, username in enumerate(usernames):
+            if index:
+                # Clear the previous reviewer's session before signing in as
+                # the next: the portal keeps one active session per account
+                # and would otherwise carry the old one into this login.
+                reset_session(self.driver)
+            sign_in(self.driver, username)
+
+            assert body_text(self.driver).strip(), (
+                f"{role_name} {username} landed on an empty page after login"
+            )
+
+            page.open_queue_module()
+            queue_text = page.get_queue_body_text()
+            assert "queue" in queue_text.casefold(), (
+                f"{role_name} review queue did not render for {username}. "
+                f"Page text: {queue_text[:600]}"
+            )
+
+            item_set_ids = self.visible_item_set_ids(queue_text)
+            if not item_set_ids:
+                attempts.append(f"{username}=empty queue")
+                continue
+
+            # Only the first candidate per account: the queue lists sets
+            # visible to the role without necessarily being allotted to this
+            # reviewer, and walking every ID with retries turned one
+            # unavailable set into tens of minutes of CI time.
+            candidate_id = item_set_ids[0]
+            try:
+                page.open_review_item_set(candidate_id)
+            except TimeoutException:
+                attempts.append(f"{username}={candidate_id} not actionable")
+                continue
+
+            set_text = body_text(self.driver)
+            opened_ids = self.visible_item_set_ids(set_text)
+            record_property(
+                "result_description",
+                f"{role_name} {username} opened assigned item set "
+                f"{opened_ids[0] if opened_ids else candidate_id} from a queue of "
+                f"{len(item_set_ids)}. Accounts tried: {attempts + [username + '=opened']}.",
+            )
+            record_property("item_set_id", opened_ids[0] if opened_ids else candidate_id)
+            assert opened_ids, (
+                f"{role_name} opened item set {candidate_id} but it rendered no item set ID. "
+                f"Page text: {set_text[:600]}"
+            )
+            return
 
         record_property(
             "result_description",
-            f"{role_name} {username} opened the review queue; "
-            f"{len(item_set_ids)} item set(s) assigned: {item_set_ids[:5]}"
-            f"{' …' if len(item_set_ids) > 5 else ''}.",
+            f"No {role_name} account holds an actionable item set. Tried: {attempts}.",
         )
-
-        assert "queue" in queue_text.casefold(), (
-            f"{role_name} review queue did not render. Page text: {queue_text[:600]}"
-        )
-
-        if not item_set_ids:
-            # An empty queue is a workflow-data state, not a broken build: sets
-            # only reach a reviewer once the previous stage advances them.
-            pytest.xfail(
-                f"KI-M1-QUEUE-001 [M1 {role_name} review queue] No item set is currently "
-                f"assigned to {username}, so the assigned-set view cannot be smoke-tested. "
-                "Advance a set to this stage, or point the check at an account that holds one."
-            )
-
-        # Only the first candidate, not every ID on screen. The queue lists
-        # sets that are visible to the role without necessarily being allotted
-        # to this reviewer, and open_first_queue_item_set() walks all of them —
-        # three retries each — which turned one unavailable set into tens of
-        # minutes of CI time.
-        candidate_id = item_set_ids[0]
-        try:
-            page.open_review_item_set(candidate_id)
-        except TimeoutException:
-            # Listed but not actionable by this reviewer: the same workflow-data
-            # gap as an empty queue, so report it the same way rather than
-            # failing the deployment gate.
-            pytest.xfail(
-                f"KI-M1-QUEUE-001 [M1 {role_name} review queue] {username} sees "
-                f"{len(item_set_ids)} set(s) in the queue but {candidate_id} did not open for "
-                "this role, so no set is currently actionable. Advance a set to this stage."
-            )
-
-        set_text = body_text(self.driver)
-        opened_ids = self.visible_item_set_ids(set_text)
-        record_property("item_set_id", opened_ids[0] if opened_ids else "")
-        assert opened_ids, (
-            f"{role_name} opened item set {candidate_id} but it rendered no item set ID. "
-            f"Page text: {set_text[:600]}"
+        # Every configured reviewer for this role is idle. That is workflow
+        # state, not a broken build: sets only reach a stage once the previous
+        # one advances them.
+        pytest.xfail(
+            f"KI-M1-QUEUE-001 [M1 {role_name} review queue] None of the "
+            f"{len(usernames)} configured {role_name} accounts holds an item set that opens, "
+            f"so the assigned-set view cannot be smoke-tested. Tried: {attempts}."
         )

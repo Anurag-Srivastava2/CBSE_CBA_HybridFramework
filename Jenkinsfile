@@ -124,12 +124,12 @@ pipeline {
                         '''
                             set -eu
                             . .venv/bin/activate
-                            python -m pytest tests/M3_Item_Testing/test_smoke_m3_item_testing.py \
+                            python -m pytest tests/M3_Item_Testing/test_m3_item_testing_probe.py \
                                 --color=yes -p no:cacheprovider --no-header -q
                         ''',
                         '''
                             call .venv\\Scripts\\activate.bat || exit /b 1
-                            python -m pytest tests/M3_Item_Testing/test_smoke_m3_item_testing.py --color=yes -p no:cacheprovider --no-header -q || exit /b 1
+                            python -m pytest tests/M3_Item_Testing/test_m3_item_testing_probe.py --color=yes -p no:cacheprovider --no-header -q || exit /b 1
                         '''
                     )
                 }

@@ -8,18 +8,26 @@ from utilities.read_config import ReadConfig
 from utilities.smoke_support import sign_in
 
 
-@pytest.mark.smoke
-# Shares the single admin account with the M2 smoke checks, so both sit in one
-# xdist group and run on the same worker under `--dist loadgroup`.
-@pytest.mark.xdist_group("smoke-admin")
+# Deliberately not part of the smoke suite: the build exposes no Item Testing
+# workspace at all, so this probe could only ever xfail, and a permanent xfail
+# on the deployment gate is noise rather than signal (KI-M3-ITM-001).
+#
+# It is kept, and still runs as the Jenkins preflight canary, because it is
+# the cheapest full login-and-render check available — and because the moment
+# the product ships the module this becomes a real passing test. To put it
+# back in the suite, rename the file to test_smoke_m3_item_testing.py; the
+# conftest naming convention re-applies the smoke marker automatically.
+#
+# Run it directly with:
+#   pytest tests/M3_Item_Testing/test_m3_item_testing_probe.py
 @pytest.mark.usefixtures("setup")
-class TestSmokeM3ItemTesting:
-    """M3 - Item Testing smoke: the psychometrics workspace is reachable.
+class TestM3ItemTestingProbe:
+    """M3 - Item Testing: is the psychometrics workspace present yet?
 
     M3 covers IRT 3PL calibration, ICC generation, DIF analysis and the
     resulting item-bank decisions (TC-ITM-05..08). None of that is exposed in
-    the current build, so this check probes for the module and reports the gap
-    as KI-M3-ITM-001 rather than asserting against a screen that is not there.
+    the current build, so this probes for the module and reports the gap as
+    KI-M3-ITM-001 rather than asserting against a screen that is not there.
     """
 
     # Acronyms are matched on word boundaries — a substring test for "irt" or
