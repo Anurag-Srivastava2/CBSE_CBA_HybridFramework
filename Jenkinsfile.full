@@ -1,0 +1,327 @@
+// Complete CBSE CBA suite — every module, in parallel lanes.
+//
+// The lanes are not one-per-module, and that is the whole design. The portal
+// allows one active session per account, and several modules share accounts:
+//
+//   M1  SME pool (worker-pinned) + RWG/SR-RWG/PIT reviewers
+//   M5  primary teacher          + RWG/SR-RWG/PIT reviewers   <- shares with M1
+//   M4  teacher2, chosen deliberately so QP work never meets M5's contributor
+//   M2  admin + admin2; its `serial` tests deactivate RWG accounts outright
+//   M3  a login-and-render probe, no state of its own
+//
+// So the lanes are drawn along account boundaries, not directory boundaries:
+//
+//   Logic    the two files that drive no browser and touch no account
+//   M2       admin only, with the RWG-deactivating `serial` tests held back
+//   M3+M4    probe + teacher2
+//   M1+M5    one pytest process over M1, M5 and tests/_unit, so xdist's global
+//            `serial` group covers the reviewer flows of all three at once —
+//            separate processes would each keep their own serial worker and
+//            double-book the reviewers. They also share tmp_uploads/, which
+//            one process schedules safely and several do not. Note tests/_unit
+//            is misnamed: 14 of its 22 files drive a real browser against SME2
+//            and the reviewer accounts, so it cannot run beside this lane.
+//   tail     M2's `serial` tests, after the parallel block: deactivating RWG
+//            mid-flight would fail M1 and M5 for a reason that is not a bug.
+//
+// Wall clock is therefore bounded by the M1+M5 lane, with everything else
+// hidden underneath it. Splitting M1 from M5 would not go faster — it would
+// just trade a long build for a flaky one. More real parallelism needs more
+// accounts, not more lanes; see docs/jenkins_setup.md section 6.
+//
+// Covers every test under tests/ except tests/_tmp_report_check/, which holds
+// synthetic pass/skip/retry fixtures for checking the report renderer and
+// contains a deliberate first-attempt failure.
+//
+// Related files:
+//   Jenkinsfile         post-deployment smoke gate (critical paths only)
+//   Jenkinsfile.module  one module at a time
+
+def cbse
+
+pipeline {
+    agent any
+
+    parameters {
+        string(
+            name: 'CBSE_BASE_URL',
+            defaultValue: 'https://cbse-qa-new.akashic.dhira.io/',
+            description: 'Environment under test.'
+        )
+        string(
+            name: 'WORKERS',
+            defaultValue: '4',
+            description: 'xdist workers for the M1+M5 lane — the critical path, so this is the number that moves the build time. Each worker drives its own headless Chrome (~200 MB). Above 6 the QA environment has shown connection contention.'
+        )
+        string(
+            name: 'LIGHT_WORKERS',
+            defaultValue: '2',
+            description: 'xdist workers for the M2 and M3+M4 lanes. Peak concurrent browsers is WORKERS + 2 x LIGHT_WORKERS, so keep the agent sized for that.'
+        )
+        string(
+            name: 'RERUNS',
+            defaultValue: '0',
+            description: 'Retries for failed tests. 0 keeps the per-test @flaky markers in charge, which is normally right — a blanket retry hides real regressions and doubles the cost of a genuine failure. Raise to 1 only for a known-noisy environment.'
+        )
+        booleanParam(
+            name: 'INCLUDE_NIGHTLY',
+            defaultValue: false,
+            description: 'Also run the nightly tests, which assert on AI/model verdicts rather than application logic. They fail on model drift, so they do not belong in a gate.'
+        )
+        string(
+            name: 'ACCOUNT_LOCK',
+            defaultValue: 'cbse-cba-accounts',
+            description: 'Lockable resource guarding the portal accounts. Held for the whole test phase, so a per-module build queues behind this one instead of signing it out. Give a second environment its own accounts and its own lock name.'
+        )
+    }
+
+    options {
+        timeout(time: 6, unit: 'HOURS')
+        timestamps()
+        // Needs the AnsiColor plugin; pairs with --color=yes, since pytest
+        // drops colour when its output is a pipe rather than a terminal.
+        ansiColor('xterm')
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        CBSE_BASE_URL = "${params.CBSE_BASE_URL}"
+        CBSE_HEADLESS = '1'
+        // Every lane overrides this with its own directory. conftest reads
+        // PYTEST_REPORTS_DIR precisely so concurrent pytest sessions keep
+        // their report artifacts apart.
+        PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci"
+        // A Jenkins agent has no ~/Downloads, so point the upload checks at
+        // the template vendored in the repo.
+        CBSE_UPLOAD_ITEM_FILE = "${WORKSPACE}/data/upload_templates/sme_sheet.xlsx"
+        PIP_DISABLE_PIP_VERSION_CHECK = '1'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    cbse = load 'ci/jenkins/cbse.groovy'
+                }
+            }
+        }
+
+        stage('Set up Python') {
+            steps {
+                script { cbse.setUpPython() }
+            }
+        }
+
+        stage('Load credentials') {
+            steps {
+                script { cbse.installEnvFile('cbse-smoke-env') }
+            }
+        }
+
+        stage('Preflight') {
+            options {
+                timeout(time: 10, unit: 'MINUTES')
+            }
+            steps {
+                // A half-booted environment fails every lane for the same
+                // reason and buries the real signal. One cheap login-and-render
+                // check decides whether the next few hours are worth spending.
+                // The M3 probe xfails by design (KI-M3-ITM-001), so it exits 0
+                // whenever the app renders at all.
+                script {
+                    cbse.classifyPytestResult(
+                        'Preflight',
+                        cbse.runPytest(
+                            'tests/M3_Item_Testing/test_m3_item_testing_probe.py ' +
+                            '--color=yes -p no:cacheprovider --no-header -q'
+                        )
+                    )
+                }
+            }
+        }
+
+        stage('Full suite') {
+            options {
+                // Held across both the parallel lanes and the serial tail, so
+                // no per-module build can slip in between them and sign these
+                // sessions out. Taken here rather than around the whole
+                // pipeline so checkout and pip do not hold the queue.
+                lock(resource: "${params.ACCOUNT_LOCK}")
+            }
+
+            stages {
+                stage('Modules') {
+                    // failFast is deliberately left off: this job exists to
+                    // produce a complete result, so one red lane must not
+                    // discard the three that are still running.
+                    parallel {
+                        stage('Logic (no browser)') {
+                            environment {
+                                PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/logic"
+                            }
+                            options {
+                                timeout(time: 10, unit: 'MINUTES')
+                            }
+                            steps {
+                                // The only two files in the repo that drive no
+                                // browser and touch no account: they exercise
+                                // the QAR retry loop and the manual-typology
+                                // data purely in Python. Seconds to run, so no
+                                // xdist. Note that tests/_unit is *not* here —
+                                // despite the name, 14 of its 22 files drive a
+                                // real browser against SME2 and the reviewer
+                                // accounts, so it belongs to the M1+M5 lane.
+                                script {
+                                    cbse.runLane('Logic', [
+                                        'tests/test_qar_retry_flow.py',
+                                        'tests/test_manual_typology_coverage.py',
+                                        cbse.markerArgs([], params.INCLUDE_NIGHTLY),
+                                        cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
+                                    ].findAll { it }.join(' '))
+                                }
+                            }
+                        }
+
+                        stage('M2 Web Portal Admin') {
+                            environment {
+                                PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m2"
+                            }
+                            options {
+                                timeout(time: 90, unit: 'MINUTES')
+                            }
+                            steps {
+                                // `not serial` holds back the tests that
+                                // mutate shared state — chiefly the one that
+                                // deactivates every RWG account, which the
+                                // M1+M5 lane is using right now. They run in
+                                // the tail stage below.
+                                script {
+                                    cbse.runLane('M2', [
+                                        'tests/M2_Web_Portal_Admin',
+                                        cbse.markerArgs(['not serial'], params.INCLUDE_NIGHTLY),
+                                        cbse.xdistArgs(params.LIGHT_WORKERS),
+                                        cbse.rerunArgs(params.RERUNS),
+                                        cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
+                                    ].findAll { it }.join(' '))
+                                }
+                            }
+                        }
+
+                        stage('M3 + M4') {
+                            environment {
+                                PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m3_m4"
+                            }
+                            options {
+                                timeout(time: 45, unit: 'MINUTES')
+                            }
+                            steps {
+                                // M3 is a probe over a module the build does
+                                // not ship yet; M4 drives teacher2, picked so
+                                // it never meets M5's contributor account.
+                                script {
+                                    cbse.runLane('M3+M4', [
+                                        'tests/M3_Item_Testing',
+                                        'tests/M4_QP_Creation',
+                                        cbse.markerArgs([], params.INCLUDE_NIGHTLY),
+                                        cbse.xdistArgs(params.LIGHT_WORKERS),
+                                        cbse.rerunArgs(params.RERUNS),
+                                        cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
+                                    ].findAll { it }.join(' '))
+                                }
+                            }
+                        }
+
+                        stage('M1 + M5') {
+                            environment {
+                                PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m1_m5"
+                            }
+                            options {
+                                timeout(time: 180, unit: 'MINUTES')
+                            }
+                            steps {
+                                // One process over all three paths on purpose
+                                // — see the header. tests/_unit is M1 content
+                                // driving SME2 and the reviewer accounts, so
+                                // it has to share this lane's scheduler. This
+                                // is the critical path, so WORKERS is the
+                                // parameter that decides the build's length.
+                                script {
+                                    cbse.runLane('M1+M5', [
+                                        'tests/M1_Item_Bank_Mgmt',
+                                        'tests/M5_Teacher_Contribution',
+                                        'tests/_unit',
+                                        cbse.markerArgs([], params.INCLUDE_NIGHTLY),
+                                        cbse.xdistArgs(params.WORKERS),
+                                        cbse.rerunArgs(params.RERUNS),
+                                        cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
+                                    ].findAll { it }.join(' '))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('M2 serial tail') {
+                    environment {
+                        PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m2_serial"
+                    }
+                    options {
+                        timeout(time: 45, unit: 'MINUTES')
+                    }
+                    steps {
+                        // Runs alone, without xdist: these tests take review
+                        // roles offline and edit QAR configuration, which is
+                        // global state. Everything that could notice has
+                        // already finished.
+                        script {
+                            cbse.runLane('M2 serial', [
+                                'tests/M2_Web_Portal_Admin',
+                                cbse.markerArgs(['serial'], params.INCLUDE_NIGHTLY),
+                                cbse.rerunArgs(params.RERUNS),
+                                cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
+                            ].findAll { it }.join(' '))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // allowEmptyResults keeps an environment-level failure (no lane
+            // ever started) reporting as a build failure rather than masking it
+            // as a Jenkins config error about missing results.
+            junit testResults: 'reports_ci/*/junit.xml', allowEmptyResults: true
+            archiveArtifacts(
+                artifacts: 'reports_ci/**/*, screenshots/**/*',
+                allowEmptyArchive: true,
+                fingerprint: false
+            )
+            script {
+                cbse?.publishLane('reports_ci/m1_m5', 'CBSE M1+M5 Report')
+                cbse?.publishLane('reports_ci/m2', 'CBSE M2 Report')
+                cbse?.publishLane('reports_ci/m2_serial', 'CBSE M2 Serial Report')
+                cbse?.publishLane('reports_ci/m3_m4', 'CBSE M3+M4 Report')
+                cbse?.publishLane('reports_ci/logic', 'CBSE Logic Report')
+            }
+        }
+        unstable {
+            echo 'Tests failed. Each lane publishes its own report — open the one named for the failing lane.'
+        }
+        cleanup {
+            // The decrypted .env holds real account passwords and must not sit
+            // in the workspace between builds. Screenshots run to hundreds of
+            // MB across builds; the archive above already took this build's.
+            script {
+                cbse?.removeEnvFile()
+                cbse?.runShell(
+                    'rm -rf screenshots/* tmp_uploads/* || true',
+                    'if exist screenshots rmdir /s /q screenshots & if exist tmp_uploads rmdir /s /q tmp_uploads & exit /b 0'
+                )
+            }
+        }
+    }
+}

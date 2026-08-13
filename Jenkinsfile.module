@@ -1,0 +1,192 @@
+// Per-module pipeline for the CBSE CBA suite.
+//
+// One parameterised job covers all five modules — pick M1..M5 with the MODULE
+// parameter rather than maintaining five near-identical Jenkinsfiles. See
+// docs/jenkins_pipelines.md for how to create the five jobs from this file.
+//
+// Parallelism inside a module comes from pytest-xdist with --dist loadgroup,
+// which is what keeps concurrent tests off each other's portal accounts. The
+// ACCOUNT_LOCK below is what keeps concurrent *builds* off each other.
+//
+// Related files:
+//   Jenkinsfile        post-deployment smoke gate (M1-M5 critical paths only)
+//   Jenkinsfile.full   complete suite, module lanes in parallel
+
+def cbse
+
+pipeline {
+    agent any
+
+    parameters {
+        choice(
+            name: 'MODULE',
+            choices: ['M1', 'M2', 'M3', 'M4', 'M5'],
+            description: '''Module under test.
+M1 Item Bank Mgmt · M2 Web Portal Admin · M3 Item Testing · M4 QP Creation · M5 Teacher Contribution'''
+        )
+        choice(
+            name: 'SUITE',
+            choices: ['regression', 'smoke', 'nightly'],
+            description: '''regression — everything in the module except the nightly AI-verdict tests.
+smoke — the module's critical-path checks only (minutes).
+nightly — only the AI/model-verdict tests, which assert on model output rather than application logic.'''
+        )
+        string(
+            name: 'CBSE_BASE_URL',
+            defaultValue: 'https://cbse-qa-new.akashic.dhira.io/',
+            description: 'Environment under test.'
+        )
+        string(
+            name: 'WORKERS',
+            defaultValue: '4',
+            description: 'pytest-xdist workers. Each worker drives its own headless Chrome (~200 MB), and the suite has 10 account-isolated groups. Above 6 the QA environment has shown connection contention.'
+        )
+        string(
+            name: 'RERUNS',
+            defaultValue: '0',
+            description: 'Retries for failed tests. 0 keeps the per-test @flaky markers in charge, which is normally right — a blanket retry hides real regressions and doubles the cost of a genuine failure. Raise to 1 only for a known-noisy environment.'
+        )
+        string(
+            name: 'ACCOUNT_LOCK',
+            defaultValue: 'cbse-cba-accounts',
+            description: 'Lockable resource guarding the portal accounts. Builds sharing this name queue instead of signing each other out. Give a second environment its own accounts and its own lock name.'
+        )
+    }
+
+    options {
+        timeout(time: 3, unit: 'HOURS')
+        timestamps()
+        // Needs the AnsiColor plugin; pairs with --color=yes, since pytest
+        // drops colour when its output is a pipe rather than a terminal.
+        ansiColor('xterm')
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        CBSE_BASE_URL = "${params.CBSE_BASE_URL}"
+        CBSE_HEADLESS = '1'
+        PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/${params.MODULE}"
+        // A Jenkins agent has no ~/Downloads, so point the upload checks at
+        // the template vendored in the repo.
+        CBSE_UPLOAD_ITEM_FILE = "${WORKSPACE}/data/upload_templates/sme_sheet.xlsx"
+        PIP_DISABLE_PIP_VERSION_CHECK = '1'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    cbse = load 'ci/jenkins/cbse.groovy'
+                }
+            }
+        }
+
+        stage('Set up Python') {
+            steps {
+                script { cbse.setUpPython() }
+            }
+        }
+
+        stage('Load credentials') {
+            steps {
+                script { cbse.installEnvFile('cbse-smoke-env') }
+            }
+        }
+
+        stage('Preflight') {
+            options {
+                timeout(time: 10, unit: 'MINUTES')
+            }
+            steps {
+                // A stalled or half-booted environment fails every test for
+                // the same reason and buries the real signal. One cheap
+                // login-and-render check tells us whether the module suite is
+                // worth its runtime. The M3 probe is used for every module
+                // because it is the cheapest such check in the repo — it
+                // xfails by design (KI-M3-ITM-001) and so exits 0 whenever the
+                // app renders at all.
+                script {
+                    cbse.classifyPytestResult(
+                        'Preflight',
+                        cbse.runPytest(
+                            'tests/M3_Item_Testing/test_m3_item_testing_probe.py ' +
+                            '--color=yes -p no:cacheprovider --no-header -q'
+                        )
+                    )
+                }
+            }
+        }
+
+        stage('Test') {
+            options {
+                // Serialise against every other build using the same portal
+                // accounts. Taken here rather than around the whole pipeline
+                // so checkout and pip do not hold the queue.
+                lock(resource: "${params.ACCOUNT_LOCK}")
+            }
+            steps {
+                script {
+                    // M1 owns three extra paths: tests/_unit (misnamed — 14 of
+                    // its 22 files drive a real browser against SME2 and the
+                    // reviewer accounts) and the two pure-Python files at the
+                    // top of tests/. Running them here is what makes M1..M5
+                    // add up to the whole suite; the only test directory no
+                    // job covers is tests/_tmp_report_check, which holds
+                    // synthetic fixtures for checking the report renderer.
+                    def paths = [
+                        M1: 'tests/M1_Item_Bank_Mgmt tests/_unit ' +
+                            'tests/test_qar_retry_flow.py tests/test_manual_typology_coverage.py',
+                        M2: 'tests/M2_Web_Portal_Admin',
+                        M3: 'tests/M3_Item_Testing',
+                        M4: 'tests/M4_QP_Creation',
+                        M5: 'tests/M5_Teacher_Contribution',
+                    ][params.MODULE]
+
+                    // regression -> not nightly · smoke -> smoke and not
+                    // nightly · nightly -> nightly. Always a full expression:
+                    // see markerArgs() for why a bare `-m smoke` is a trap.
+                    def clauses = ['smoke': ['smoke'], 'nightly': ['nightly']].get(params.SUITE, [])
+
+                    cbse.runLane(params.MODULE, [
+                        paths,
+                        cbse.markerArgs(clauses, params.SUITE == 'nightly'),
+                        cbse.xdistArgs(params.WORKERS),
+                        cbse.rerunArgs(params.RERUNS),
+                        cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
+                    ].findAll { it }.join(' '))
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // allowEmptyResults keeps an environment-level failure (the suite
+            // never started) reporting as a build failure rather than masking
+            // it as a Jenkins config error about missing results.
+            junit testResults: "reports_ci/${params.MODULE}/junit.xml", allowEmptyResults: true
+            archiveArtifacts(
+                artifacts: "reports_ci/${params.MODULE}/**/*, screenshots/**/*",
+                allowEmptyArchive: true,
+                fingerprint: false
+            )
+            script {
+                cbse?.publishLane("reports_ci/${params.MODULE}", "CBSE ${params.MODULE} Report")
+            }
+        }
+        cleanup {
+            // The decrypted .env holds real account passwords and must not sit
+            // in the workspace between builds. Screenshots run to hundreds of
+            // MB across builds; the archive above already took this build's.
+            script {
+                cbse?.removeEnvFile()
+                cbse?.runShell(
+                    'rm -rf screenshots/* tmp_uploads/* || true',
+                    'if exist screenshots rmdir /s /q screenshots & if exist tmp_uploads rmdir /s /q tmp_uploads & exit /b 0'
+                )
+            }
+        }
+    }
+}
