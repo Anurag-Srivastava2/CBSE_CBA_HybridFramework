@@ -67,17 +67,22 @@ pipeline {
 
         stage('Set up Python') {
             steps {
+                // Reuse an existing .venv rather than recreating it each build.
+                // Recreating fails outright when a previous build was aborted
+                // and its python.exe still holds the file, and it costs ~40s
+                // even when it works. pip is still run every build, so a
+                // changed requirements.txt is always picked up.
                 script {
                     runShell(
                         '''
                             set -eu
-                            python3 -m venv .venv
+                            [ -x .venv/bin/python ] || python3 -m venv .venv
                             . .venv/bin/activate
                             pip install -q -r requirements.txt
                             pip install -q pytest-xdist
                         ''',
                         '''
-                            python -m venv .venv || exit /b 1
+                            if not exist .venv\\Scripts\\python.exe python -m venv .venv || exit /b 1
                             call .venv\\Scripts\\activate.bat || exit /b 1
                             pip install -q -r requirements.txt || exit /b 1
                             pip install -q pytest-xdist || exit /b 1
