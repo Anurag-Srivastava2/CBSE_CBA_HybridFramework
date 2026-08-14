@@ -349,8 +349,8 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
                 role, item_set_id, scraped_username,
             )
             if scraped_username:
-                self.login_as(scraped_username, upload_page)
                 try:
+                    self.login_as(scraped_username, upload_page)
                     review_page.open_review_item_set(item_set_id, item_set_url)
                     return scraped_username
                 except TimeoutException:
@@ -373,8 +373,14 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         max_passes = 6
         for pass_number in range(1, max_passes + 1):
             for candidate in candidates:
-                self.login_as(candidate, upload_page)
                 try:
+                    # The login belongs inside the try: with several suites
+                    # driving the same shared reviewer pool at once, the SPA
+                    # occasionally strands a sign-in on the login form until it
+                    # times out. That is just another candidate that did not
+                    # work, so record it and move to the next account instead of
+                    # abandoning every remaining candidate and pass.
+                    self.login_as(candidate, upload_page)
                     review_page.open_review_item_set(item_set_id, item_set_url)
                 except TimeoutException as error:
                     last_error = error

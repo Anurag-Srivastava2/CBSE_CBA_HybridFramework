@@ -25,6 +25,11 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
+from utilities.environment_health import (
+    is_infrastructure_failure,
+    wait_for_environment,
+)
+from utilities.logger import LogGenerator
 from utilities.pdf_report_utils import PDFReportUtils
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
@@ -104,8 +109,15 @@ MODULE_NAMES = {
     "m5_teacher_contribution": "M5 - Teacher Contribution",
 }
 MODULE_TEST_COUNTS = {display_name: 0 for display_name in MODULE_NAMES.values()}
+logger = LogGenerator.loggen()
+
 ENVIRONMENT_REACHABILITY = {}
 SESSION_TIMING = {"start": None, "end": None}
+# Set when a test fails with an infrastructure signature, and cleared by the
+# next test's setup once the environment answers again. Without this, one
+# outage cascades: every remaining test fails in seconds against a dead
+# environment, and pytest-rerunfailures spends its retries there too.
+INFRA_OUTAGE = {"pending": False}
 
 
 def get_environment_info():
@@ -214,6 +226,8 @@ def one_line(value, max_length=240):
 
 def get_failure_one_line(report):
     lines = [line.strip() for line in str(report.longrepr or "").splitlines() if line.strip()]
+    # Say it up front, so nobody triages an outage as a product bug.
+    prefix = "[ENVIRONMENT] " if getattr(report, "infra_failure", False) else ""
     for line in reversed(lines):
         cleaned = re.sub(r"^E\s+", "", line).strip()
         if any(
@@ -225,8 +239,8 @@ def get_failure_one_line(report):
                 "Error:",
             )
         ):
-            return one_line(cleaned)
-    return one_line(lines[-1]) if lines else "Test assertion failed."
+            return prefix + one_line(cleaned)
+    return prefix + one_line(lines[-1]) if lines else "Test assertion failed."
 
 
 def build_step_evidence_html(evidence_screenshots):
@@ -321,25 +335,54 @@ def is_environment_connection_failure(report):
     )
 
 
-def is_configured_environment_reachable(timeout=2.0):
-    """Small TCP preflight so unreachable UI environments fail fast."""
+def _tcp_reachable(url, timeout, attempts, retry_delay):
+    parsed = urlparse(url)
+    host = parsed.hostname
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    if not host:
+        return False
+
+    for attempt in range(attempts):
+        try:
+            with socket.create_connection((host, port), timeout=timeout):
+                return True
+        except OSError:
+            if attempt < attempts - 1:
+                time.sleep(retry_delay)
+    return False
+
+
+def is_configured_environment_reachable(timeout=5.0, attempts=3, retry_delay=2.0):
+    """Small TCP preflight so unreachable UI environments fail fast.
+
+    Retries before concluding the environment is down. A negative verdict is
+    cached for the whole session and skips every M1 test with the run still
+    exiting 0, so a single dropped packet used to turn a whole suite into a
+    silent pass. Only a positive result is cheap to be wrong about.
+
+    Both hosts are checked. The SPA host alone is not enough: during a
+    2026-08-14 outage it served HTTP 200 throughout while the REST API on its
+    separate host was unreachable, which strands the browser on the app's
+    global "Loading..." screen - the SPA never gets the data it needs to render
+    even a login form. A preflight that only saw the SPA host called that
+    environment healthy and let 8 tests run into it.
+    """
     base_url = ReadConfig.get_base_url()
     if base_url in ENVIRONMENT_REACHABILITY:
         return ENVIRONMENT_REACHABILITY[base_url]
 
-    parsed = urlparse(base_url)
-    host = parsed.hostname
-    port = parsed.port or (443 if parsed.scheme == "https" else 80)
-    if not host:
-        ENVIRONMENT_REACHABILITY[base_url] = False
-        return False
-
+    urls = [base_url]
     try:
-        with socket.create_connection((host, port), timeout=timeout):
-            ENVIRONMENT_REACHABILITY[base_url] = True
-    except OSError:
-        ENVIRONMENT_REACHABILITY[base_url] = False
-    return ENVIRONMENT_REACHABILITY[base_url]
+        urls.append(ReadConfig.get_api_base_url())
+    except Exception:
+        # API host not configured - the SPA host is all there is to check.
+        pass
+
+    reachable = all(
+        _tcp_reachable(url, timeout, attempts, retry_delay) for url in urls
+    )
+    ENVIRONMENT_REACHABILITY[base_url] = reachable
+    return reachable
 
 
 def compute_module_stats():
@@ -1094,6 +1137,28 @@ def pytest_sessionstart(session):
             shutil.rmtree(get_partial_results_dir(), ignore_errors=True)
 
 
+def pytest_runtest_setup(item):
+    """Hold the next test until a mid-run outage clears.
+
+    The session-start preflight cannot help here - it already passed, and its
+    verdict is cached. This runs before the browser fixture starts, so a test
+    that would only have failed on a dead environment waits for it instead.
+    """
+    if not INFRA_OUTAGE["pending"]:
+        return
+    INFRA_OUTAGE["pending"] = False
+    timeout = int(os.getenv("CBSE_INFRA_RECOVERY_TIMEOUT", "300"))
+    if timeout <= 0:
+        return
+    logger.warning(
+        "Previous test failed on an infrastructure error; waiting up to %ds for "
+        "the environment before running %s.",
+        timeout,
+        item.name,
+    )
+    wait_for_environment(timeout=timeout)
+
+
 def pytest_runtest_call(item):
     if (
         get_module_name(item) == "M1 - Item Bank Mgmt"
@@ -1198,6 +1263,17 @@ def pytest_runtest_makereport(item):
     outcome = yield
     report = outcome.get_result()
     report.extras = getattr(report, "extras", [])
+
+    # An outage is not a defect. Flag it so the report says so, and so the next
+    # test waits for the environment instead of failing into it.
+    report.infra_failure = bool(
+        report.failed and is_infrastructure_failure(report.longrepr)
+    )
+    if report.infra_failure:
+        INFRA_OUTAGE["pending"] = True
+        logger.warning(
+            "%s failed on an infrastructure error, not a product defect.", item.name
+        )
 
     user_properties = dict(item.user_properties)
     manual_item_id = user_properties.get("manual_item_id")

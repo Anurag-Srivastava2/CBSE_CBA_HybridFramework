@@ -743,12 +743,13 @@ class UploadItemFilePage(BasePage):
         return True
 
     def wait_for_upload_validation_success(self):
-        """Wait until the file upload validation completes successfully.
+        """Return the upload's validation-success message.
 
-        First tries the primary UPLOAD_SUCCESS_MESSAGE locator.
-        Falls back to a broader page-text scan, then confirms the Continue
-        button is present in the DOM (using until_present to avoid the
-        until_clickable timeout caused by loading overlays).
+        Tries the primary UPLOAD_SUCCESS_MESSAGE locator (the multi-file
+        wording), then a broader scan that also covers the single-file wording.
+        Raises AssertionError if neither reports success -- callers assert on
+        the returned text, so returning an assumed-success string here would
+        make a rejected upload indistinguishable from an accepted one.
         """
         # Try primary success message locator
         try:
@@ -757,13 +758,17 @@ class UploadItemFilePage(BasePage):
         except TimeoutException:
             pass
 
-        # Broader fallback: wait for any success/status text to appear in the body
+        # Broader fallback: wait for any success/status text to appear in the body.
+        # Deliberately no 'Upload Status' / 'File Upload Status' clause: that is the
+        # header of the ever-present "Previously Uploaded Files" history table, so it
+        # matches whether or not this upload succeeded and reports false-positive
+        # success. Single-file uploads word it "All N rows added successfully"
+        # rather than the multi-file "validated successfully", so both are listed.
         broad_success = (
             By.XPATH,
             "//*[contains(normalize-space(),'PASSED') "
             "or contains(normalize-space(),'validated successfully') "
-            "or contains(normalize-space(),'Upload Status') "
-            "or contains(normalize-space(),'File Upload Status') "
+            "or contains(normalize-space(),'added successfully') "
             "or contains(normalize-space(),'Validation Passed')]",
         )
         try:
@@ -772,13 +777,21 @@ class UploadItemFilePage(BasePage):
         except TimeoutException:
             pass
 
-        # Last resort: file name visible + Continue button in DOM (use present, not clickable)
-        self.wait_utils.until_visible(self.UPLOADED_FILE_NAME, timeout=60)
+        # Nothing on screen reports success. This used to return a hardcoded
+        # "All files uploaded and validated successfully Status: PASSED", which
+        # is the exact wording callers assert on -- so a rejected upload passed
+        # as a success. Raise instead: the caller wanted proof of validation and
+        # there is none. Include what the page does say, since the app reports
+        # row-level failures ("All 1 row(s) failed validation") right here.
         try:
-            self.wait_utils.until_present(self.CONTINUE_BUTTON, timeout=20)
-        except TimeoutException:
-            pass  # Continue button may already have been removed; proceed anyway
-        return "All files uploaded and validated successfully Status: PASSED"
+            page_text = self.driver.find_element(By.TAG_NAME, "body").text.strip()
+        except Exception:
+            page_text = ""
+        raise AssertionError(
+            "Upload did not report validation success: no status message "
+            "appeared within the wait. Page text follows:\n"
+            f"{page_text[:2000]}"
+        )
 
     def wait_for_upload_rejection(self, timeout=30):
         def visible_rejection(driver):
@@ -814,8 +827,11 @@ class UploadItemFilePage(BasePage):
                 if index + 1 < len(message_lines) and "Status:" in message_lines[index + 1]:
                     return f"{line} {message_lines[index + 1]}"
                 return line
+        # "File Upload Status" is a column heading in the uploaded-files history
+        # table, not a status value -- matching it here returned the header row
+        # ("File Name Uploaded On File Upload Status ...") as the success message.
         for line in message_lines:
-            if "Status:" in line or "File Upload Status" in line:
+            if "added successfully" in line or "Status:" in line:
                 return line
         return message_text.strip()
 
@@ -1539,6 +1555,106 @@ class UploadItemFilePage(BasePage):
             except Exception:
                 continue
         return results
+
+    # --- Uploaded File column on the full My Item Set list ---
+    # open_sets_module() reaches the dashboard, whose "My Item Sets" widget only
+    # previews a few sets and paints "Loading item sets..." first. The full list
+    # -- and the only place the Uploaded File column renders -- is /item-sets,
+    # behind the widget's "View All".
+    ITEM_SETS_LIST_PATH = "/item-sets"
+    ITEM_SET_TABLE_HEADERS = (
+        By.XPATH,
+        "//table[.//th[contains(normalize-space(),'Item Set ID')]]//th",
+    )
+    # Sets authored manually have no source workbook and render an em dash.
+    UPLOADED_FILE_EMPTY_MARKERS = {"", "—", "–", "-"}
+
+    # The dashboard widget's link through to the full list.
+    MY_ITEM_SETS_VIEW_ALL = (
+        By.XPATH,
+        "//*[normalize-space()='View All'][not(.//*[normalize-space()='View All'])]",
+    )
+
+    def open_item_sets_list(self, timeout=45):
+        """Open the full My Item Set list and wait for its rows to render.
+
+        Prefers the dashboard's "View All" link to navigating straight at
+        /item-sets: a hard driver.get() reloads the SPA and lands on its global
+        Loading screen, which this environment can sit on for longer than the
+        wait. The direct URL stays as the fallback for builds without the link.
+        """
+        self.open_sets_module()
+        try:
+            link = self.wait_utils.until_clickable(self.MY_ITEM_SETS_VIEW_ALL, timeout=15)
+            self.driver.execute_script("arguments[0].click();", link)
+        except TimeoutException:
+            self.driver.get(ReadConfig.get_base_url().rstrip("/") + self.ITEM_SETS_LIST_PATH)
+        self.wait_utils.until_visible(self.MY_ITEM_SETS_HEADING, timeout=timeout)
+        # Rows only exist once the "Loading item sets..." placeholder clears.
+        self.wait_utils.until_condition(
+            lambda driver: driver.find_elements(*self.ITEM_SET_LIST_ROWS) or False,
+            timeout=timeout,
+        )
+        return True
+
+    def get_uploaded_file_column_index(self, timeout=30):
+        """1-based index of the 'Uploaded File' column, or 0 when it is absent.
+
+        Resolved from the header rather than hard-coded: this list has gained
+        columns across builds (Item Count, Last Review Submit Date), and a fixed
+        td index silently reads a neighbouring cell when that happens.
+        """
+        headers = self.wait_utils.until_condition(
+            lambda driver: driver.find_elements(*self.ITEM_SET_TABLE_HEADERS) or False,
+            timeout=timeout,
+        )
+        for index, header in enumerate(headers, start=1):
+            if "uploaded file" in header.text.casefold():
+                return index
+        return 0
+
+    @classmethod
+    def uploaded_file_name(cls, cell):
+        """The full workbook name in an Uploaded File cell, or '' if it has none.
+
+        Reads the title attribute rather than the cell text: long names are
+        truncated for display ("smoke_item_set_b935079…"), so the visible text
+        is not the file name. Cells for manually authored sets carry no title
+        and hold an em dash, which yields ''.
+        """
+        for element in cell.find_elements(By.XPATH, ".//*[@title]"):
+            title = (element.get_attribute("title") or "").strip()
+            if title:
+                return title
+        text = cell.text.strip()
+        return "" if text in cls.UPLOADED_FILE_EMPTY_MARKERS else text
+
+    def get_item_set_uploaded_files(self):
+        """Map item set ID -> source workbook name for rows that name one.
+
+        Rows for manually authored sets are omitted, so an empty result means
+        this page lists no uploaded sets rather than that the column failed.
+        """
+        column = self.get_uploaded_file_column_index()
+        if not column:
+            return {}
+        uploads = {}
+        for row in self.driver.find_elements(*self.ITEM_SET_LIST_ROWS):
+            try:
+                if not row.is_displayed():
+                    continue
+                cells = row.find_elements(By.XPATH, "./td")
+                if len(cells) < column:
+                    continue
+                set_id_lines = [
+                    line.strip() for line in cells[0].text.splitlines() if line.strip()
+                ]
+                name = self.uploaded_file_name(cells[column - 1])
+                if set_id_lines and name:
+                    uploads[set_id_lines[0]] = name
+            except Exception:
+                continue
+        return uploads
 
     def get_item_set_filter_trigger(self, filter_name, timeout=20):
         label = self.xpath_literal(filter_name)

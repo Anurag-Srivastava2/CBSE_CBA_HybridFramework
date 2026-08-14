@@ -31,6 +31,24 @@ class BaseReviewQueuePage(BasePage):
         match = re.match(r"(IS\d+)", str(item_set_id), re.IGNORECASE)
         return match.group(1) if match else str(item_set_id)
 
+    @classmethod
+    def loose_item_id_key(cls, item_id):
+        """A chapter-code-insensitive identity for an item ID.
+
+        Pairs the stable "IS<number>" prefix with the trailing item number so
+        IDs scraped from two different pages compare equal even when they
+        disagree on the chapter-code segment in between (e.g.
+        "IS833-G1-Mathematics-Ch29-i1" vs "IS833-G1-Mathematics-CH-1-i1") -
+        see item_set_numeric_prefix(). Use this instead of comparing scraped
+        IDs to captured ones directly.
+        """
+        text = str(item_id).strip()
+        item_number_match = re.search(r"-i(\d+)$", text, re.IGNORECASE)
+        if not item_number_match:
+            return text.casefold()
+        item_number = int(item_number_match.group(1))
+        return f"{cls.item_set_numeric_prefix(text).upper()}-i{item_number}"
+
     ITEM_SET_READY_SIGNALS = (
         "Item Response Sheet",
         "Evaluation Criteria",

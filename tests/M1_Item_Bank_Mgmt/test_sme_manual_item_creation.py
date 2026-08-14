@@ -194,6 +194,9 @@ def build_manual_typology_items(run_id):
             "assertion": f"Assertion (A): 25 is greater than 14. A&R run {run_id}",
             "reasoning": "Reasoning (R): 25 comes after 14 when counting upward.",
             "answer": "A",
+            # "Explanation for the Answer" is required for this typology too.
+            # Without it Add Item is silently blocked, so the item never stages.
+            "explanation": "Both statements are true and the reasoning explains the assertion.",
             "marks": "1",
         },
         {

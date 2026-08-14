@@ -1,9 +1,13 @@
 # Jenkins post-deployment smoke gate
 
 The [Jenkinsfile](../Jenkinsfile) at the repo root runs the cross-module smoke
-suite (16 checks across M1-M5) against a freshly deployed environment. This
+suite (15 checks across M1-M5) against a freshly deployed environment. This
 page covers what the agent needs, how credentials are supplied, and how the
 deployment job triggers it.
+
+For the per-module jobs and the full-suite job — which reuse the agent
+prerequisites and the credential described here — see
+[jenkins_pipelines.md](jenkins_pipelines.md).
 
 ## 1. Agent prerequisites
 
@@ -106,7 +110,7 @@ change. Useful, but it validates the suite rather than a deployment.
 | **Unstable / test failures** | A specific module's critical path is broken. Open the *CBSE Smoke Report* artifact and read the failing module. |
 | **`xfailed`** | A known gap, not a regression. Currently: M3 Item Testing (KI-M3-ITM-001) always xfails, and a reviewer queue xfails when no item set is assigned (KI-M1-QUEUE-001). See [known_issues.md](known_issues.md). |
 
-The `Preflight` stage exists because a half-booted environment fails all 16
+The `Preflight` stage exists because a half-booted environment fails all 15
 checks for one reason and buries the real signal. One cheap login tells you
 whether it is worth running the rest.
 

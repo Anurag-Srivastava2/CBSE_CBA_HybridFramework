@@ -240,9 +240,19 @@ class TestQARDuplicateDetection:
             marker in duplicate_normalized
             for marker in ("duplicate", "similarity", "plagiarism", "uniqueness")
         ), f"IS12 QAR report does not show duplicate-check evidence: {duplicate_text}"
-        assert any(
-            marker in duplicate_normalized
-            for marker in ("red", "failed", "fail", "<10", "less than 10", "90%")
+        # The set-level verdict now reads "QAR completed - 0/1 set(s) passed."
+        # and each duplicate item carries a "Rejected" badge. Match the banner's
+        # ratio rather than a bare status word: this page always renders the
+        # status-filter labels "Approved", "Needs Revision" and "Rejected"
+        # whatever the outcome, so a bare-word match would pass unconditionally
+        # and turn this assertion into a permanent green.
+        sets_passed = re.search(r"(\d+)\s*/\s*(\d+)\s*set", duplicate_normalized)
+        assert (
+            any(
+                marker in duplicate_normalized
+                for marker in ("red", "failed", "fail", "<10", "less than 10", "90%")
+            )
+            or (sets_passed is not None and sets_passed.group(1) == "0")
         ), f"IS12 duplicate check is not visibly failed/red: {duplicate_text}"
         self.assert_all_items_status(duplicate, "Needs Revision", expected_count=5)
         assert not re.search(r"\brwg\s*\d+\b|assigned\s+rwg", duplicate_normalized), (

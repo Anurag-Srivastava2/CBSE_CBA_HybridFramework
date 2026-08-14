@@ -165,10 +165,15 @@ class ManualItemPage(BasePage):
         By.XPATH,
         "//input[not(@type='hidden') and not(@disabled)] | //textarea[not(@disabled)]",
     )
+    # Match the Following renders this as a <textarea>, not an <input>, so an
+    # input-only locator skipped past it and landed on the rich-text toolbar's
+    # hidden <input type="color">. Waiting for that to become visible timed out
+    # with an empty message, and the fields after it were never filled.
     ANSWER_KEY_INPUT = (
         By.XPATH,
         "//*[contains(normalize-space(),'Correct Answer') or contains(normalize-space(),'Answer Key')]"
-        "/following::input[not(@type='hidden') and not(@disabled)][1]",
+        "/following::*[(self::textarea or (self::input and not(@type='hidden') and not(@type='color')))"
+        " and not(@disabled)][1]",
     )
     CORRECT_ANSWER_DROPDOWN = (
         By.XPATH,
@@ -1128,20 +1133,35 @@ class ManualItemPage(BasePage):
     def fill_match_the_following_question(self, question_text, pairs, explanation):
         self.set_visible_rich_text_editor_by_index(0, question_text)
         self.remove_extra_match_the_following_rows(len(pairs))
-        flat_pairs = []
-        for left_value, right_value in pairs:
-            flat_pairs.extend([left_value, right_value])
+        # The editors are grouped by column -- [0] stem, then every Column A
+        # cell, then every Column B cell -- not interleaved pair by pair.
+        # Writing them interleaved put each pair's match into a Column A slot.
+        column_a = [left_value for left_value, _ in pairs]
+        column_b = [right_value for _, right_value in pairs]
         editors = self.get_visible_rich_text_editors()
-        for offset, value in enumerate(flat_pairs, start=1):
+        for offset, value in enumerate(column_a + column_b, start=1):
             if offset < len(editors):
                 self.set_visible_rich_text_editor_by_index(offset, value)
-        self.enter_answer_key("1-A, 2-B, 3-C")
+        # Column B keeps the pair order, so item N matches the Nth letter.
+        # Derived from the pairs rather than hardcoded to three rows.
+        self.enter_answer_key(
+            ", ".join(
+                f"{index} - {chr(ord('A') + index - 1)}"
+                for index in range(1, len(pairs) + 1)
+            )
+        )
         self.set_explanation_by_label(explanation)
 
-    def fill_assertion_and_reasoning_question(self, assertion_text, reasoning_text, answer_option="A"):
+    def fill_assertion_and_reasoning_question(
+        self, assertion_text, reasoning_text, answer_option="A", explanation=None
+    ):
         self.set_visible_rich_text_editor_by_index(0, assertion_text)
         self.set_visible_rich_text_editor_by_index(1, reasoning_text)
         self.select_correct_answer_dropdown(answer_option)
+        # "Explanation for the Answer" is required here as it is for every other
+        # typology; leaving it blank silently blocks Add Item.
+        if explanation:
+            self.set_explanation_by_label(explanation)
 
     def fill_fa_activity_question(self, instructions_text, rubric_text):
         self.set_visible_rich_text_editor_by_index(0, instructions_text)
@@ -1368,6 +1388,7 @@ class ManualItemPage(BasePage):
                 item_data["assertion"],
                 item_data["reasoning"],
                 item_data.get("answer", "A"),
+                item_data.get("explanation"),
             )
         elif typology == "FA Activity":
             self.fill_fa_activity_question(

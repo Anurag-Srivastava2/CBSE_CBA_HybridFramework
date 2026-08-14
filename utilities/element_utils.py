@@ -1,6 +1,10 @@
 from time import sleep
 
-from selenium.common.exceptions import StaleElementReferenceException, WebDriverException
+from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    StaleElementReferenceException,
+    WebDriverException,
+)
 
 
 class ElementUtils:
@@ -34,6 +38,20 @@ class ElementUtils:
                 last_error = error
                 if attempt == 2:
                     raise
+            except ElementClickInterceptedException as error:
+                # The app's sticky header overlays whatever scrolls under it.
+                # Controls near the top of the page - the Manual/Upload tabs
+                # sit at about y=18 - are reported clickable by Selenium (they
+                # are displayed and enabled) while the brand name actually
+                # receives the click. Recentre the element and retry, then fall
+                # back to a JS click, which is not subject to the overlay.
+                last_error = error
+                try:
+                    self.scroll_to_element(self.wait_utils.until_present(locator, timeout))
+                except WebDriverException:
+                    pass
+                if attempt == 2:
+                    return self.js_click(locator, timeout)
         raise last_error
 
     def js_click(self, locator, timeout=None):

@@ -46,6 +46,16 @@ class ReadConfig:
         return ReadConfig._secret("CBSE_BASE_URL")
 
     @staticmethod
+    def get_api_base_url():
+        """Base URL of the REST API, which is a different host to the web app.
+
+        CBSE_BASE_URL serves only the SPA - every /api/* path under it returns
+        the app's own HTML 404 page, so API tests must not derive their URLs
+        from it. The frontend bundle points at this separate host instead.
+        """
+        return ReadConfig._secret("CBSE_API_BASE_URL").rstrip("/")
+
+    @staticmethod
     def get_browser_name():
         return ReadConfig.config.get("browser", "browser_name")
 

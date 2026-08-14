@@ -92,12 +92,10 @@ class BulkUploadPage(UploadItemFilePage):
         for that panel to render before sending the zip, otherwise the zip
         lands on the old (about-to-be-replaced) file input and is dropped.
 
-        We deliberately do NOT trust wait_for_upload_validation_success()'s
-        generic fallback here: its broad success locator matches any text
-        containing "Upload Status" / "File Upload Status", which is also the
-        header of the ever-present "Previously Uploaded Files" history table
-        further down the page -- so it reports false-positive success even
-        when the zip silently failed to attach. Instead we require the
+        We deliberately do NOT rely on wait_for_upload_validation_success()
+        alone here: its success text can already be on screen from the earlier
+        *Excel* stage while the zip silently failed to attach, so a success
+        message is not by itself proof the zip landed. Instead we require the
         "Upload Images ZIP" panel to actually disappear (proof the zip was
         accepted) before trusting any success message.
         """

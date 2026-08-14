@@ -132,10 +132,14 @@ Set `CBSE_HEADLESS` to `1`/`true`/`yes` (PowerShell: `$env:CBSE_HEADLESS = "1"`)
 
 ```text
 pages/
-  common/     Shared POM classes such as BasePage and LoginPage
+  common/     Shared POM classes such as BasePage, LoginPage and ReviewQueuePage
+  admin/      Portal-admin page objects (dashboard, users, roles, audit, QAR config)
   teacher/    Teacher-specific page objects
-  sme/        SME-specific page objects
-  rwg/        RWG-specific page objects
+  sme/        SME-specific page objects (bulk upload, item set, manual item)
+  pit/        PIT review-queue page objects
+  rwg/        RWG review-queue page objects
+  sr_rwg/     Senior-RWG review-queue page objects
+  qar/        QAR report page objects
 
 tests/
   M1_Item_Bank_Mgmt/          M1 - Item Bank Mgmt
@@ -143,8 +147,14 @@ tests/
   M3_Item_Testing/            M3 - Item Testing
   M4_QP_Creation/             M4 - QP Creation
   M5_Teacher_Contribution/    M5 - Teacher Contribution
+  _unit/                      Fixture-driven checks that need no live browser
 
+utilities/     Shared helpers: waits, logging, screenshots, QAR fixtures
+tools/         Standalone maintenance and seeding scripts
+data/          Typology and upload templates, question bank
 rtm/           Excel RTM manifest and traceability checks
+docs/          Jenkins setup and the known-issues log
+ci/            Jenkins pipeline library
 ```
 
 Run the RTM validation separately with `pytest rtm`.
@@ -168,6 +178,19 @@ PYTEST_REPORTS_DIR=test-reports/smoke pytest -m smoke -n 6 --dist loadgroup
 - HTML report: `reports/report.html`
 - Logs: `logs/automation_YYYY_MM_DD.log`
 - Failure screenshots: `screenshots/`
+
+None of this is tracked by git and no run reads back the previous run's output, so
+it only accumulates. Clear it with:
+
+```powershell
+tools\clean_workspace.ps1 -DryRun      # list what would go
+tools\clean_workspace.ps1              # keep the last day's output
+tools\clean_workspace.ps1 -KeepDays 7  # keep the last week's output
+```
+
+The script preserves the `.gitkeep` sentinels and the tracked fixtures under
+`data/` and `test_images/`. Extent reports embed their screenshots as base64 data
+URIs, so clearing `screenshots/` never breaks a report you are keeping.
 
 ## Expected failures
 

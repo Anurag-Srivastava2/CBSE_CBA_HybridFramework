@@ -47,37 +47,57 @@ class TestSMECrossRBACAPI:
             
         return session, headers
 
-    def discover_api_url(self, session, base_url, path, headers):
-        """Autodetect API path structure by trying prefixed /api path first."""
-        url_with_api = base_url.rstrip("/") + "/api" + path
-        url_direct = base_url.rstrip("/") + path
-        
-        try:
-            response = session.get(url_with_api, headers=headers, timeout=10)
-            if response.status_code != 404:
-                return url_with_api, response
-        except Exception:
-            pass
-            
-        try:
-            response = session.get(url_direct, headers=headers, timeout=10)
-            return url_direct, response
-        except Exception as error:
-            self.logger.warning(f"Connection failed for direct endpoint {url_direct}: {error}")
-            return url_direct, None
+    def get_owned_item_set_and_item(self, session, headers):
+        """Return (item_set_id, item_id) for a set this session's SME owns.
+
+        Queries the REST API host, not CBSE_BASE_URL: that serves only the SPA,
+        so item-set paths under it answer with index.html and a 404 -- which is
+        why this test skipped for want of a resource on every run. The listing
+        is an envelope ({"data": {"itemSets": [...]}}) rather than a bare list,
+        and carries no items, so the set's items need a second call.
+        """
+        api_base = ReadConfig.get_api_base_url()
+        listing = session.get(
+            f"{api_base}/item-sets/mine",
+            params={"page_index": 1, "perpage_records": 10},
+            headers=headers,
+            timeout=15,
+        )
+        if listing.status_code != 200:
+            self.logger.warning(
+                f"GET /item-sets/mine returned {listing.status_code}: {listing.text[:200]}"
+            )
+            return None, None
+
+        item_sets = (listing.json().get("data") or {}).get("itemSets") or []
+        # Only a set that actually holds items can back the item-level check.
+        owned = next((entry for entry in item_sets if entry.get("total_items")), None)
+        if not owned:
+            return None, None
+        item_set_id = owned.get("item_set_id")
+
+        detail = session.get(
+            f"{api_base}/item-sets/{item_set_id}/items", headers=headers, timeout=15
+        )
+        if detail.status_code != 200:
+            self.logger.warning(
+                f"GET /item-sets/{item_set_id}/items returned {detail.status_code}"
+            )
+            return item_set_id, None
+        items = (detail.json().get("data") or {}).get("items") or []
+        return item_set_id, (items[0].get("item_id") if items else None)
 
     def test_tc_neg_m1_08_cross_sme_rbac_returns_403_forbidden(self):
         """TC-NEG-M1-08: Verify that cross-SME item set access returns 403 Forbidden at API level.
         
         Steps:
         1. Login as SME1 via Selenium, extract auth cookies and bearer token.
-        2. Query GET /item-sets to get list of item sets belonging to SME1.
+        2. Resolve an item set SME1 owns, and one item inside it, from the API.
         3. Login as SME2 via Selenium, extract auth cookies and bearer token.
-        4. Request GET /item-sets/{id_from_sme1} as SME2 -> assert 403 Forbidden.
-        5. Request PUT /items/{item_id_from_sme1} as SME2 -> assert 403 Forbidden.
-        6. Request DELETE /item-sets/{id_from_sme1} as SME2 -> assert 403 Forbidden.
+        4. Request GET /item-sets/{id_from_sme1}/items as SME2 -> assert 403.
+        5. Re-request the same URL as SME1 -> assert 200, so the 403 above is
+           attributable to ownership rather than to a bad URL or dead token.
         """
-        base_url = ReadConfig.get_base_url()
         sme_usernames = ReadConfig.get_role_usernames("sme")
         
         if len(sme_usernames) < 2:
@@ -91,33 +111,9 @@ class TestSMECrossRBACAPI:
         self.step(1, f"Logging in as SME1 ({sme1_user}) and extracting auth session")
         sme1_session, sme1_headers = self.get_auth_session(sme1_user, ReadConfig.get_password_for_username(sme1_user))
         
-        # Step 2: Get item sets of SME1
-        self.step(2, "Querying SME1's item sets via GET /item-sets")
-        api_path = "/item-sets"
-        endpoint_url, response = self.discover_api_url(sme1_session, base_url, api_path, sme1_headers)
-        
-        item_set_id = None
-        item_id = None
-        
-        if response is not None and response.status_code == 200:
-            try:
-                data = response.json()
-                self.logger.info(f"Retrieved SME1 item sets count: {len(data)}")
-                if isinstance(data, list) and len(data) > 0:
-                    first_set = data[0]
-                    if isinstance(first_set, dict):
-                        item_set_id = first_set.get("id") or first_set.get("item_set_id")
-                        # Try to get an item ID if present in the item set structure
-                        items = first_set.get("items")
-                        if items and len(items) > 0:
-                            if isinstance(items[0], dict):
-                                item_id = items[0].get("id") or items[0].get("item_id")
-                            else:
-                                item_id = items[0]
-                elif isinstance(data, dict):
-                    item_set_id = data.get("id") or data.get("item_set_id")
-            except Exception as parse_error:
-                self.logger.warning(f"Could not parse item sets JSON: {parse_error}")
+        # Step 2: Resolve a real item set (and item) owned by SME1
+        self.step(2, "Resolving an item set owned by SME1 via the REST API")
+        item_set_id, item_id = self.get_owned_item_set_and_item(sme1_session, sme1_headers)
 
         # Cross-owner RBAC is meaningful only with a real resource owned by SME1.
         if not item_set_id or not item_id:
@@ -125,7 +121,7 @@ class TestSMECrossRBACAPI:
                 "SME1 has no discoverable owned item set/item; fabricated IDs would not "
                 "prove cross-SME RBAC enforcement."
             )
-            
+
         print(f"[PASS] SME1 identifiers: Set ID = {item_set_id}, Item ID = {item_id}", flush=True)
 
         # Step 3: Login as SME2
@@ -134,39 +130,29 @@ class TestSMECrossRBACAPI:
         UploadItemFilePage(self.driver).reset_browser_session_to_login()
         sme2_session, sme2_headers = self.get_auth_session(sme2_user, ReadConfig.get_password_for_username(sme2_user))
 
-        # Determine target URLs for SME2 requests
-        api_root = endpoint_url.rsplit("/item-sets", 1)[0]
-        get_set_url = f"{api_root}/item-sets/{item_set_id}"
-        put_item_url = f"{api_root}/items/{item_id}"
-        delete_set_url = f"{api_root}/item-sets/{item_set_id}"
-
-        # Step 4: Verify GET /item-sets/{id} returns 403 Forbidden
-        self.step(4, f"Verifying SME2 GET access to SME1's set {item_set_id} is forbidden")
-        print(f"[CHECK] GET {get_set_url} returns 403 Forbidden", flush=True)
-        get_response = sme2_session.get(get_set_url, headers=sme2_headers, timeout=10)
-        self.logger.info(f"GET Response status: {get_response.status_code}")
-        assert get_response.status_code == 403, (
-            f"Expected status 403 Forbidden for cross-SME GET, but got {get_response.status_code}"
+        # SME2 must not be able to read SME1's set. This targets
+        # /item-sets/{id}/items because that endpoint exists. The routes this
+        # test used to assert on -- GET /item-sets/{id}, PUT /items/{id} and
+        # DELETE /item-sets/{id} -- are not served at all, so they answer 404
+        # for owner and non-owner alike and proved nothing about RBAC.
+        self.step(4, f"Verifying SME2 cannot read SME1's item set {item_set_id}")
+        cross_url = f"{ReadConfig.get_api_base_url()}/item-sets/{item_set_id}/items"
+        print(f"[CHECK] GET {cross_url} as SME2 returns 403 Forbidden", flush=True)
+        cross_response = sme2_session.get(cross_url, headers=sme2_headers, timeout=15)
+        self.logger.info(f"Cross-SME GET status: {cross_response.status_code}")
+        assert cross_response.status_code == 403, (
+            f"Expected 403 Forbidden when SME2 reads SME1's item set {item_set_id}, "
+            f"got {cross_response.status_code}: {cross_response.text[:300]}"
         )
         print("[PASS] Cross-SME GET returned 403 Forbidden.", flush=True)
 
-        # Step 5: Verify PUT /items/{id} returns 403 Forbidden
-        self.step(5, f"Verifying SME2 PUT access to SME1's item {item_id} is forbidden")
-        print(f"[CHECK] PUT {put_item_url} returns 403 Forbidden", flush=True)
-        dummy_put_body = {"item_content": "Unauthorized update attempt"}
-        put_response = sme2_session.put(put_item_url, json=dummy_put_body, headers=sme2_headers, timeout=10)
-        self.logger.info(f"PUT Response status: {put_response.status_code}")
-        assert put_response.status_code == 403, (
-            f"Expected status 403 Forbidden for cross-SME PUT, but got {put_response.status_code}"
+        # Positive control: a 403 alone would also be produced by a mistyped URL
+        # or an expired token, neither of which says anything about ownership.
+        self.step(5, "Confirming SME1 still reads its own set (control)")
+        owner_response = sme1_session.get(cross_url, headers=sme1_headers, timeout=15)
+        self.logger.info(f"Owner GET status: {owner_response.status_code}")
+        assert owner_response.status_code == 200, (
+            f"Owner SME1 should still read its own item set {item_set_id}, got "
+            f"{owner_response.status_code}: {owner_response.text[:300]}"
         )
-        print("[PASS] Cross-SME PUT returned 403 Forbidden.", flush=True)
-
-        # Step 6: Verify DELETE /item-sets/{id} returns 403 Forbidden
-        self.step(6, f"Verifying SME2 DELETE access to SME1's set {item_set_id} is forbidden")
-        print(f"[CHECK] DELETE {delete_set_url} returns 403 Forbidden", flush=True)
-        delete_response = sme2_session.delete(delete_set_url, headers=sme2_headers, timeout=10)
-        self.logger.info(f"DELETE Response status: {delete_response.status_code}")
-        assert delete_response.status_code == 403, (
-            f"Expected status 403 Forbidden for cross-SME DELETE, but got {delete_response.status_code}"
-        )
-        print("[PASS] Cross-SME DELETE returned 403 Forbidden.", flush=True)
+        print("[PASS] Owner still gets 200 - the 403 is ownership, not a broken URL.", flush=True)

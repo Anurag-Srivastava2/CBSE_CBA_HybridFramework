@@ -508,9 +508,13 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         max_passes = 3
         for pass_number in range(1, max_passes + 1):
             for candidate in candidates:
-                upload_page.reset_browser_session_to_login()
-                self.login_as(candidate)
                 try:
+                    # The login belongs inside the try: a candidate whose
+                    # sign-in strands on the login form is just another
+                    # candidate that did not work, so move to the next account
+                    # instead of abandoning every remaining one and pass.
+                    upload_page.reset_browser_session_to_login()
+                    self.login_as(candidate)
                     RWGReviewQueuePage(self.driver).open_review_item_set(
                         item_set_id, item_set_url
                     )

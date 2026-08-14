@@ -154,7 +154,17 @@ class PITItemLifecycle:
         pit_page = PITReviewQueuePage(self.driver)
         pit_page.open_review_item_set(item_set_id, item_set_url)
         pending_ids = pit_page.get_pending_pit_item_ids(item_set_id)
-        assert set(pending_ids) == set(item_ids), (
+        # Compare on the chapter-code-insensitive key: these IDs are scraped
+        # from the PIT queue, which renders the chapter segment differently
+        # than the SME page did at upload time ("-CH-1-i1" vs "-Ch29-i1"), so
+        # an exact-string set comparison never matches the same items.
+        pending_keys = {
+            pit_page.loose_item_id_key(pending_id) for pending_id in pending_ids
+        }
+        expected_keys = {
+            pit_page.loose_item_id_key(item_id) for item_id in item_ids
+        }
+        assert pending_keys == expected_keys, (
             f"Expected every fresh item at PIT; pending={pending_ids}, created={item_ids}."
         )
 

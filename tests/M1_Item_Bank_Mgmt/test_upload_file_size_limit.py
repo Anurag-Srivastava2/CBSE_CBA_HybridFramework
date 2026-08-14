@@ -13,11 +13,16 @@ from selenium.webdriver.common.by import By
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from utilities.item_bank_workbook_builder import build_item_workbook
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
 
 
 @pytest.mark.rtm
+# The item-creation module is lazy-loaded, and this environment intermittently
+# fails to serve the chunk ("failed to fetch dynamically imported module") even
+# after open_item_creation_module()'s own refresh retries.
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.usefixtures("setup")
 class TestUploadFileSizeLimit:
     """TC-NEG-M1-10 — Bulk Upload File Exceeds 10 MB Size Limit"""
@@ -167,32 +172,37 @@ class TestUploadFileSizeLimit:
         assert "upload id:" not in normalized_rejection, "BUG: Upload ID was incorrectly generated for an oversized file!"
         print("[PASS] Confirmed no Upload ID was generated.", flush=True)
 
-        # Step 5: Assert API POST /upload returns 413 Payload Too Large
-        self.step(5, "Verifying API POST /upload returns 413 Payload Too Large")
+        # Step 5: Assert the bulk-upload API rejects the oversized payload
+        self.step(5, "Verifying the bulk-upload API rejects the 12 MB payload")
         session, headers = self.get_api_session()
-        
-        # Discover upload API endpoint
-        api_path = "/upload"
-        url_with_api = ReadConfig.get_base_url().rstrip("/") + "/api" + api_path
-        url_direct = ReadConfig.get_base_url().rstrip("/") + api_path
-        
-        upload_url = url_with_api
-        try:
-            # Send small dummy head/options check first to discover structure
-            resp = session.options(url_with_api, headers=headers, timeout=5)
-            if resp.status_code == 404:
-                upload_url = url_direct
-        except Exception:
-            upload_url = url_direct
-            
-        self.logger.info(f"Discovered Upload API URL: {upload_url}")
+
+        # The REST API lives on its own host; every /api/* path under the web
+        # app's host resolves to the SPA's HTML 404 page instead, so a URL
+        # derived from CBSE_BASE_URL never reaches the API. Posting 12 MB there
+        # returns a proxy 502, which says nothing about the size limit.
+        upload_url = ReadConfig.get_api_base_url() + "/excel-import/upload"
+
+        assert "Authorization" in headers, (
+            "No auth token was found in browser storage, so this API check would "
+            "assert on an unauthenticated 401 rather than the size limit."
+        )
+        self.logger.info(f"Upload API URL: {upload_url}")
 
         print(f"[CHECK] POST {upload_url} with 12 MB file returns 413 Payload Too Large", flush=True)
         with open(large_workbook, "rb") as file_bytes:
             files = {"file": (large_workbook.name, file_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-            post_response = session.post(upload_url, files=files, headers=headers, timeout=30)
+            # (connect, read) - the read leg also bounds the socket send, and
+            # pushing 12 MB to this environment exceeds 30 s whenever the link
+            # is busy, which surfaces as "the write operation timed out"
+            # rather than as the size rejection being tested.
+            post_response = session.post(
+                upload_url, files=files, headers=headers, timeout=(30, 300)
+            )
             
-        self.logger.info(f"API Upload response status code: {post_response.status_code}")
+        self.logger.info(
+            f"API Upload response status code: {post_response.status_code}; "
+            f"body: {post_response.text[:500]}"
+        )
         # Note: 413 is standard Payload Too Large, 400 Bad Request can also be returned by some validators
         assert post_response.status_code in (413, 400), (
             f"Expected status 413 Payload Too Large or 400 Bad Request, but got {post_response.status_code}. Response: {post_response.text}"
@@ -202,11 +212,22 @@ class TestUploadFileSizeLimit:
         # Step 6: Verify smaller valid file is accepted immediately after
         self.step(6, "Verifying smaller valid file is accepted immediately after (no stuck state)")
         page.reset_upload_step()
-        
-        # Generate smaller valid file (normal workbook template path)
-        small_workbook = Path(ReadConfig.get_upload_item_file_path())
-        self.logger.info(f"Uploading valid smaller template file: {small_workbook}")
-        
+
+        # Build a unique under-limit workbook rather than re-uploading the raw
+        # template: the app rejects a re-upload of identical filename+content
+        # ("A file with identical content and same filename was already
+        # uploaded"), so the static fixture fails validation once any earlier
+        # run has consumed it - which looks like the stuck state this step is
+        # meant to rule out.
+        small_workbook = tmp_path / f"small_upload_{uuid4().hex[:10]}.xlsx"
+        build_item_workbook(
+            Path(ReadConfig.get_upload_item_file_path()),
+            small_workbook,
+            count=1,
+            seed=f"upload-size-limit-{uuid4().hex[:12]}",
+        )
+        self.logger.info(f"Uploading valid smaller workbook: {small_workbook}")
+
         page.upload_file(small_workbook)
         validation_message = page.wait_for_upload_validation_success()
         self.logger.info(f"Validation success message: {validation_message}")

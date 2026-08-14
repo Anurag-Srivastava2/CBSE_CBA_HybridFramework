@@ -44,6 +44,9 @@ class TestSmokeM1ItemBank:
     # without the per-typology form handling the E2E suites exercise.
     TRUE_FALSE_TYPOLOGY = "True or False"
 
+    # The formats the upload screen advertises as accepted.
+    WORKBOOK_SUFFIXES = (".xlsx", ".xls", ".csv")
+
     # Text-based tab locators only. The positional fallbacks the page objects
     # carry for resilient clicking would satisfy a visibility assertion
     # without proving the intended tab is the one on screen.
@@ -220,3 +223,53 @@ class TestSmokeM1ItemBank:
                 upload_page.discard_staged_upload_files()
             except Exception:
                 pass
+
+    # Shares check 01's account and group deliberately: both are read-only and
+    # the portal allows one active session per account, so giving this its own
+    # group would have two workers fighting over the same login.
+    @pytest.mark.xdist_group("smoke-m1-workspace")
+    def test_smoke_m1_06_my_item_set_lists_uploaded_source_files(self, record_property):
+        """The My Item Set list renders and names each set's source workbook.
+
+        The Uploaded File column is a property of the build, so its presence is
+        asserted outright. Which sets carry a file is not: a fresh account has
+        none, and manually authored sets legitimately show an em dash. So the
+        names that are there are asserted to be well-formed workbooks and the
+        counts recorded as evidence, rather than gating the build on whatever
+        this account happens to hold — the same reasoning as check 05.
+        """
+        sign_in(self.driver, self.sme_username(0))
+        page = UploadItemFilePage(self.driver)
+        page.close_popup_if_open()
+        page.wait_for_application_to_load()
+        page.open_item_sets_list()
+
+        column_index = page.get_uploaded_file_column_index()
+        listed_sets = page.get_item_set_list_rows()
+        uploads = page.get_item_set_uploaded_files()
+
+        # Read from the title attribute, which holds the untruncated name, so a
+        # suffix check is meaningful here — the visible text is elided.
+        malformed = sorted(
+            f"{set_id} -> {name!r}"
+            for set_id, name in uploads.items()
+            if not name.casefold().endswith(self.WORKBOOK_SUFFIXES)
+        )
+        sample = sorted(uploads.items())[:3]
+
+        record_property(
+            "result_description",
+            f"My Item Set listed {len(listed_sets)} set(s) for {self.sme_username(0)}; "
+            f"{len(uploads)} name a source workbook (e.g. {sample or 'none on this page'}). "
+            f"Uploaded File column index: {column_index}.",
+        )
+
+        assert column_index, (
+            "The My Item Set list has no 'Uploaded File' column, so an item set's "
+            "source workbook is no longer traceable from the list. "
+            f"Headers seen: {[h.text.strip() for h in self.driver.find_elements(*page.ITEM_SET_TABLE_HEADERS)]}"
+        )
+        assert not malformed, (
+            "Uploaded File cells do not name a workbook "
+            f"({'/'.join(self.WORKBOOK_SUFFIXES)}): {malformed}"
+        )

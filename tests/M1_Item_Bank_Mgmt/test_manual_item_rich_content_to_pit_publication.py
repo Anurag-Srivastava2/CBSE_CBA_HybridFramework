@@ -69,8 +69,12 @@ class TestManualItemRichContentToPITPublication:
         candidates = ReadConfig.get_role_usernames(role)
         last_error = None
         for candidate in candidates:
-            self.login_as(candidate, self.helper_page)
             try:
+                # The login belongs inside the try: a candidate whose sign-in
+                # strands on the login form is just another candidate that did
+                # not work, so move to the next account instead of abandoning
+                # every remaining one.
+                self.login_as(candidate, self.helper_page)
                 review_page.open_review_item_set(item_set_id, item_set_url)
                 return candidate
             except TimeoutException as error:

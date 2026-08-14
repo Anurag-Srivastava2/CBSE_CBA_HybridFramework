@@ -147,9 +147,16 @@ nightly — only the AI/model-verdict tests, which assert on model output rather
                     // regression -> not nightly · smoke -> smoke and not
                     // nightly · nightly -> nightly. Always a full expression:
                     // see markerArgs() for why a bare `-m smoke` is a trap.
-                    def clauses = ['smoke': ['smoke'], 'nightly': ['nightly']].get(params.SUITE, [])
+                    def clauses = []
+                    if (params.SUITE == 'smoke') { clauses = ['smoke'] }
+                    if (params.SUITE == 'nightly') { clauses = ['nightly'] }
 
-                    cbse.runLane(params.MODULE, [
+                    // Not every combination selects tests — M3 has no smoke
+                    // checks, and all 25 nightly tests live in M1. pytest
+                    // exits 5 for an empty selection and runLane turns that
+                    // into a failure rather than a green build that ran
+                    // nothing, so the lane name carries the suite too.
+                    cbse.runLane("${params.MODULE} ${params.SUITE}", [
                         paths,
                         cbse.markerArgs(clauses, params.SUITE == 'nightly'),
                         cbse.xdistArgs(params.WORKERS),
