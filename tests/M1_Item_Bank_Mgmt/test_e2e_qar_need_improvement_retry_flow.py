@@ -12,6 +12,8 @@ from selenium.webdriver.common.by import By
 from pages.common.login_page import LoginPage
 from pages.rwg.review_queue_page import RWGReviewQueuePage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
+from utilities.element_checks import ElementChecks
 from utilities.qar_retry_flow import run_qar_need_improvement_retry_loop
 from utilities.read_config import ReadConfig
 
@@ -112,6 +114,28 @@ class TestE2EQARNeedImprovementRetryFlow:
         page.close_popup_if_open()
         return page
 
+    def survey_upload_screen(self, page):
+        """Survey the upload step before a workbook is pushed at it.
+
+        No-op unless the test set self.record_property, so the helper stays
+        usable from paths that do not collect.
+        """
+        record_property = getattr(self, "record_property", None)
+        if record_property is None:
+            return
+        try:
+            page.open_item_creation_module()
+            page.open_upload_item_file_tab()
+            page.open_upload_step()
+        except Exception:  # noqa: BLE001 - a survey must never break the flow
+            return
+        checks = ElementChecks(
+            page, record_property, page_name="SME Bulk Upload — QAR Retry Flow"
+        )
+        survey_chrome(checks, page)
+        survey_upload_step(checks, page, wait_for_history=False)
+        checks.publish()
+
     def login_as_sme(self):
         return self.reset_and_login(ReadConfig.get_sme2_username())
 
@@ -124,6 +148,7 @@ class TestE2EQARNeedImprovementRetryFlow:
         )
         page = UploadItemFilePage(self.driver)
         page.close_popup_if_open()
+        self.survey_upload_screen(page)
         _, _, item_ids, qar_message = page.upload_item_file_and_submit_for_qar(
             workbook_path
         )
@@ -311,7 +336,8 @@ class TestE2EQARNeedImprovementRetryFlow:
             max_retries=max_retries,
         )
 
-    def test_e2e_qar_happy_path_routes_to_rwg_without_retry(self, tmp_path):
+    def test_e2e_qar_happy_path_routes_to_rwg_without_retry(self, record_property, tmp_path):
+        self.record_property = record_property
         prefix = self.make_prefix("happy")
         workbook = self.build_workbook(
             tmp_path,
@@ -334,7 +360,8 @@ class TestE2EQARNeedImprovementRetryFlow:
         assert result.retry_count == 0
         assert result.final_need_improvement_item_ids == ()
 
-    def test_e2e_qar_retry_path_passes_after_one_edit_and_rerun(self, tmp_path, request):
+    def test_e2e_qar_retry_path_passes_after_one_edit_and_rerun(self, record_property, tmp_path, request):
+        self.record_property = record_property
         prefix = self.make_prefix("retry")
         workbook = self.build_workbook(
             tmp_path,
@@ -382,8 +409,10 @@ class TestE2EQARNeedImprovementRetryFlow:
 
     def test_e2e_qar_failure_path_stops_after_three_retries_and_stays_blocked(
         self,
+        record_property,
         tmp_path,
     ):
+        self.record_property = record_property
         prefix = self.make_prefix("failure")
         workbook = self.build_workbook(
             tmp_path,

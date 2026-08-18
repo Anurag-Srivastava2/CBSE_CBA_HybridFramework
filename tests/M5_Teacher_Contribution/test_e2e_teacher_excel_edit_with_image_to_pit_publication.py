@@ -23,6 +23,8 @@ from pages.sme.upload_item_file_page import UploadItemFilePage
 from utilities.arithmetic_question_factory import generate_unique_comparison_questions
 from utilities.logger import LogGenerator
 from utilities.qar_recovery import recover_qar_need_improvement_items
+from tests.M1_Item_Bank_Mgmt.m1_surveys import enter_screen, survey_opened_item_set
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 TEST_IMAGES_FOLDER = Path(__file__).parent.parent.parent / "test_images"
@@ -93,6 +95,21 @@ class TestE2ETeacherExcelEditWithImageToPITPublication:
         question_count = cls.update_teacher_upload_file_questions(unique_file)
         return unique_file, question_count
 
+    def survey_reviewer_screen(self, review_page, role):
+        """Survey a reviewer's opened item set, if this test is collecting.
+
+        Read-only: marks no criteria, so it cannot consume the one-time review
+        vote the set still needs. Re-published each phase because publish()
+        writes the whole accumulated list, so a failure later in this long
+        chain still leaves the rows gathered so far on the report card.
+        """
+        checks = getattr(self, "checks", None)
+        if checks is None:
+            return
+        enter_screen(checks, f"{role} — Opened Item Set")
+        survey_opened_item_set(checks, review_page)
+        checks.publish()
+
     def login_as(self, username):
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
@@ -151,7 +168,7 @@ class TestE2ETeacherExcelEditWithImageToPITPublication:
         }
 
     def test_e2e_teacher_edits_items_with_image_rwg_and_pit_verify_image_then_publish(
-        self, request
+        self, request, record_property
     ):
         request.node.user_properties.append(
             ("result_checkpoint", "fresh teacher Excel upload and QAR validation")
@@ -159,6 +176,13 @@ class TestE2ETeacherExcelEditWithImageToPITPublication:
         upload_page = UploadItemFilePage(self.driver)
         rwg_page = RWGReviewQueuePage(self.driver)
         pit_page = PITReviewQueuePage(self.driver)
+
+        # One collector for the whole teacher -> RWG -> PIT chain, re-pointed at
+        # each screen as the item set moves through it.
+        self.checks = ElementChecks(
+            upload_page, record_property, page_name="Teacher Contribution — Edit With Image"
+        )
+        self.checks.publish()
 
         image_path = _pick_test_image()
 
@@ -270,6 +294,7 @@ class TestE2ETeacherExcelEditWithImageToPITPublication:
         upload_page.reset_browser_session_to_login()
         self.login_as(rwg_username)
         rwg_page.open_review_item_set(item_set_id, item_set_url)
+        self.survey_reviewer_screen(rwg_page, 'RWG')
 
         rwg_image_visibility = rwg_page.verify_image_visible_for_items(
             item_set_id, revised_item_ids
@@ -313,6 +338,7 @@ class TestE2ETeacherExcelEditWithImageToPITPublication:
             # Image verification: open set, click each revised item, check image visible
             try:
                 pit_page.open_review_item_set(item_set_id, item_set_url)
+                self.survey_reviewer_screen(pit_page, 'PIT')
                 pit_visible_items = []
                 try:
                     pit_visible_items = pit_page.get_pit_item_ids(item_set_id)

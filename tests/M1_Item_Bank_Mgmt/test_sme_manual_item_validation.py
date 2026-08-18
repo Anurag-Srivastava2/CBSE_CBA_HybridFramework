@@ -5,6 +5,8 @@ from selenium.common.exceptions import TimeoutException
 
 from pages.common.login_page import LoginPage
 from pages.sme.manual_item_page import ManualItemPage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_manual_form
+from utilities.element_checks import ElementChecks
 from utilities.logger import LogGenerator
 from utilities.read_config import ReadConfig
 
@@ -51,11 +53,26 @@ class TestSMEManualItemValidation:
         self.logger.info("SME2 login complete: %s", username)
         return page
 
+    def survey(self, page, record_property, scope):
+        """Soft-check the SME authoring form furniture.
+
+        Called once per test with a distinct scope. Presence only — driving a
+        control here would perturb the very validation state these tests assert
+        on, which is why the interaction checks live in the RBAC and listing
+        suites instead.
+        """
+        checks = ElementChecks(
+            page, record_property, page_name=f"SME Manual Item — {scope}"
+        )
+        return survey_manual_form(checks, page)
+
     # ------------------------------------------------------------------
     # Tests
     # ------------------------------------------------------------------
 
-    def test_tc_ibmm_01b_p02_continue_locked_until_mandatory_item_complete(self):
+    def test_tc_ibmm_01b_p02_continue_locked_until_mandatory_item_complete(
+        self, record_property
+    ):
         """IBMM-01b-P02: The 'Continue' button must be disabled when no item has
         been added yet, and must become enabled once at least one complete mandatory
         item (with question, answer, and explanation) has been added.
@@ -64,6 +81,10 @@ class TestSMEManualItemValidation:
 
         self.step(3, "Opening True/False manual item creation form")
         page.open_true_false_manual_item_form()
+        record_property(
+            "result_description",
+            self.survey(page, record_property, "Mandatory Fields").publish(),
+        )
 
         # The staged "Added Items" list lives server-side per SME account and
         # survives previous runs, so isolate the draft before asserting on it.
@@ -108,7 +129,7 @@ class TestSMEManualItemValidation:
         self.passed("Continue button enabled — mandatory item completed successfully")
         self.logger.info("IBMM-01b-P02 passed")
 
-    def test_tc_ibmm_01b_p03_new_item_is_visible_in_draft_review(self):
+    def test_tc_ibmm_01b_p03_new_item_is_visible_in_draft_review(self, record_property):
         """IBMM-01b-P03: After adding a T/F item and clicking Continue, the draft
         review screen must display the new item with a real assigned item ID
         (not blank and not the sentinel value 'ID not found before QAR submit').
@@ -117,6 +138,7 @@ class TestSMEManualItemValidation:
 
         self.step(3, "Opening True/False manual item creation form")
         page.open_true_false_manual_item_form()
+        checks = self.survey(page, record_property, "Draft Review")
 
         # Isolate the draft so leftover staged items are not swept into the
         # item set this test advances to the review screen.
@@ -135,6 +157,20 @@ class TestSMEManualItemValidation:
 
         self.step(5, "Clicking Continue to advance to draft review screen")
         page.click_continue()
+
+        # The draft review grid is the screen this test is really about, so it
+        # gets its own rows in the same collector rather than a second publish().
+        checks.page_name = "SME Manual Item — Draft Review Grid"
+        checks.capture_page_evidence("SME Manual Item — Draft Review Grid")
+        review_rows = checks.safe_call(
+            lambda: len(self.driver.find_elements(*page.REVIEW_TABLE_ROWS)), 0
+        )
+        checks.check_condition(
+            "Draft review grid rendered rows",
+            review_rows,
+            detail=f"{review_rows} rows",
+        )
+        record_property("result_description", checks.publish())
 
         self.step(6, f"Retrieving item ID assigned to question: '{question}'")
         item_id = page.get_review_item_id_for_question(question)
@@ -156,15 +192,22 @@ class TestSMEManualItemValidation:
         self.passed(f"Item ID is a real assigned value: {item_id!r}")
         self.logger.info("IBMM-01b-P03 passed — item ID: %s", item_id)
 
-    def test_tc_ibmm_01b_n01_out_of_scope_subject_is_not_available(self):
+    def test_tc_ibmm_01b_n01_out_of_scope_subject_is_not_available(self, record_property):
         """IBMM-01b-N01: The Subject dropdown on the T/F form must be scoped
         to only the subjects this SME role is authorised for.
         'Mathematics' must be available; 'Physics' must not.
+
+        The form is surveyed softly; the scoping itself is a security contract
+        and stays a hard assert.
         """
         page = self.login_as_sme2()
 
         self.step(3, "Opening True/False manual item creation form")
         page.open_true_false_manual_item_form()
+        record_property(
+            "result_description",
+            self.survey(page, record_property, "Subject Scope").publish(),
+        )
 
         self.step(4, "Checking Subject dropdown for in-scope and out-of-scope options")
 
@@ -188,7 +231,9 @@ class TestSMEManualItemValidation:
         self.passed("'Physics' correctly absent from Subject dropdown (RBAC enforced)")
         self.logger.info("IBMM-01b-N01 passed")
 
-    def test_tc_ibmm_01b_n02_empty_item_content_shows_inline_error_on_blur(self):
+    def test_tc_ibmm_01b_n02_empty_item_content_shows_inline_error_on_blur(
+        self, record_property
+    ):
         """IBMM-01b-N02: Leaving the Item Content field empty and blurring away
         must either show an inline required-field error or keep Continue disabled.
         Both are acceptable UX patterns — the test accepts either outcome.
@@ -197,6 +242,10 @@ class TestSMEManualItemValidation:
 
         self.step(3, "Opening True/False manual item creation form")
         page.open_true_false_manual_item_form()
+        record_property(
+            "result_description",
+            self.survey(page, record_property, "Empty Content Validation").publish(),
+        )
 
         # Continue also unlocks once any item is staged, so a draft left behind
         # by an earlier run would mask the empty-content validation under test.

@@ -1,4 +1,4 @@
-from time import monotonic
+from time import monotonic, sleep
 
 from selenium.common.exceptions import (
     ElementClickInterceptedException,
@@ -22,6 +22,393 @@ class QuestionPaperBuilderPage(BasePage):
         "//button[contains(normalize-space(),'Continue')]"
         " | //button[contains(normalize-space(),'Confirm')]",
     )
+
+    # ------------------------------------------------------------------
+    # Survey locators
+    #
+    # Used by the element-presence surveys rather than by the build workflow,
+    # which finds most of its controls dynamically through JS. Taken from a DOM
+    # census of the live builder, My QP listing and paper preview.
+    # ------------------------------------------------------------------
+
+    # --- Application chrome (shared across every QP screen) ---
+    HEADER = (By.TAG_NAME, "header")
+    SIDEBAR_NAV = (By.TAG_NAME, "nav")
+    SIDEBAR_TOGGLE = (By.XPATH, "//button[contains(normalize-space(),'Toggle Sidebar')]")
+    NOTIFICATION_BELL = (By.CSS_SELECTOR, "button[aria-label='Notifications']")
+    THEME_PICKER = (By.CSS_SELECTOR, "button[aria-label='Theme']")
+    SCREEN_READER_TOGGLE = (
+        By.CSS_SELECTOR,
+        "button[aria-label='Toggle screen-reader hints']",
+    )
+    LANG_EN = (By.XPATH, "//button[normalize-space()='EN']")
+    LANG_HI = (By.XPATH, "//button[normalize-space()='हिंदी']")
+    NAV_ITEMS = (
+        "Home",
+        "QP Builder",
+        "My QP",
+        "Create",
+        "Repository",
+        "Sets",
+        "Support",
+        "Settings",
+    )
+
+    # --- Assessment Builder shell ---
+    BUILDER_HEADING = (By.XPATH, "//h1[normalize-space()='Assessment Builder']")
+    # Scoped to the heading element: an unscoped normalize-space() match also
+    # returns each wrapping ancestor, so "1 present" would not mean the heading.
+    ASSESSMENT_CONFIG_HEADING = (
+        By.XPATH,
+        "//*[self::h1 or self::h2 or self::h3][normalize-space()='Assessment Configuration']",
+    )
+    WORKFLOW_OVERVIEW_HEADING = (
+        By.XPATH,
+        "//*[self::h1 or self::h2 or self::h3][normalize-space()='Workflow Overview']",
+    )
+    MODE_TAB_LABELS = ("Manual Build", "Auto Generator")
+
+    # The builder shows a different wizard depending on the mode: Manual Build
+    # is a three-step flow, Auto Generator collapses Build Paper away.
+    MANUAL_STEP_LABELS = ("Configure Meta Data", "Build Paper", "Preview & Publish")
+    AUTO_STEP_LABELS = ("Configure Meta Data", "Preview & Publish")
+
+    # Manual Build configuration form. Labels carry no asterisk here; the Auto
+    # Generator spells the same fields with one, so the two sets are separate.
+    MANUAL_CONFIG_LABELS = (
+        "Paper Title",
+        "Grade",
+        "Subject",
+        "Assessment Type",
+        "Chapters",
+        "Exam Duration (in Minutes)",
+        "Total Marks",
+        "No. of Sections",
+        "Number of Sets",
+        "General Instructions",
+    )
+    CFG_DURATION_INPUT = (By.ID, "cfg-duration")
+    CFG_MARKS_INPUT = (By.ID, "cfg-marks")
+    CFG_SECTIONS_INPUT = (By.ID, "cfg-sections")
+
+    # Auto Generator configuration form.
+    AUTO_CONFIG_LABELS = (
+        "Paper Title*",
+        "Grade*",
+        "Subject*",
+        "Assessment Type*",
+        "Chapters*",
+        "Exam Duration (in Minutes)*",
+        "Number of Section*",
+        "Total Marks*",
+        "Number of Sets*",
+        "Select Question Distribution*",
+        "General Instructions",
+    )
+    GENERATION_LEVEL_HEADING = (
+        By.XPATH,
+        "//*[self::h2 or self::h3][normalize-space()='Choose Generation Level']",
+    )
+    GENERATION_LEVEL_SECTION = (
+        By.XPATH,
+        "//*[self::h3 or self::h4][normalize-space()='Section Level']",
+    )
+    GENERATION_LEVEL_ITEM = (
+        By.XPATH,
+        "//*[self::h3 or self::h4][normalize-space()='Item Level']",
+    )
+    QP_DETAILS_HEADING = (
+        By.XPATH,
+        "//*[self::h2 or self::h3][normalize-space()='Question Paper Details']",
+    )
+    DISTRIBUTION_SAME = (
+        By.XPATH,
+        "//*[not(*)][normalize-space()='All sets contain the same questions']",
+    )
+    DISTRIBUTION_DIFFERENT = (
+        By.XPATH,
+        "//*[not(*)][normalize-space()='Each set contains different questions']",
+    )
+    AUTO_DURATION_INPUT = (By.ID, "auto-gen-exam-duration")
+    AUTO_SECTIONS_INPUT = (By.ID, "auto-gen-number-of-section")
+    AUTO_MARKS_INPUT = (By.ID, "auto-gen-total-marks")
+
+    COMBOBOXES = (By.CSS_SELECTOR, "[role='combobox']")
+    RICH_TEXT_EDITOR = (By.CSS_SELECTOR, "div.tiptap.ProseMirror")
+
+    # --- My QP listing ---
+    MY_QP_HEADING = (By.XPATH, "//h1[normalize-space()='My Question Paper']")
+    MY_QP_SUBTITLE = (
+        By.XPATH,
+        "//*[not(*)][contains(normalize-space(),'Click any paper to open it')]",
+    )
+    CREATE_NEW_PAPER_BUTTON = (
+        By.XPATH,
+        "//button[contains(normalize-space(),'Create New Paper')]",
+    )
+    MY_QP_SEARCH_INPUT = (By.CSS_SELECTOR, "input[placeholder='Search by ID, Title']")
+    MY_QP_FILTER_LABELS = ("Type", "Subject", "Grade", "Status")
+    MY_QP_FILTER_BUTTONS = (By.CSS_SELECTOR, "button[class*='_filterBtn_']")
+    MY_QP_TABLE = (By.TAG_NAME, "table")
+    MY_QP_TABLE_HEADERS = (By.XPATH, "//table//th")
+    MY_QP_TABLE_ROWS = (By.XPATH, "//table/tbody/tr")
+    MY_QP_COLUMNS = (
+        "Question Paper ID",
+        "Title",
+        "Type",
+        "Subject",
+        "Grade",
+        "No. of Sets",
+        "Marks per set",
+        "No. of Sections",
+        "Duration",
+        "Created On",
+        "Published Date",
+        "Status",
+        "Delete",
+    )
+    MY_QP_DELETE_BUTTONS = (By.CSS_SELECTOR, "button[class*='_deleteIconButton_']")
+    # A published paper's delete control is disabled and says so — the listing's
+    # own statement of the "published papers are immutable" rule.
+    MY_QP_DELETE_BLOCKED = (
+        By.CSS_SELECTOR,
+        "button[aria-label='Published question papers cannot be deleted']",
+    )
+    ROWS_PER_PAGE = (By.CSS_SELECTOR, "[role='combobox']")
+    PREV_PAGE_BTN = (By.CSS_SELECTOR, "button[aria-label='Previous page']")
+    NEXT_PAGE_BTN = (By.CSS_SELECTOR, "button[aria-label='Next page']")
+
+    # --- Paper preview ---
+    PREVIEW_PAPER_HEADING = (By.CSS_SELECTOR, "[class*='_paperHeading_']")
+    # Matched on its component class, not its text: the heading is styled
+    # `text-transform: uppercase`, so it reads GENERAL INSTRUCTIONS on screen
+    # while the DOM — and therefore XPath — only ever sees "General
+    # Instructions". A text locator taken from the rendered page never matches.
+    PREVIEW_INSTRUCTIONS_HEADING = (
+        By.CSS_SELECTOR,
+        "[class*='_instructionsHeading_']",
+    )
+    PREVIEW_SECTION_TITLES = (By.CSS_SELECTOR, "[class*='_sectionTitle_']")
+    PREVIEW_METRIC_CHIPS = (By.CSS_SELECTOR, "[class*='_metricChip_']")
+    PREVIEW_BACK_BUTTON = (By.CSS_SELECTOR, "button[class*='_backButton_']")
+    PREVIEW_PRINT_BUTTON = (By.XPATH, "//button[normalize-space()='Print']")
+    PREVIEW_DOWNLOAD_BUTTON = (By.XPATH, "//button[normalize-space()='Download']")
+    PREVIEW_DOWNLOAD_WITH_KEY_BUTTON = (
+        By.XPATH,
+        "//button[normalize-space()='Download with Answer Key']",
+    )
+    PREVIEW_SUMMARY_FIELDS = (
+        "Subject",
+        "Subject Code",
+        "Class",
+        "Assessment Type",
+        "Total Marks",
+        "Time Allowed",
+    )
+    PREVIEW_END_MARKER = (
+        By.XPATH,
+        "//*[not(*)][contains(normalize-space(),'End of Question Paper')]",
+    )
+
+    # ------------------------------------------------------------------
+    # Survey readers
+    # ------------------------------------------------------------------
+
+    def is_visible(self, locator, timeout=5):
+        return self.is_element_visible_quick(locator, timeout)
+
+    def count_visible(self, locator):
+        """How many matches are actually on screen — 0 when none are."""
+        count = 0
+        for element in self.driver.find_elements(*locator):
+            try:
+                if element.is_displayed():
+                    count += 1
+            except Exception:  # noqa: BLE001 - a stale match is simply not visible
+                continue
+        return count
+
+    @staticmethod
+    def xpath_literal_text(value):
+        """Quote a label for use inside an XPath expression.
+
+        Field labels here are safe today, but quoting them keeps a future label
+        containing an apostrophe from raising InvalidSelectorException out of
+        the reader instead of recording one absent element.
+        """
+        text = str(value)
+        if "'" not in text:
+            return f"'{text}'"
+        if '"' not in text:
+            return f'"{text}"'
+        parts = "', \"'\", '".join(text.split("'"))
+        return f"concat('{parts}')"
+
+    @classmethod
+    def label_locator(cls, label):
+        return (By.XPATH, f"//label[normalize-space()={cls.xpath_literal_text(label)}]")
+
+    @classmethod
+    def tab_locator(cls, label):
+        return (
+            By.XPATH,
+            f"//*[@role='tab'][normalize-space()={cls.xpath_literal_text(label)}]",
+        )
+
+    @classmethod
+    def wizard_step_locator(cls, label):
+        return (
+            By.XPATH,
+            "//*[contains(@class,'stepItem')]"
+            f"[contains(normalize-space(),{cls.xpath_literal_text(label)})]",
+        )
+
+    @classmethod
+    def filter_button_locator(cls, label):
+        return (
+            By.XPATH,
+            "//button[contains(@class,'_filterBtn_')]"
+            f"[normalize-space()={cls.xpath_literal_text(label)}]",
+        )
+
+    def missing_from(self, labels, locator_builder):
+        """Which of `labels` has no visible match. Never raises."""
+        missing = []
+        for label in labels:
+            try:
+                present = self.count_visible(locator_builder(label))
+            except Exception:  # noqa: BLE001 - an unreadable label is an absent one
+                present = 0
+            if not present:
+                missing.append(label)
+        return missing
+
+    def missing_mode_tabs(self):
+        return self.missing_from(self.MODE_TAB_LABELS, self.tab_locator)
+
+    def missing_nav_items(self):
+        return self.missing_from(
+            self.NAV_ITEMS,
+            lambda label: (
+                By.XPATH,
+                "//button[contains(@class,'menu-button')]"
+                f"[contains(normalize-space(),{self.xpath_literal_text(label)})]",
+            ),
+        )
+
+    def missing_my_qp_filters(self):
+        return self.missing_from(self.MY_QP_FILTER_LABELS, self.filter_button_locator)
+
+    def is_tab_active(self, label):
+        try:
+            state = self.driver.find_element(*self.tab_locator(label)).get_attribute(
+                "data-state"
+            )
+        except Exception:  # noqa: BLE001 - an unreadable tab is not the active one
+            return False
+        return state == "active"
+
+    def switch_mode_tab(self, label, timeout=20):
+        """Activate a builder mode tab and wait for it to report itself active."""
+        self.wait_utils.until_clickable(self.tab_locator(label), timeout=timeout).click()
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: self.is_tab_active(label), timeout=timeout
+            )
+        except TimeoutException:
+            return False
+        return True
+
+    def get_table_headers(self, locator=None):
+        headers = []
+        for element in self.driver.find_elements(*(locator or self.MY_QP_TABLE_HEADERS)):
+            try:
+                text = element.text.strip()
+            except Exception:  # noqa: BLE001
+                continue
+            if text:
+                headers.append(text)
+        return headers
+
+    def missing_my_qp_columns(self):
+        headers = [header.casefold() for header in self.get_table_headers()]
+        return [
+            column for column in self.MY_QP_COLUMNS if column.casefold() not in headers
+        ]
+
+    def get_my_qp_row_count(self):
+        return len(self.driver.find_elements(*self.MY_QP_TABLE_ROWS))
+
+    def get_my_qp_paper_ids(self):
+        ids = []
+        for element in self.driver.find_elements(
+            By.CSS_SELECTOR, "button[class*='_paperId_']"
+        ):
+            try:
+                text = element.text.strip()
+            except Exception:  # noqa: BLE001
+                continue
+            if text:
+                ids.append(text)
+        return ids
+
+    # The listing clears its rows while a debounced search is in flight, so a
+    # stability poll started immediately sees the empty intermediate state twice
+    # and returns it — reporting "no matches" for a query that does match. Hold
+    # for the debounce before believing any result set.
+    MY_QP_SEARCH_DEBOUNCE_SECONDS = 1.5
+
+    def _wait_for_my_qp_rows_to_settle(self, timeout=15, settle_polls=2):
+        """Return the paper IDs once the listing has stopped changing."""
+        sleep(self.MY_QP_SEARCH_DEBOUNCE_SECONDS)
+        previous = None
+        stable = 0
+        deadline = monotonic() + timeout
+        while True:
+            current = self.get_my_qp_paper_ids()
+            stable = stable + 1 if current == previous else 0
+            previous = current
+            if stable >= settle_polls or monotonic() >= deadline:
+                return current
+            sleep(0.4)
+
+    def search_my_qp(self, query):
+        """Type into the My QP search box and return the settled paper IDs."""
+        box = self.wait_utils.until_visible(self.MY_QP_SEARCH_INPUT, timeout=15)
+        box.clear()
+        box.send_keys(Keys.CONTROL, "a")
+        box.send_keys(Keys.DELETE)
+        box.send_keys(query)
+        return self._wait_for_my_qp_rows_to_settle()
+
+    def clear_my_qp_search(self):
+        """Empty the search box and return the settled, unfiltered paper IDs."""
+        box = self.wait_utils.until_visible(self.MY_QP_SEARCH_INPUT, timeout=15)
+        box.send_keys(Keys.CONTROL, "a")
+        box.send_keys(Keys.DELETE)
+        return self._wait_for_my_qp_rows_to_settle()
+
+    def get_header_chip_texts(self):
+        """The preview toolbar's duration / marks / questions chips.
+
+        get_header_metadata_text() matches every element whose text contains
+        'Marks' or 'Questions', which on a question paper is essentially the
+        whole document — so `'marks' in get_header_metadata_text()` is true of
+        any paper page and asserts nothing. These are the chips themselves.
+        """
+        texts = []
+        for element in self.driver.find_elements(*self.PREVIEW_METRIC_CHIPS):
+            try:
+                text = element.text.strip()
+            except Exception:  # noqa: BLE001
+                continue
+            if text:
+                texts.append(text)
+        return texts
+
+    def missing_preview_summary_fields(self, summary=None):
+        summary = summary if summary is not None else self.get_paper_summary_metadata()
+        return [field for field in self.PREVIEW_SUMMARY_FIELDS if field not in summary]
 
     def open(self):
         self.wait_utils.until_clickable(self.QP_BUILDER_NAV, timeout=20).click()

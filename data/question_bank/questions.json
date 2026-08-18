@@ -2932,7 +2932,13 @@
     "explanation": "1245 + 861 = 2106, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:608ad792e1379f2601285f1d669a3fbfe24f6b0dfc99ee1f9a0e2b1e0f1bf161",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-17T11:42:30.865979+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000104",
@@ -2953,7 +2959,13 @@
     "explanation": "3680 - 3562 = 118, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:dd47652ee0d8ab3370275aa33642b93baa2617567f5480612fac82c90f5415d8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-17T14:49:11.684574+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000105",
@@ -2974,7 +2986,13 @@
     "explanation": "56 + 17 = 73, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:d14aa4834185e9dbd907848500a6859eb829ecf36fcdc3fc2fc0768ddf8be4b1",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-17T14:51:42.302404+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000106",
@@ -7140,7 +7158,13 @@
     "explanation": "4 x 7 = 28, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:f1c2b7f613172f9fbf180ae671301cd4694795048c4bded6d68c699578381953",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-17T14:49:11.684574+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000302",
@@ -7156,7 +7180,13 @@
     "explanation": "4 x 8 = 32, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:a2952e12748716661eef29b728f6d3ac4dc6cb1a0fc558e319c39a3de7ef40f2",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-17T14:51:42.302404+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000303",
@@ -10271,7 +10301,13 @@
     "explanation": "246 is indeed greater than 156, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:4d496e853ace1c9e9af13a7fecb9075bd005cc5a6e8f4c5310e597481e3ba6b1",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-17T14:49:11.684574+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000485",
@@ -10287,7 +10323,13 @@
     "explanation": "14 is not greater than 235; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:a3c3388d3a57e58bc48ed8eacdb8fb37d8067694ac3908d0474e5d793fca76aa",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-17T14:51:42.302404+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000486",

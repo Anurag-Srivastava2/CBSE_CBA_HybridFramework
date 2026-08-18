@@ -5,6 +5,13 @@ import pytest
 
 from pages.sme.manual_item_page import ManualItemPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import (
+    survey_chrome,
+    survey_item_sets,
+    survey_manual_form,
+    survey_upload_step,
+)
+from utilities.element_checks import ElementChecks
 from utilities.item_bank_workbook_builder import build_item_workbook
 from utilities.read_config import ReadConfig
 from utilities.smoke_support import sign_in
@@ -83,13 +90,22 @@ class TestSmokeM1ItemBank:
         """SME signs in and the item-creation workspace offers both authoring routes."""
         page = self.open_item_creation_workspace(slot=0)
 
+        # Additive only: every assertion below stays exactly as hard as it
+        # was, so the smoke gate still fails loudly and fast.
+        checks = ElementChecks(
+            page, record_property, page_name="SME Item Creation — Workspace"
+        )
+        survey_chrome(checks, page)
+        survey_manual_form(checks, page)
+
         manual_tab_visible = page.is_element_visible_quick(self.MANUAL_TAB, timeout=20)
         upload_tab_visible = page.is_element_visible_quick(self.UPLOAD_TAB, timeout=20)
 
         record_property(
             "result_description",
             f"SME {self.sme_username(0)} reached the item-creation workspace — "
-            f"Manual tab: {manual_tab_visible}, Upload Item File tab: {upload_tab_visible}.",
+            f"Manual tab: {manual_tab_visible}, Upload Item File tab: {upload_tab_visible}. "
+            f"{checks.publish()}",
         )
 
         assert manual_tab_visible, "Manual item authoring tab is not available to the SME"
@@ -117,6 +133,11 @@ class TestSmokeM1ItemBank:
 
         page = self.open_item_creation_workspace(slot=1)
         page.open_manual_item_tab()
+
+        checks = ElementChecks(
+            page, record_property, page_name="SME Item Creation — Manual Authoring"
+        )
+        survey_manual_form(checks, page)
         page.wait_for_saved_draft_to_hydrate()
         page.clear_added_items()
 
@@ -127,7 +148,8 @@ class TestSmokeM1ItemBank:
         record_property(
             "result_description",
             f"Authored one {self.TRUE_FALSE_TYPOLOGY} item (answer: {answer}); "
-            f"Added Items count: {staged_count}. Card: {card_text[:160] or 'not found'}",
+            f"Added Items count: {staged_count}. Card: {card_text[:160] or 'not found'}. "
+            f"{checks.publish()}",
         )
         record_property("manual_item_question", question_text)
 
@@ -153,11 +175,17 @@ class TestSmokeM1ItemBank:
         upload_page.open_upload_item_file_tab()
         upload_page.open_upload_step()
 
+        checks = ElementChecks(
+            upload_page, record_property, page_name="SME Bulk Upload — Upload Step"
+        )
+        survey_chrome(checks, upload_page)
+        survey_upload_step(checks, upload_page)
+
         file_input_present = bool(self.driver.find_elements(*upload_page.FILE_INPUT))
         record_property(
             "result_description",
             "Bulk upload screen reached the Upload Documents step; "
-            f"file input present: {file_input_present}.",
+            f"file input present: {file_input_present}. {checks.publish()}",
         )
         assert file_input_present, (
             "Upload Documents step exposes no file input, so no Excel item file can be uploaded"
@@ -190,6 +218,10 @@ class TestSmokeM1ItemBank:
         assert summaries, f"Generated workbook {workbook_path.name} has no item-data worksheet"
 
         upload_page = self.open_item_creation_workspace(slot=3, page_class=UploadItemFilePage)
+        checks = ElementChecks(
+            upload_page, record_property, page_name="SME Bulk Upload — Excel Ingestion"
+        )
+        survey_chrome(checks, upload_page)
         try:
             _, upload_message = upload_page.upload_item_file_and_validate(str(workbook_path))
 
@@ -202,7 +234,8 @@ class TestSmokeM1ItemBank:
             record_property(
                 "result_description",
                 f"Excel upload of {self.EXCEL_ITEM_COUNT} item(s) validated and minted item set "
-                f"{item_set_id or 'UNKNOWN'} with items {item_ids}. Upload: {upload_message}",
+                f"{item_set_id or 'UNKNOWN'} with items {item_ids}. Upload: {upload_message}. "
+                f"{checks.publish()}",
             )
             record_property("item_set_id", item_set_id)
             record_property("manual_item_id", ", ".join(item_ids))
@@ -244,6 +277,12 @@ class TestSmokeM1ItemBank:
         page.wait_for_application_to_load()
         page.open_item_sets_list()
 
+        checks = ElementChecks(
+            page, record_property, page_name="SME My Item Set — Listing"
+        )
+        survey_chrome(checks, page)
+        survey_item_sets(checks, page)
+
         column_index = page.get_uploaded_file_column_index()
         listed_sets = page.get_item_set_list_rows()
         uploads = page.get_item_set_uploaded_files()
@@ -261,7 +300,7 @@ class TestSmokeM1ItemBank:
             "result_description",
             f"My Item Set listed {len(listed_sets)} set(s) for {self.sme_username(0)}; "
             f"{len(uploads)} name a source workbook (e.g. {sample or 'none on this page'}). "
-            f"Uploaded File column index: {column_index}.",
+            f"Uploaded File column index: {column_index}. {checks.publish()}",
         )
 
         assert column_index, (

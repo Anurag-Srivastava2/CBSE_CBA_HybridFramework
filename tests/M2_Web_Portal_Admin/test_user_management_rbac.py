@@ -7,6 +7,7 @@ from pages.admin.admin_portal_page import AdminPortalPage
 from pages.common.login_page import LoginPage
 from pages.sme.manual_item_page import ManualItemPage
 from pages.teacher.dashboard_page import DashboardPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -17,7 +18,8 @@ class TestM2UserManagementRBAC:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             username,
-            ReadConfig.get_all_users_password(),
+            # Per-user password - see test_portal_admin_features.login_as.
+            ReadConfig.get_password_for_username(username),
         )
         self.driver.find_element("tag name", "body").send_keys("\ue00c")
         page = AdminPortalPage(self.driver)
@@ -25,7 +27,7 @@ class TestM2UserManagementRBAC:
         return page
 
     def login_as_admin(self):
-        return self.login_as(ReadConfig.get_role_usernames("admin")[0])
+        return self.login_as(ReadConfig.get_admin_username())
 
     def test_tc_wpad_01_p01_admin_creates_new_user_with_required_fields(self):
         page = self.login_as_admin()
@@ -105,7 +107,10 @@ class TestM2UserManagementRBAC:
             )
         assert "mobile" in page.normalized_body_text() and "registered" in page.normalized_body_text()
 
-    def test_tc_wpad_02_p01_sidebar_rbac_is_enforced_for_core_roles(self):
+    def test_tc_wpad_02_p01_sidebar_rbac_is_enforced_for_core_roles(self, record_property):
+        """Each role's expected sidebar markers are recorded individually; the
+        RBAC negative (an SME must not see QP Builder) stays a hard gate."""
+        checks = ElementChecks(None, record_property, page_name="Sidebar RBAC")
         role_expectations = {
             "teacher": ("home", "qp builder", "my qp", "create", "sets"),
             "rwg": ("dashboard", "review queue"),
@@ -116,15 +121,32 @@ class TestM2UserManagementRBAC:
             username = ReadConfig.get_role_usernames(role)[0]
             page = self.login_as(username)
             text = page.normalized_body_text()
-            missing = [marker for marker in expected_markers if marker not in text]
+            missing = []
+            for marker in expected_markers:
+                if not checks.check_condition(
+                    f"{role} sidebar — {marker}", marker in text
+                ):
+                    missing.append(marker)
+            # The guard fires for ANY role whose dashboard did not render, not
+            # just the SME. The loop reaches sme third, so a degraded teacher or
+            # rwg dashboard means the run never established a healthy session -
+            # and the RBAC negative below would then be asserted against
+            # whatever page is actually on screen, which is not evidence of an
+            # access-control leak. Scoping this guard to sme alone is what made
+            # the assertion fire on a login screen.
             if missing:
+                checks.publish()
                 pytest.xfail(
-                    f"KI-M2-RBAC-001 [M2 RBAC] {role} sidebar/dashboard does not expose expected markers: {missing}"
+                    f"KI-M2-RBAC-001 [M2 RBAC] {role} sidebar/dashboard does not expose "
+                    f"expected markers: {missing}"
                 )
             if role == "sme":
-                assert "qp builder" not in text
+                assert "qp builder" not in text, (
+                    "RBAC FAILURE: the SME sidebar exposes QP Builder."
+                )
+        record_property("result_description", checks.publish())
 
-    def test_tc_wpad_02_p02_sme_grade_subject_restriction_is_enforced(self):
+    def test_tc_wpad_02_p02_sme_grade_subject_restriction_is_enforced(self, record_property):
         self.login_as(ReadConfig.get_sme2_username())
         page = ManualItemPage(self.driver)
         try:
@@ -133,8 +155,16 @@ class TestM2UserManagementRBAC:
             pytest.xfail(
                 f"KI-M2-RBAC-002 [M2 RBAC] SME item-creation form is not reachable for grade/subject check: {error}"
             )
-        assert page.is_dropdown_option_available("Subject *", "Mathematics") is True
-        assert page.is_dropdown_option_available("Grade *", "Grade 10") is False
+        checks = ElementChecks(page, record_property, page_name="SME Item Form")
+        checks.check_condition(
+            "Dropdown — Subject offers Mathematics",
+            lambda: page.is_dropdown_option_available("Subject *", "Mathematics") is True,
+        )
+        record_property("result_description", checks.publish())
+        # The restriction itself is an access-control contract, so it stays hard.
+        assert page.is_dropdown_option_available("Grade *", "Grade 10") is False, (
+            "RBAC FAILURE: a restricted grade is selectable for this SME."
+        )
 
     def test_tc_wpad_02_n01_teacher_direct_admin_url_is_denied(self):
         self.login_as(ReadConfig.get_role_usernames("teacher")[0])

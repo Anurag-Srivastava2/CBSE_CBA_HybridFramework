@@ -4,6 +4,14 @@ from selenium.webdriver.common.keys import Keys
 from pages.common.login_page import LoginPage
 from pages.teacher.dashboard_page import DashboardPage
 from pages.teacher.question_paper_builder_page import QuestionPaperBuilderPage
+from tests.M4_QP_Creation.qp_surveys import (
+    enter_screen,
+    survey_builder,
+    survey_chrome,
+    survey_my_qp,
+    survey_preview,
+)
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -12,19 +20,31 @@ from utilities.read_config import ReadConfig
 class TestQPAutoGenerateItemLevelPreview:
     def login_as_teacher(self):
         self.driver.get(ReadConfig.get_base_url())
-        # Each M4 suite uses its own teacher account so parallel runs don't
-        # collide: all three publish into "My QP", and the preview step opens
-        # the newest paper in that list. A shared account would let one
-        # suite's paper be picked up by another's assertions.
-        username = "teacher2@dev.com"
+        # A QP teacher account, never the primary one: all three M4 suites
+        # publish into "My QP" and the preview step opens the newest paper in
+        # that list, so a suite sharing an account with a concurrently running
+        # one would assert against the other's paper. get_qp_teacher_username()
+        # hands each xdist worker its own account and keeps M5's primary
+        # teacher out of M4 entirely.
+        username = ReadConfig.get_qp_teacher_username()
         LoginPage(self.driver).login_to_application(
             username,
             ReadConfig.get_password_for_username(username),
         )
         self.driver.find_element("tag name", "body").send_keys(Keys.ESCAPE)
         assert DashboardPage(self.driver).is_dashboard_loaded()
+        return username
 
-    def test_e2e_teacher_auto_generates_item_level_qp_and_previews_sets(self, request):
+    def test_e2e_teacher_auto_generates_item_level_qp_and_previews_sets(
+        self, request, record_property
+    ):
+        """Item-level auto generation, publication and multi-set preview.
+
+        Page structure is surveyed softly across the three screens this walks.
+        Everything about the generated paper — the generation budget, the
+        metadata surviving publication, the section and set counts — is a
+        workflow outcome or data integrity and stays a hard assert.
+        """
         self.login_as_teacher()
         page = QuestionPaperBuilderPage(self.driver)
 
@@ -32,7 +52,28 @@ class TestQPAutoGenerateItemLevelPreview:
         # STEP 1: Configure and auto-generate an item-level question paper
         # -------------------------------------------------------------
         page.open()
+        checks = ElementChecks(
+            page, record_property, page_name="QP Builder — Assessment Configuration"
+        )
+        survey_chrome(checks, page)
+        survey_builder(checks, page, mode="Manual Build")
+
+        # Does the mode switch actually respond, or is it a dead tab?
+        checks.check_interaction(
+            "Mode tab responds — Auto Generator",
+            lambda: page.switch_mode_tab("Auto Generator"),
+            lambda: page.is_tab_active("Auto Generator"),
+        )
+        checks.check_interaction(
+            "Mode tab responds — Manual Build",
+            lambda: page.switch_mode_tab("Manual Build"),
+            lambda: page.is_tab_active("Manual Build"),
+        )
+
         page.open_auto_generator()
+        enter_screen(checks, "QP Builder — Auto Generator")
+        survey_builder(checks, page, mode="Auto Generator")
+
         page.select_item_level()
         # Section A: 10 questions x 1 mark = 10 marks.
         # Section B: 5 questions x 2 marks = 10 marks. Total = 20 marks.
@@ -55,21 +96,34 @@ class TestQPAutoGenerateItemLevelPreview:
             generation_seconds = page.generate_auto_paper()
         except AssertionError as error:
             request.node.user_properties.append(("auto_generation_message", str(error)))
+            record_property("result_description", checks.publish())
             assert selections
             assert rules
             return
+        # Performance budget — stays hard.
         assert generation_seconds <= 10
         page.finalise_or_publish()
+
+        # -------------------------------------------------------------
+        # STEP 2: The published paper appears in My QP
+        # -------------------------------------------------------------
         page.open_my_qp()
+        enter_screen(checks, "QP Builder — My QP")
+        survey_my_qp(checks, page)
+
         request.node.user_properties.append(("auto_metadata", str(selections)))
         request.node.user_properties.append(("auto_rules", str(rules)))
         request.node.user_properties.append(("generation_seconds", generation_seconds))
         assert selections["Paper Title*"].casefold() in page.body_text().casefold()
 
         # -------------------------------------------------------------
-        # STEP 2: Open the generated question paper's preview
+        # STEP 3: Open the generated question paper's preview
         # -------------------------------------------------------------
         page.open_first_qp_preview()
+        enter_screen(checks, "QP Builder — Paper Preview")
+        survey_preview(checks, page)
+        record_property("result_description", checks.publish())
+
         preview_text = page.body_text().casefold()
         assert "select set" in preview_text
 
@@ -89,7 +143,7 @@ class TestQPAutoGenerateItemLevelPreview:
         assert len(section_headings) == 2, section_headings
 
         # -------------------------------------------------------------
-        # STEP 3: Switch between generated question paper sets
+        # STEP 4: Switch between generated question paper sets
         # -------------------------------------------------------------
         set_labels = page.get_set_tab_labels()
         request.node.user_properties.append(("set_labels", str(set_labels)))
@@ -99,7 +153,7 @@ class TestQPAutoGenerateItemLevelPreview:
             page.switch_to_set(set_labels[0])
 
         # -------------------------------------------------------------
-        # STEP 4: Verify header metadata (Marks / Questions) and Download action
+        # STEP 5: Verify header metadata (Marks / Questions) and Download action
         # -------------------------------------------------------------
         header_text = page.get_header_metadata_text().casefold()
         assert "marks" in header_text
@@ -107,7 +161,7 @@ class TestQPAutoGenerateItemLevelPreview:
         assert page.is_download_button_visible()
 
         # -------------------------------------------------------------
-        # STEP 5: Navigate back to the My QP listing
+        # STEP 6: Navigate back to the My QP listing
         # -------------------------------------------------------------
         page.click_back_from_preview()
         assert "my qp" in page.body_text().casefold()

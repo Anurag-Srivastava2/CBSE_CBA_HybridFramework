@@ -8,6 +8,8 @@ import pytest
 from pages.common.login_page import LoginPage
 from pages.qar.qar_report_page import QARReportPage
 from pages.sme.bulk_upload_page import BulkUploadPage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome
+from utilities.element_checks import ElementChecks
 from utilities.qar_plagiarism_fixture import (
     EXPECTED_PLAGIARISM_THRESHOLD,
     PUBLISHED_SOURCE_ITEMS,
@@ -34,6 +36,7 @@ class TestE2EQARPlagiarismPDFThreshold:
         self,
         request,
         tmp_path,
+        record_property,
     ):
         run_token = f"QAR_AUTO_PDF_PLAG_{uuid4().hex[:10]}"
         workbook_path, source_evidence = build_qar_plagiarism_workbook(
@@ -50,6 +53,15 @@ class TestE2EQARPlagiarismPDFThreshold:
         self.login_as_sme()
         upload_page = BulkUploadPage(self.driver)
         upload_page.close_popup_if_open()
+
+        # Chrome only: this nightly check drives the bulk-upload page object,
+        # which does not expose the upload-step furniture the other suites
+        # survey. The plagiarism threshold assertions all stay hard.
+        checks = ElementChecks(
+            upload_page, record_property, page_name="SME Bulk Upload — PDF Plagiarism"
+        )
+        survey_chrome(checks, upload_page)
+        record_property("result_description", checks.publish())
         validation = upload_page.upload_excel_for_validation(workbook_path)
         assert validation["accepted"], (
             f"PDF plagiarism fixture was rejected before QAR: {validation['message']}"

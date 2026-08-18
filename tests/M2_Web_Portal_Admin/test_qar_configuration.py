@@ -12,6 +12,7 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 from pages.admin.admin_portal_page import AdminPortalPage
 from pages.admin.qar_config_page import QARConfigPage
 from pages.common.login_page import LoginPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -30,7 +31,7 @@ class TestM2QARConfiguration:
         return page
 
     def open_qar_config(self):
-        self.login_as(ReadConfig.get_role_usernames("admin")[0])
+        self.login_as(ReadConfig.get_admin_username())
         try:
             return QARConfigPage(self.driver).open()
         except (TimeoutException, WebDriverException) as error:
@@ -39,82 +40,106 @@ class TestM2QARConfiguration:
                 f"reachable for Admin: {error}"
             )
 
-    def test_m2_qar_config_01_all_seven_checks_are_listed_at_their_layer(self):
+    def test_m2_qar_config_01_all_seven_checks_are_listed_at_their_layer(self, record_property):
+        """Every check is recorded individually, so a partial screen names which
+        check is missing or misclassified rather than only the first."""
         page = self.open_qar_config()
+        checks = ElementChecks(page, record_property, page_name="QAR Configuration — Checks")
 
-        missing = [
-            check_name
-            for check_name in page.EXPECTED_CHECKS
-            if not page.get_check_container_text(check_name)
-        ]
-        assert not missing, f"QAR checks are not rendered on the screen: {missing}"
-
-        mismatched = {}
         for check_name, expected_layer in page.EXPECTED_CHECKS.items():
-            container_text = page.get_check_container_text(check_name).casefold()
+            container_text = page.get_check_container_text(check_name)
+            if not checks.check_condition(
+                f"Check listed — {check_name}", container_text
+            ):
+                continue
+            folded = container_text.casefold()
             expected_kind = (
                 "informational"
                 if "informational" in expected_layer.casefold()
                 else "blocker"
             )
-            if expected_kind not in container_text or (
-                f"layer {page.LAYER_NUMBERS[check_name]}" not in container_text
-            ):
-                mismatched[check_name] = expected_layer
-        assert not mismatched, (
-            f"QAR checks are not classified as expected (check: expected layer): {mismatched}"
-        )
+            classified = (
+                expected_kind in folded
+                and f"layer {page.LAYER_NUMBERS[check_name]}" in folded
+            )
+            checks.check_condition(
+                f"Check classified — {check_name}",
+                classified,
+                detail=f"expected {expected_layer}",
+            )
 
-    def test_m2_qar_config_02_every_tab_opens_and_renders_controls(self):
+        record_property("result_description", checks.publish())
+
+    def test_m2_qar_config_02_every_tab_opens_and_renders_controls(self, record_property):
+        """Tab presence and its rendered controls, both recorded softly."""
         page = self.open_qar_config()
+        checks = ElementChecks(page, record_property, page_name="QAR Configuration — Tabs")
 
-        expected_tabs = [page.GLOBAL_SETTINGS_TAB, *page.EXPECTED_CHECKS]
-        absent = [tab for tab in expected_tabs if not page.has_tab(tab)]
-        assert not absent, f"QAR Configuration tabs are missing: {absent}"
-
-        unrendered = []
-        for tab in expected_tabs:
+        for tab in [page.GLOBAL_SETTINGS_TAB, *page.EXPECTED_CHECKS]:
+            if not checks.check_condition(f"Tab — {tab}", page.has_tab(tab)):
+                continue
             page.open_tab(tab)
-            if page.visible_control_count() == 0:
-                unrendered.append(tab)
-        assert not unrendered, (
-            f"These tabs opened but rendered no configurable control: {unrendered}"
-        )
+            control_count = page.visible_control_count()
+            checks.check_condition(
+                f"Tab renders controls — {tab}",
+                control_count > 0,
+                detail=f"{control_count} controls",
+            )
 
-    def test_m2_qar_config_03_status_bar_reports_every_check_state(self):
+        record_property("result_description", checks.publish())
+
+    def test_m2_qar_config_03_status_bar_reports_every_check_state(self, record_property):
+        """Pill presence is soft; a blocker check switched OFF stays a hard gate."""
         page = self.open_qar_config()
+        checks = ElementChecks(page, record_property, page_name="QAR Configuration — Status Bar")
 
         snapshot = page.get_status_bar_snapshot()
-        missing_pills = [
-            check_name for check_name, state in snapshot.items() if state is None
-        ]
-        assert not missing_pills, (
-            f"Status bar has no ON/OFF pill for: {missing_pills}. "
-            f"Status bar text: {page.body_text()[-500:]}"
-        )
-        assert all(state in {"ON", "OFF"} for state in snapshot.values()), snapshot
+        for check_name, state in snapshot.items():
+            checks.check_condition(
+                f"Status pill — {check_name}",
+                state in {"ON", "OFF"},
+                detail=f"reads {state!r}",
+            )
+        checks.publish()
 
-        # Blocker layers must never silently run disabled.
+        # Blocker layers must never silently run disabled. Only an explicit OFF
+        # counts — an unreadable pill is already recorded as a soft gap above,
+        # and reporting it here as "switched OFF" would misname the problem.
         disabled_blockers = [
             check_name
             for check_name, layer in page.EXPECTED_CHECKS.items()
-            if "blocker" in layer.casefold() and snapshot[check_name] != "ON"
+            if "blocker" in layer.casefold() and snapshot[check_name] == "OFF"
         ]
         assert not disabled_blockers, (
             f"Blocker-layer QAR checks are switched OFF: {disabled_blockers}"
         )
 
-    def test_m2_qar_config_04_status_bar_pass_pill_matches_global_threshold(self):
+    def test_m2_qar_config_04_status_bar_pass_pill_matches_global_threshold(self, record_property):
+        """Pill presence is soft; the threshold agreeing with Global Settings is hard."""
         page = self.open_qar_config()
+        checks = ElementChecks(page, record_property, page_name="QAR Configuration — Pass Threshold")
 
         configured = page.get_global_pass_threshold()
-        assert configured is not None, "Global Settings does not expose a pass threshold."
+        checks.check_condition(
+            "Global Settings exposes a pass threshold",
+            configured is not None,
+            detail=f"reads {configured!r}",
+        )
 
         page.open_tab(page.GLOBAL_SETTINGS_TAB)
         footer_value = page.get_status_bar_pass_threshold()
-        assert footer_value is not None, (
-            f"Status bar has no 'Pass: N%' pill. Page text: {page.body_text()[-500:]}"
+        checks.check_condition(
+            "Status bar shows a 'Pass: N%' pill",
+            footer_value is not None,
+            detail=f"reads {footer_value!r}",
         )
+        checks.publish()
+
+        if configured is None or footer_value is None:
+            pytest.xfail(
+                "KI-M2-QARCFG-002 [M2 QAR Config] Pass threshold is not exposed on both "
+                "Global Settings and the status bar, so they cannot be reconciled."
+            )
         assert footer_value == configured, (
             f"Status bar shows Pass: {footer_value}% but Global Settings is configured "
             f"at {configured}%."

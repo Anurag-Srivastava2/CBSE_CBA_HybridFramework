@@ -68,6 +68,14 @@ class RoleManagementPage(AdminPortalPage):
             return ""
 
     # --- Per-role Active toggle ---
+    def role_row_locator(self, role_id):
+        """Locator for one role's grid row, for presence checks that must not
+        raise the way _role_toggle does when the row is absent."""
+        return (
+            By.XPATH,
+            f"//table//tbody/tr[.//td[contains(normalize-space(),'{role_id}')]]",
+        )
+
     def _role_toggle(self, role_id):
         """Return the toggle control living in the row whose first cell is role_id."""
         row_xpath = (

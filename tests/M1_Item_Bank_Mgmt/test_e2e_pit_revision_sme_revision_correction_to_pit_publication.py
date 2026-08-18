@@ -5,6 +5,8 @@ from uuid import uuid4
 import pytest
 
 from pages.pit.review_queue_page import PITReviewQueuePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import enter_screen, survey_opened_item_set
+from utilities.element_checks import ElementChecks
 from utilities.pit_item_lifecycle import PITItemLifecycle
 
 
@@ -47,11 +49,14 @@ class TestPITSMERevisionApproval:
         for context in created_contexts:
             lifecycle.best_effort_finalize(context)
 
+    checks = None
+
     def test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication(
         self,
         request,
         tmp_path,
         isolated_pit_lifecycle,
+        record_property,
     ):
         lifecycle, created_contexts = isolated_pit_lifecycle
         request.node.user_properties.append(
@@ -176,6 +181,17 @@ class TestPITSMERevisionApproval:
             lifecycle.login_as(pit_username)
             pit_page = PITReviewQueuePage(self.driver)
             pit_page.open_review_item_set(context.item_set_id, context.item_set_url)
+            # Read-only survey of the PIT panel's view of the set. Published
+            # each vote: publish() writes the whole accumulated list, so a
+            # later failure still leaves the rows gathered so far.
+            if self.checks is None:
+                self.checks = ElementChecks(
+                    pit_page, record_property, page_name=f"PIT — Vote {vote_number}"
+                )
+            else:
+                enter_screen(self.checks, f"PIT — Vote {vote_number}")
+            survey_opened_item_set(self.checks, pit_page)
+            self.checks.publish()
 
             if vote_number == 1:
                 pit_page.click_item(revision_item_id)

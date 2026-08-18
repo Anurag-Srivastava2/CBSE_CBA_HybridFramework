@@ -9,6 +9,8 @@ import pytest
 from pages.common.login_page import LoginPage
 from pages.pit.review_queue_page import PITReviewQueuePage
 from pages.rwg.review_queue_page import RWGReviewQueuePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_opened_item_set
+from utilities.element_checks import ElementChecks
 from pages.sme.upload_item_file_page import UploadItemFilePage
 from pages.sr_rwg.review_queue_page import SRRWGReviewQueuePage
 from utilities.item_bank_workbook_builder import build_item_workbook
@@ -115,7 +117,9 @@ class TestE2ESMEExcelUploadWithImageEditToPITPublication:
 
         return all_revised_item_ids, rerun_messages
 
-    def test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish(self, request):
+    def test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish(
+        self, request, record_property
+    ):
         request.node.user_properties.append(
             ("result_checkpoint", "SME Excel upload with image editing and QAR validation")
         )
@@ -233,6 +237,14 @@ class TestE2ESMEExcelUploadWithImageEditToPITPublication:
             if items_with_images and all_revised_ids:
                 try:
                     rwg_review_queue_page.open_review_item_set(item_set_id, item_set_url)
+                    # Read-only survey of the RWG view; marks no criteria.
+                    checks = ElementChecks(
+                        rwg_review_queue_page,
+                        record_property,
+                        page_name="RWG — Opened Item Set",
+                    )
+                    survey_opened_item_set(checks, rwg_review_queue_page)
+                    checks.publish()
                     rwg_image_verification_results = (
                         rwg_review_queue_page.verify_images_visible_to_reviewer(
                             item_set_id, items_with_images

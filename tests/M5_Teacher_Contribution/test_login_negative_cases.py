@@ -1,13 +1,50 @@
 import pytest
 from pages.common.login_page import LoginPage
 from pages.teacher.dashboard_page import DashboardPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 from utilities.logger import LogGenerator
+
+# The sign-in survey runs a dozen checks against controls that paint together.
+CHECK_TIMEOUT = 2
 
 
 @pytest.mark.usefixtures("setup")
 class TestLoginNegativeCases:
     logger = LogGenerator.loggen()
+
+    def survey(self, login_page, record_property, scope):
+        """Soft-check the sign-in form furniture.
+
+        Deliberately narrow: the full branding and theme survey of this screen
+        lives in TestTeacherLoginPageBranding, so this records only the controls
+        a credential test actually depends on rather than duplicating that
+        inventory in eight more report cards.
+        """
+        checks = ElementChecks(
+            login_page, record_property, page_name=f"Sign-in Form — {scope}"
+        )
+        checks.check("Heading — Welcome Back!", login_page.WELCOME_HEADING, timeout=CHECK_TIMEOUT)
+        checks.check("Label — email", login_page.EMAIL_LABEL, timeout=CHECK_TIMEOUT)
+        checks.check("Label — password", login_page.PASSWORD_LABEL, timeout=CHECK_TIMEOUT)
+        checks.check("Field — email", login_page.USERNAME_TEXTBOX, timeout=CHECK_TIMEOUT)
+        checks.check("Field — password", login_page.PASSWORD_TEXTBOX, timeout=CHECK_TIMEOUT)
+        checks.check("Button — Sign In", login_page.SIGN_IN_BUTTON, timeout=CHECK_TIMEOUT)
+        checks.check(
+            "Button — password visibility toggle",
+            login_page.PASSWORD_VISIBILITY_TOGGLE,
+            timeout=CHECK_TIMEOUT,
+        )
+        checks.check(
+            "Link — Forgot Password?", login_page.FORGOT_PASSWORD_LINK, timeout=CHECK_TIMEOUT
+        )
+        checks.check(
+            "Link — Contact Support", login_page.CONTACT_SUPPORT_LINK, timeout=CHECK_TIMEOUT
+        )
+        checks.check("Theme picker", login_page.THEME_PICKER, timeout=CHECK_TIMEOUT)
+        checks.check("Language — EN", login_page.LANG_EN, timeout=CHECK_TIMEOUT)
+        checks.check("Language — हिंदी", login_page.LANG_HI, timeout=CHECK_TIMEOUT)
+        return checks
 
     # ---------------------------------------------------------------------------
     # Invalid-credential parametrize cases.
@@ -35,6 +72,12 @@ class TestLoginNegativeCases:
     #   • All cases now use ReadConfig.get_username() (the configured teacher account)
     #     as the username so that only the *password* is the variable under test,
     #     except for the format-validation row which deliberately uses a bad email.
+    #
+    # get_username() rather than the worker-aware get_teacher_username() on
+    # purpose: this list is evaluated at collection time and its values end up in
+    # the test IDs. pytest-xdist requires every worker to collect identical IDs,
+    # so a per-worker username here would break the run outright. None of these
+    # rows establishes a session, so they never contend for the account anyway.
     # ---------------------------------------------------------------------------
     @pytest.mark.parametrize(
         "username,password,expected_error_fragment",
@@ -81,8 +124,11 @@ class TestLoginNegativeCases:
         ],
     )
     def test_negative_login_password_compliance(
-        self, username, password, expected_error_fragment
+        self, username, password, expected_error_fragment, record_property
     ):
+        """Password-policy rejection. The rejection itself is a security
+        contract, so the error-text assertions stay hard; only the form
+        furniture around them is recorded softly."""
         self.logger.info(
             "Starting negative login password compliance test: user=%s pwd=%s",
             username,
@@ -93,6 +139,9 @@ class TestLoginNegativeCases:
         self.logger.info("Opened application URL")
 
         login_page = LoginPage(self.driver)
+        checks = self.survey(login_page, record_property, expected_error_fragment)
+        record_property("result_description", checks.publish())
+
         assert login_page.is_login_form_displayed(), "Login form was not available"
 
         login_page.enter_username(username)
@@ -112,7 +161,7 @@ class TestLoginNegativeCases:
             "Negative login password compliance case passed: pwd=%s", password
         )
 
-    def test_negative_login_with_valid_username_invalid_password(self):
+    def test_negative_login_with_valid_username_invalid_password(self, record_property):
         """Submitting a syntactically-valid but incorrect password should leave
         the user on the login page with an error message.
 
@@ -128,10 +177,27 @@ class TestLoginNegativeCases:
         self.logger.info("Opened application URL")
 
         login_page = LoginPage(self.driver)
+        checks = self.survey(login_page, record_property, "Invalid Password")
+
+        # A rendered-but-dead visibility toggle would pass every presence check
+        # above. Driving it here is safe: it changes nothing but the input type.
+        checks.check_interaction(
+            "Password visibility toggle reveals the password",
+            lambda: login_page.click_element(login_page.PASSWORD_VISIBILITY_TOGGLE),
+            lambda: login_page.attribute_of(login_page.PASSWORD_TEXTBOX, "type") == "text",
+        )
+        checks.check_interaction(
+            "Password visibility toggle hides it again",
+            lambda: login_page.click_element(login_page.PASSWORD_VISIBILITY_TOGGLE),
+            lambda: login_page.attribute_of(login_page.PASSWORD_TEXTBOX, "type")
+            == "password",
+        )
+        record_property("result_description", checks.publish())
+
         assert login_page.is_login_form_displayed(), "Login form was not available"
 
         # Submit with a plausible-looking but incorrect password.
-        login_page.enter_username(ReadConfig.get_username())
+        login_page.enter_username(ReadConfig.get_teacher_username())
         login_page.enter_password("InvalidPass123!")
         login_page.click_sign_in()
 
@@ -147,7 +213,7 @@ class TestLoginNegativeCases:
     # The only case here that actually signs in, so it is the only one that
     # can be signed out again by another worker using the same account.
     @pytest.mark.serial
-    def test_positive_login_with_valid_username_and_password(self):
+    def test_positive_login_with_valid_username_and_password(self, record_property):
         """Valid credentials should land the user on the teacher dashboard."""
         self.logger.info("Starting positive login test")
 
@@ -155,11 +221,15 @@ class TestLoginNegativeCases:
         self.logger.info("Opened application URL")
 
         login_page = LoginPage(self.driver)
+        checks = self.survey(login_page, record_property, "Valid Credentials")
+        record_property("result_description", checks.publish())
+
         assert login_page.is_login_form_displayed(), "Login form was not available"
 
+        username = ReadConfig.get_teacher_username()
         login_page.login_to_application(
-            ReadConfig.get_username(),
-            ReadConfig.get_password(),
+            username,
+            ReadConfig.get_password_for_username(username),
         )
 
         dashboard_page = DashboardPage(self.driver)

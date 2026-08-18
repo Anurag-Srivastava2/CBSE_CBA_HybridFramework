@@ -4,6 +4,12 @@ from selenium.webdriver.common.by import By
 from pages.sme.manual_item_page import ManualItemPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
 from pages.teacher.dashboard_page import DashboardPage
+from tests.M5_Teacher_Contribution.m5_surveys import (
+    survey_contribution_workspace,
+    survey_teacher_chrome,
+    survey_upload_history,
+)
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 from utilities.smoke_support import sign_in
 
@@ -53,12 +59,19 @@ class TestSmokeM5TeacherContribution:
         """Teacher signs in, lands on the dashboard and opens item creation."""
         page = self.open_contribution_workspace()
 
+        # Additive only: every assertion below stays exactly as hard as it was.
+        checks = ElementChecks(
+            page, record_property, page_name="Teacher Contribution — Workspace"
+        )
+        survey_teacher_chrome(checks, page)
+
         manual_tab_visible = page.is_element_visible_quick(self.MANUAL_TAB, timeout=20)
         upload_tab_visible = page.is_element_visible_quick(self.UPLOAD_TAB, timeout=20)
         record_property(
             "result_description",
             f"Teacher {ReadConfig.get_username()} reached the contribution workspace — "
-            f"Manual tab: {manual_tab_visible}, Upload Item File tab: {upload_tab_visible}.",
+            f"Manual tab: {manual_tab_visible}, Upload Item File tab: {upload_tab_visible}. "
+            f"{checks.publish()}",
         )
 
         assert manual_tab_visible, "Manual item authoring tab is not available to the teacher"
@@ -70,6 +83,13 @@ class TestSmokeM5TeacherContribution:
         page.open_upload_item_file_tab()
         page.open_upload_step()
 
+        checks = ElementChecks(
+            page, record_property, page_name="Teacher Contribution — Upload History"
+        )
+        survey_teacher_chrome(checks, page)
+        survey_contribution_workspace(checks, page)
+        survey_upload_history(checks, page)
+
         history_visible = page.is_element_visible_quick(self.UPLOAD_HISTORY_TABLE, timeout=20)
         # A never-used account legitimately has no rows, so the statuses are
         # evidence in the report rather than an assertion.
@@ -77,7 +97,8 @@ class TestSmokeM5TeacherContribution:
         record_property(
             "result_description",
             "Teacher upload history rendered; recent statuses: "
-            f"{', '.join(statuses) if statuses else 'no upload history rows'}.",
+            f"{', '.join(statuses) if statuses else 'no upload history rows'}. "
+            f"{checks.publish()}",
         )
 
         assert history_visible, (

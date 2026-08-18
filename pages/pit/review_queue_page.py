@@ -14,6 +14,33 @@ class PITReviewQueuePage(BaseReviewQueuePage):
         "YOUR DECISION",
     )
 
+    # The PIT queue carries the quorum columns the other roles have no use for,
+    # and drops Last Updated. Taken from a live census of this role's screen.
+    QUEUE_COLUMNS = (
+        "Item Set ID",
+        "Grade",
+        "Subject & Chapter",
+        "Item Count",
+        "Submitted By",
+        "Type",
+        "Iteration",
+        "PIT Votes",
+        "Item Set Status",
+        "My Vote Status",
+        "Sr.RWG Review Date",
+        "Last Review Submit Date",
+        "Due On",
+    )
+    # PIT reviews to a quorum rather than a single approval, so its queue has no
+    # 'Approved' tab — the outcome lives in PIT Votes / My Vote Status instead.
+    QUEUE_TAB_LABELS = (
+        "All",
+        "Pending Review",
+        "Revision Needed",
+        "Rejected",
+        "Published",
+    )
+
     SUBMIT_REVIEW_LOCATORS = [
         (By.XPATH, "//button[contains(normalize-space(),'Submit PIT Review') and not(@disabled)]"),
     ]

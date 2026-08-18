@@ -264,6 +264,167 @@ class ManualItemPage(BasePage):
     REVIEW_TABLE_ROWS = (By.XPATH, "//tbody/tr[.//td]")
     REVIEW_ROW_ITEM_ID = (By.XPATH, "./td[1]//*[self::a or self::button or self::span][normalize-space()][1]")
 
+    # --- Manual authoring furniture -------------------------------------
+    #
+    # Locators used by the element-presence surveys rather than by the
+    # authoring workflow, taken from a DOM census of the live manual tab.
+
+    WORKSPACE_TITLE = (By.XPATH, "//h1[normalize-space()='Create New Item Set']")
+    METADATA_HEADING = (By.XPATH, "//*[normalize-space()='Metadata Tags']")
+
+    # Field labels as the form renders them, asterisk included — the mandatory
+    # marker is part of the contract this screen advertises.
+    METADATA_FIELD_LABELS = (
+        "Grade *",
+        "Subject *",
+        "Chapter *",
+        "Curricular Goal",
+        "Competency *",
+        "Learning Outcome (NCERT) *",
+        "Bloom's Level *",
+        "Item Typology *",
+        "Marks *",
+    )
+    CONTENT_FIELD_LABELS = (
+        "Item Content *",
+        "Correct Answer / Answer Key *",
+        "Explanation for the Answer *",
+    )
+    MANUAL_WIZARD_STEP_LABELS = ("Add Items", "Review & Tag Metadata", "Confirm & Submit")
+
+    METADATA_DROPDOWNS = (By.CSS_SELECTOR, "[role='combobox']")
+    CLEAR_FORM_BUTTON = (By.XPATH, "//button[normalize-space()='Clear Form']")
+    # Exact text: a contains() here also matches the 'Add Items Manually' tab.
+    ADD_ITEM_BUTTON = (By.XPATH, "//button[normalize-space()='Add Item']")
+
+    # Rich-text editor toolbar. Checked as a group rather than button by
+    # button: it carries ~40 controls, and an absent one costs a full timeout.
+    EDITOR_TOOLBAR_BUTTONS = (By.CSS_SELECTOR, "button[class*='_btn_']")
+    EDITOR_SURFACES = (By.CSS_SELECTOR, "div.tiptap.ProseMirror")
+    ANSWER_KEY_TEXTBOX = (
+        By.CSS_SELECTOR,
+        "input[placeholder='Enter correct answer...']",
+    )
+
+    # Per-item row controls. Observed absent from the DOM entirely on arrival
+    # even with items staged — they are revealed by interacting with an item
+    # card — so surveys deliberately leave them out rather than record a gap
+    # for a control the page is right not to be showing yet.
+    ADDED_ITEM_EDIT_BUTTONS = (By.CSS_SELECTOR, "button[aria-label='Edit item']")
+    ADDED_ITEM_DELETE_BUTTONS = (By.CSS_SELECTOR, "button[aria-label='Delete item']")
+    ADDED_ITEM_ACCORDION_BUTTONS = (By.CSS_SELECTOR, "button[aria-label='Show answer']")
+
+    # Application chrome. Duplicated from UploadItemFilePage rather than
+    # inherited: both page objects extend BasePage directly, and a survey helper
+    # reads these attributes *outside* ElementChecks' guard, so a page object
+    # missing them raises AttributeError and takes the whole test down instead
+    # of recording one absent element.
+    HEADER = (By.TAG_NAME, "header")
+    SIDEBAR_NAV = (By.TAG_NAME, "nav")
+    SIDEBAR_TOGGLE = (By.XPATH, "//button[contains(normalize-space(),'Toggle Sidebar')]")
+    NOTIFICATION_BELL = (By.CSS_SELECTOR, "button[aria-label='Notifications']")
+    THEME_PICKER = (By.CSS_SELECTOR, "button[aria-label='Theme']")
+    SCREEN_READER_TOGGLE = (
+        By.CSS_SELECTOR,
+        "button[aria-label='Toggle screen-reader hints']",
+    )
+    LANG_EN = (By.XPATH, "//button[normalize-space()='EN']")
+    LANG_HI = (By.XPATH, "//button[normalize-space()='हिंदी']")
+    SME_NAV_ITEMS = ("Home", "Repository", "Create", "Item", "Support", "Settings")
+
+    # --- Manual authoring readers ---------------------------------------
+
+    @classmethod
+    def sme_nav_locator(cls, label):
+        """Locate a sidebar destination by its visible label.
+
+        Matched on the label <span>: each nav button also carries a
+        visually-hidden tooltip span, so the button's textContent — what XPath
+        normalize-space() reads — is tooltip and label run together
+        ("DashboardHome"), and an exact match on the button never fires.
+        """
+        return (
+            By.XPATH,
+            "//button[contains(@class,'menu-button')]"
+            f"[.//span[normalize-space()={cls.xpath_literal(label)}]]",
+        )
+
+    def missing_from(self, labels, locator_builder):
+        """Which of `labels` has no visible match. Never raises."""
+        missing = []
+        for label in labels:
+            try:
+                present = self.count_visible(locator_builder(label))
+            except Exception:  # noqa: BLE001 - an unreadable label is an absent one
+                present = 0
+            if not present:
+                missing.append(label)
+        return missing
+
+    def is_visible(self, locator, timeout=5):
+        return self.is_element_visible_quick(locator, timeout)
+
+    def count_visible(self, locator):
+        """How many matches are actually on screen — 0 when none are."""
+        count = 0
+        for element in self.driver.find_elements(*locator):
+            try:
+                if element.is_displayed():
+                    count += 1
+            except WebDriverException:
+                continue
+        return count
+
+    @staticmethod
+    def xpath_literal(value):
+        """Quote a value for use inside an XPath expression.
+
+        Several field labels contain an apostrophe ("Bloom's Level *"), which
+        terminates a single-quoted XPath string early and raises
+        InvalidSelectorException rather than simply not matching — so it fails
+        the whole reader instead of recording one absent element.
+        """
+        text = str(value)
+        if "'" not in text:
+            return f"'{text}'"
+        if '"' not in text:
+            return f'"{text}"'
+        parts = "', \"'\", '".join(text.split("'"))
+        return f"concat('{parts}')"
+
+    @classmethod
+    def field_label_locator(cls, label):
+        return (By.XPATH, f"//*[normalize-space()={cls.xpath_literal(label)}]")
+
+    @classmethod
+    def manual_wizard_step_locator(cls, label):
+        return (
+            By.XPATH,
+            "//*[contains(@class,'stepItem')]"
+            f"[contains(normalize-space(),{cls.xpath_literal(label)})]",
+        )
+
+    def missing_metadata_fields(self):
+        return [
+            label
+            for label in self.METADATA_FIELD_LABELS
+            if not self.count_visible(self.field_label_locator(label))
+        ]
+
+    def missing_content_fields(self):
+        return [
+            label
+            for label in self.CONTENT_FIELD_LABELS
+            if not self.count_visible(self.field_label_locator(label))
+        ]
+
+    def missing_manual_wizard_steps(self):
+        return [
+            label
+            for label in self.MANUAL_WIZARD_STEP_LABELS
+            if not self.count_visible(self.manual_wizard_step_locator(label))
+        ]
+
     def open_item_creation_module(self):
         last_error = None
         for attempt in range(2):

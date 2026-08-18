@@ -76,6 +76,79 @@ class ReadConfig:
         return ReadConfig._secret("CBSE_TEACHER_PASSWORD")
 
     @staticmethod
+    def get_teacher_usernames():
+        """Every configured teacher login, primary first.
+
+        CBSE_TEACHER_USERNAME names the primary; CBSE_TEACHER_USERNAMES is the
+        pool. The primary is moved to the front rather than assumed to be there,
+        so a serial run always drives the same account regardless of the order
+        the pool happens to be configured in.
+        """
+        usernames = list(ReadConfig.get_role_usernames("teacher"))
+        primary = os.getenv("CBSE_TEACHER_USERNAME", "").strip()
+        if primary:
+            remaining = [name for name in usernames if name.casefold() != primary.casefold()]
+            usernames = [primary] + remaining
+        return usernames
+
+    @staticmethod
+    def get_teacher_username():
+        """The teacher login this worker should drive.
+
+        Same reason as get_admin_username(): the portal keeps one active session
+        per account, so two xdist workers both driving the primary teacher sign
+        each other out mid-test — and M4/M5 are entirely teacher-driven. Each
+        worker takes its own account from the configured teacher pool instead; a
+        serial run is unaffected and still gets the primary teacher.
+
+        Parallelism is capped by the pool size: with N teachers configured,
+        `-n N` is the maximum before workers start sharing an account again.
+        """
+        teachers = ReadConfig.get_teacher_usernames()
+        worker_id = os.getenv("PYTEST_XDIST_WORKER", "").strip()
+        if worker_id.startswith("gw") and teachers:
+            worker_number = int(worker_id.removeprefix("gw"))
+            return teachers[worker_number % len(teachers)]
+        return teachers[0]
+
+    @staticmethod
+    def get_qp_teacher_usernames():
+        """Teacher pool for the QP Creation (M4) suites.
+
+        Excludes the primary teacher, which the M5 contribution flows drive:
+        the portal keeps one active session per account, so an M4 suite sharing
+        it would sign an M5 test out mid-run.
+        """
+        teachers = ReadConfig.get_teacher_usernames()
+        return teachers[1:] or teachers
+
+    @staticmethod
+    def get_qp_teacher_username():
+        """The QP teacher this worker should drive.
+
+        Every M4 suite publishes into "My QP" and its preview step opens the
+        newest paper in that list, so two suites running *concurrently* on one
+        account would read each other's paper. Splitting per worker gives each
+        its own account; a serial run shares one safely, because each suite
+        publishes and reads back before the next one starts.
+        """
+        pool = ReadConfig.get_qp_teacher_usernames()
+        worker_id = os.getenv("PYTEST_XDIST_WORKER", "").strip()
+        if worker_id.startswith("gw") and pool:
+            worker_number = int(worker_id.removeprefix("gw"))
+            return pool[worker_number % len(pool)]
+        return pool[0]
+
+    @staticmethod
+    def get_teacher_password():
+        """Password for whichever account get_teacher_username() resolved to.
+
+        Resolved from the username rather than read from CBSE_TEACHER_PASSWORD,
+        which only ever describes the primary teacher.
+        """
+        return ReadConfig.get_password_for_username(ReadConfig.get_teacher_username())
+
+    @staticmethod
     def get_sme_username():
         return ReadConfig._secret("CBSE_SME_USERNAME")
 
@@ -110,6 +183,32 @@ class ReadConfig:
         secondary SME slot", which is not necessarily the sme2@ login.
         """
         return ReadConfig.get_password_for_username(ReadConfig.get_sme2_username())
+
+    @staticmethod
+    def get_admin_usernames():
+        """Every configured portal-admin login, primary first."""
+        usernames = list(ReadConfig.get_role_usernames("admin"))
+        secondary = os.getenv("CBSE_ADMIN2_USERNAME", "").strip()
+        if secondary and secondary not in usernames:
+            usernames.append(secondary)
+        return usernames
+
+    @staticmethod
+    def get_admin_username():
+        """The portal-admin login this worker should drive.
+
+        Same reason as get_sme2_username: the portal keeps one active session
+        per account, so two xdist workers both driving the primary admin sign
+        each other out mid-test. Each worker takes its own account from the
+        configured admin pool instead; a serial run is unaffected and still
+        gets the primary admin.
+        """
+        admins = ReadConfig.get_admin_usernames()
+        worker_id = os.getenv("PYTEST_XDIST_WORKER", "").strip()
+        if worker_id.startswith("gw") and admins:
+            worker_number = int(worker_id.removeprefix("gw"))
+            return admins[worker_number % len(admins)]
+        return admins[0]
 
     @staticmethod
     def get_admin2_username():

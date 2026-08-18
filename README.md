@@ -177,7 +177,10 @@ PYTEST_REPORTS_DIR=test-reports/smoke pytest -m smoke -n 6 --dist loadgroup
 
 - HTML report: `reports/report.html`
 - Logs: `logs/automation_YYYY_MM_DD.log`
-- Failure screenshots: `screenshots/`
+- Screenshots: `screenshots/` — the failure/pass shot for every test, plus one
+  per page visited (`01 - Login`, `02 - Admin Dashboard`, ...) for any test that
+  runs element checks. See
+  [docs/element_checks_rollout.md](docs/element_checks_rollout.md#per-page-screenshots).
 
 None of this is tracked by git and no run reads back the previous run's output, so
 it only accumulates. Clear it with:

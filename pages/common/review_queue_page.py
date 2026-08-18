@@ -68,6 +68,246 @@ class BaseReviewQueuePage(BasePage):
         By.XPATH,
         "//input[contains(@placeholder,'Search') or contains(@aria-label,'Search')]",
     )
+
+    # ------------------------------------------------------------------
+    # Survey locators
+    #
+    # Taken from a DOM census of the live review queue. None of these drive a
+    # review: reviewer votes are one-time workflow actions per set, so a survey
+    # must never consume one.
+    #
+    # The three roles do NOT render the same grid. What is below is the RWG
+    # shape; Sr. RWG and PIT override QUEUE_COLUMNS / QUEUE_TAB_LABELS with
+    # their own. Surveying all three against one expected set filed FAILED rows
+    # for columns each screen is correct not to have.
+    # ------------------------------------------------------------------
+
+    QUEUE_PAGE_HEADING = (By.XPATH, "//h1[normalize-space()='Review Queue']")
+    QUEUE_SUBTITLE = (
+        By.XPATH,
+        "//*[not(*)][contains(normalize-space(),'provide structured feedback')]",
+    )
+    QUEUE_LOADING = (
+        By.XPATH,
+        "//*[contains(normalize-space(),'Loading Review Queue')]",
+    )
+    QUEUE_FILTER_LABELS = ("Grade", "Subject", "Chapter", "Type")
+    QUEUE_TAB_LABELS = (
+        "All",
+        "Pending Review",
+        "Revision Needed",
+        "Rejected",
+        "Approved",
+        "Published",
+    )
+    QUEUE_COLUMNS = (
+        "Item Set ID",
+        "Grade",
+        "Subject & Chapter",
+        "Item Count",
+        "Submitted By",
+        "Type",
+        "Iteration",
+        "Item Set Status",
+        "Last Updated",
+        "Last Review Submit Date",
+        "Due On",
+    )
+    QUEUE_TABLE = (By.XPATH, "//table[.//th[contains(normalize-space(),'Item Set ID')]]")
+    QUEUE_TABLE_HEADERS = (
+        By.XPATH,
+        "//table[.//th[contains(normalize-space(),'Item Set ID')]]//th",
+    )
+    QUEUE_TABLE_ROWS = (
+        By.XPATH,
+        "//table[.//th[contains(normalize-space(),'Item Set ID')]]//tbody/tr[.//td]",
+    )
+
+    # Opened item set (/review-queue/<id>)
+    ITEM_SET_TITLE = (By.CSS_SELECTOR, "[class*='_title_']")
+    ITEM_SET_BACK_BUTTON = (By.CSS_SELECTOR, "button[class*='_backBtn_']")
+    ITEM_SET_FILTER_LABELS = ("Item Type", "Marks", "Bloom's Level")
+    ITEM_SET_REVIEW_TAB_LABELS = ("All", "Review", "Approved", "Needs Revision", "Rejected")
+    ITEM_SET_ITEM_COLUMNS = (
+        "Item ID",
+        "Item",
+        "Status",
+        "Typology",
+        "Marks",
+        "Bloom's Level",
+        "Competency",
+        "Learning Outcomes",
+    )
+    ITEM_SET_ITEM_TABLE = (By.XPATH, "//table[.//th[contains(normalize-space(),'Item ID')]]")
+    ITEM_SET_ITEM_HEADERS = (
+        By.XPATH,
+        "//table[.//th[contains(normalize-space(),'Item ID')]]//th",
+    )
+    ITEM_SET_ITEM_ROWS = (
+        By.XPATH,
+        "//table[.//th[contains(normalize-space(),'Item ID')]]//tbody/tr[.//td]",
+    )
+    DOWNLOAD_QAR_REPORT_BUTTON = (
+        By.XPATH,
+        "//button[contains(normalize-space(),'Download QAR Report')]",
+    )
+
+    FILTER_BUTTONS = (By.CSS_SELECTOR, "button[class*='_filterBtn_']")
+    ROWS_PER_PAGE = (By.CSS_SELECTOR, "[role='combobox']")
+    PREV_PAGE_BTN = (By.CSS_SELECTOR, "button[aria-label='Previous page']")
+    NEXT_PAGE_BTN = (By.CSS_SELECTOR, "button[aria-label='Next page']")
+
+    # Reviewer chrome — a shorter sidebar than the SME's or the teacher's.
+    HEADER = (By.TAG_NAME, "header")
+    SIDEBAR_NAV = (By.TAG_NAME, "nav")
+    SIDEBAR_TOGGLE = (By.XPATH, "//button[contains(normalize-space(),'Toggle Sidebar')]")
+    NOTIFICATION_BELL = (By.CSS_SELECTOR, "button[aria-label='Notifications']")
+    THEME_PICKER = (By.CSS_SELECTOR, "button[aria-label='Theme']")
+    SCREEN_READER_TOGGLE = (
+        By.CSS_SELECTOR,
+        "button[aria-label='Toggle screen-reader hints']",
+    )
+    LANG_EN = (By.XPATH, "//button[normalize-space()='EN']")
+    LANG_HI = (By.XPATH, "//button[normalize-space()='हिंदी']")
+    REVIEWER_NAV_ITEMS = ("Queue", "Home", "Support", "Settings")
+
+    # --- Survey readers -------------------------------------------------
+
+    @staticmethod
+    def survey_xpath_literal(value):
+        """Quote a label for XPath. 'Bloom's Level' contains an apostrophe,
+        which would otherwise raise InvalidSelectorException out of the reader
+        rather than recording one absent element."""
+        text = str(value)
+        if "'" not in text:
+            return f"'{text}'"
+        if '"' not in text:
+            return f'"{text}"'
+        parts = "', \"'\", '".join(text.split("'"))
+        return f"concat('{parts}')"
+
+    def is_visible(self, locator, timeout=5):
+        return self.is_element_visible_quick(locator, timeout)
+
+    def count_visible(self, locator):
+        """How many matches are actually on screen — 0 when none are."""
+        count = 0
+        for element in self.driver.find_elements(*locator):
+            try:
+                if element.is_displayed():
+                    count += 1
+            except WebDriverException:
+                continue
+        return count
+
+    @classmethod
+    def queue_tab_locator(cls, label):
+        return (
+            By.XPATH,
+            f"//*[@role='tab'][starts-with(normalize-space(),{cls.survey_xpath_literal(label)})]",
+        )
+
+    @classmethod
+    def queue_filter_locator(cls, label):
+        return (
+            By.XPATH,
+            "//button[contains(@class,'_filterBtn_')]"
+            f"[normalize-space()={cls.survey_xpath_literal(label)}]",
+        )
+
+    @classmethod
+    def reviewer_nav_locator(cls, label):
+        # Matched on the label span: each nav button also carries a hidden
+        # tooltip span, so the button's textContent is tooltip+label run
+        # together and an exact match on the button never fires.
+        return (
+            By.XPATH,
+            "//button[contains(@class,'menu-button')]"
+            f"[.//span[normalize-space()={cls.survey_xpath_literal(label)}]]",
+        )
+
+    def missing_from(self, labels, locator_builder):
+        """Which of `labels` has no visible match. Never raises."""
+        missing = []
+        for label in labels:
+            try:
+                present = self.count_visible(locator_builder(label))
+            except Exception:  # noqa: BLE001 - an unreadable label is an absent one
+                present = 0
+            if not present:
+                missing.append(label)
+        return missing
+
+    def wait_for_queue_to_load(self, timeout=60):
+        """Wait for the queue's own content, not merely for its spinner to go.
+
+        open_queue_module() returns while 'Loading Review Queue…' is still on
+        screen, and the placeholder clears a few seconds *before* the tabs,
+        grid and pagination paint. Waiting only on the placeholder therefore
+        surveyed an empty shell and reported the whole queue missing — while a
+        tab click moments later worked fine. Wait for the tablist and the grid.
+        """
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: (
+                    not driver.find_elements(*self.QUEUE_LOADING)
+                    and driver.find_elements(By.CSS_SELECTOR, "[role='tablist']")
+                    and driver.find_elements(*self.QUEUE_TABLE_ROWS)
+                ),
+                timeout=timeout,
+            )
+        except TimeoutException:
+            # An empty queue legitimately has no rows; settle for the tablist.
+            return bool(self.driver.find_elements(By.CSS_SELECTOR, "[role='tablist']"))
+        return True
+
+    def get_headers_text(self, locator):
+        headers = []
+        for element in self.driver.find_elements(*locator):
+            try:
+                text = element.text.strip()
+            except WebDriverException:
+                continue
+            if text:
+                headers.append(text)
+        return headers
+
+    def missing_queue_columns(self):
+        headers = [h.casefold() for h in self.get_headers_text(self.QUEUE_TABLE_HEADERS)]
+        return [c for c in self.QUEUE_COLUMNS if c.casefold() not in headers]
+
+    def missing_item_set_item_columns(self):
+        headers = [h.casefold() for h in self.get_headers_text(self.ITEM_SET_ITEM_HEADERS)]
+        return [c for c in self.ITEM_SET_ITEM_COLUMNS if c.casefold() not in headers]
+
+    def get_queue_row_count(self):
+        return len(self.driver.find_elements(*self.QUEUE_TABLE_ROWS))
+
+    def get_item_set_item_row_count(self):
+        return len(self.driver.find_elements(*self.ITEM_SET_ITEM_ROWS))
+
+    def is_queue_tab_active(self, label):
+        try:
+            state = self.driver.find_element(
+                *self.queue_tab_locator(label)
+            ).get_attribute("data-state")
+        except WebDriverException:
+            return False
+        return state == "active"
+
+    def switch_queue_tab(self, label, timeout=20):
+        """Activate a queue tab and wait for it to report itself active.
+
+        Read-only: tabs re-scope the listing and never cast a review vote.
+        """
+        self.click_element(self.queue_tab_locator(label))
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: self.is_queue_tab_active(label), timeout=timeout
+            )
+        except TimeoutException:
+            return False
+        return True
     YES_LOCATORS = [
         (By.XPATH, "//button[normalize-space()='Yes']"),
         (By.XPATH, "//*[self::label or self::button][contains(normalize-space(),'Yes')]"),

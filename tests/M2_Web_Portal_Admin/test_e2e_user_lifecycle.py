@@ -5,6 +5,7 @@ from selenium.common.exceptions import TimeoutException
 
 from pages.admin.user_management_page import UserManagementPage
 from pages.common.login_page import LoginPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -22,7 +23,7 @@ class TestM2UserLifecycle:
         LoginPage(self.driver).login_to_application(username, password)
 
     def login_as_admin(self):
-        username = ReadConfig.get_role_usernames("admin")[0]
+        username = ReadConfig.get_admin_username()
         self.login(username, ReadConfig.get_password_for_username(username))
         page = UserManagementPage(self.driver)
         page.open(ReadConfig.get_base_url())
@@ -48,6 +49,26 @@ class TestM2UserLifecycle:
         # --- Step 1: admin creates the user -----------------------------------
         record_property("result_checkpoint", "Step 1 — admin creates user")
         admin_page = self.login_as_admin()
+
+        # Surveyed before the user is created, so the table describes User
+        # Management as the test found it. Every lifecycle assertion below —
+        # creation, the new user signing in, deactivation, and the blocked
+        # re-login — stays a hard assert.
+        checks = ElementChecks(
+            admin_page, record_property, page_name="User Management — Lifecycle"
+        )
+        checks.check("Page heading", admin_page.PAGE_HEADING, timeout=2)
+        checks.check("Search box", admin_page.SEARCH_INPUT, timeout=2)
+        checks.check("Button — Create User", admin_page.CREATE_USER_BTN, timeout=2)
+        checks.check("Account rows", admin_page.TABLE_ROWS, timeout=2)
+        listed_before = checks.safe_call(admin_page.get_listed_users, [])
+        checks.check_condition(
+            "Account listing rendered",
+            listed_before,
+            detail=f"{len(listed_before)} account(s) on the first page",
+        )
+        checks.publish()
+
         try:
             admin_page.create_user(
                 first_name=first_name,

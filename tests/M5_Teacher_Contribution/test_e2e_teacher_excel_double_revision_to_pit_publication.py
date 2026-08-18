@@ -13,6 +13,8 @@ from pages.sme.upload_item_file_page import UploadItemFilePage
 from utilities.item_bank_workbook_builder import build_item_workbook
 from utilities.logger import LogGenerator
 from utilities.qar_recovery import recover_qar_need_improvement_items
+from tests.M1_Item_Bank_Mgmt.m1_surveys import enter_screen, survey_opened_item_set
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -56,6 +58,21 @@ class TestE2ETeacherExcelDoubleRevisionToPITPublication:
         )
         return unique_file, question_count
 
+    def survey_reviewer_screen(self, review_page, role):
+        """Survey a reviewer's opened item set, if this test is collecting.
+
+        Read-only: marks no criteria, so it cannot consume the one-time review
+        vote the set still needs. Re-published each phase because publish()
+        writes the whole accumulated list, so a failure later in this long
+        chain still leaves the rows gathered so far on the report card.
+        """
+        checks = getattr(self, "checks", None)
+        if checks is None:
+            return
+        enter_screen(checks, f"{role} — Opened Item Set")
+        survey_opened_item_set(checks, review_page)
+        checks.publish()
+
     def login_as(self, username):
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
@@ -90,9 +107,11 @@ class TestE2ETeacherExcelDoubleRevisionToPITPublication:
                     # instead of abandoning every remaining one and pass.
                     upload_item_file_page.reset_browser_session_to_login()
                     self.login_as(candidate)
-                    RWGReviewQueuePage(self.driver).open_review_item_set(
+                    rwg_queue_page = RWGReviewQueuePage(self.driver)
+                    rwg_queue_page.open_review_item_set(
                         item_set_id, item_set_url
                     )
+                    self.survey_reviewer_screen(rwg_queue_page, 'RWG')
                 except TimeoutException as error:
                     last_error = error
                     continue
@@ -175,13 +194,20 @@ class TestE2ETeacherExcelDoubleRevisionToPITPublication:
             "initial_qar_recovery": qar_recovery,
         }
 
-    def test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish(self, request):
+    def test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish(self, request, record_property):
         request.node.user_properties.append(
             ("result_checkpoint", "fresh double-revision teacher Excel upload and QAR validation")
         )
         upload_item_file_page = UploadItemFilePage(self.driver)
         rwg_review_queue_page = RWGReviewQueuePage(self.driver)
         pit_review_queue_page = PITReviewQueuePage(self.driver)
+
+        # One collector for the whole teacher -> RWG -> PIT chain, re-pointed at
+        # each screen as the item set moves through it.
+        self.checks = ElementChecks(
+            upload_item_file_page, record_property, page_name="Teacher Contribution — Double Revision"
+        )
+        self.checks.publish()
 
         default_teacher_username = ReadConfig.get_username()
         teacher_username = next(

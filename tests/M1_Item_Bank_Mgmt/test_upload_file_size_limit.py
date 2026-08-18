@@ -13,6 +13,8 @@ from selenium.webdriver.common.by import By
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
+from utilities.element_checks import ElementChecks
 from utilities.item_bank_workbook_builder import build_item_workbook
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
@@ -101,7 +103,9 @@ class TestUploadFileSizeLimit:
             
         return session, headers
 
-    def test_tc_neg_m1_10_upload_file_size_limit_exceeded(self, tmp_path, request):
+    def test_tc_neg_m1_10_upload_file_size_limit_exceeded(
+        self, tmp_path, request, record_property
+    ):
         """TC-NEG-M1-10: Verify 12 MB file upload is rejected via Selenium and API, and smaller files still upload.
         
         Steps:
@@ -142,6 +146,16 @@ class TestUploadFileSizeLimit:
         page.open_item_creation_module()
         page.open_upload_item_file_tab()
         page.open_upload_step()
+
+        # Surveyed before the oversized file is pushed at the page, so the
+        # element table describes a healthy upload step rather than a rejected one.
+        checks = ElementChecks(
+            page, record_property, page_name="Upload Item File — File Size Limit"
+        )
+        survey_chrome(checks, page)
+        survey_upload_step(checks, page)
+        record_property("result_description", checks.publish())
+
         page.upload_file(large_workbook)
 
         # Step 4: Assert size limit error message and no Upload ID

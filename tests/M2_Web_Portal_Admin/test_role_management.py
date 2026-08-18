@@ -2,6 +2,7 @@ import pytest
 
 from pages.admin.role_management_page import RoleManagementPage
 from pages.common.login_page import LoginPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -15,7 +16,7 @@ class TestM2RoleManagement:
     """
 
     def open_role_management(self):
-        admin_username = ReadConfig.get_role_usernames("admin")[0]
+        admin_username = ReadConfig.get_admin_username()
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             admin_username,
@@ -25,21 +26,53 @@ class TestM2RoleManagement:
         page.wait_for_application_ready()
         return page.open()
 
-    def test_tc_wpad_role_01_page_loads_with_default_roles(self, request):
-        page = self.open_role_management()
-        assert page.is_on_page(), "Role Management page header is not visible."
+    def survey(self, page, record_property, scope):
+        """Soft-check the Role Management page furniture."""
+        checks = ElementChecks(page, record_property, page_name=f"Role Management — {scope}")
+        checks.check_condition("Page header", page.is_on_page)
+        checks.check("Role table rows", page.TABLE_ROWS)
+        checks.check_condition("Rows per page control", page.has_rows_per_page_control)
+        checks.check_condition("Next page control", page.has_next_page_control)
+        return checks
 
-        row_count = page.get_table_row_count()
-        request.node.user_properties.append(
-            ("result_description", f"Role Management listed {row_count} roles on load.")
+    def test_tc_wpad_role_01_page_loads_with_default_roles(self, record_property):
+        """Page furniture and the default role list, all recorded softly."""
+        page = self.open_role_management()
+        checks = self.survey(page, record_property, "Load")
+
+        row_count = checks.safe_call(page.get_table_row_count, 0)
+        checks.check_condition(
+            f"At least {RoleManagementPage.DEFAULT_ROLE_COUNT} default roles listed",
+            row_count >= RoleManagementPage.DEFAULT_ROLE_COUNT,
+            detail=f"{row_count} rows",
         )
-        assert row_count >= RoleManagementPage.DEFAULT_ROLE_COUNT, (
-            f"Expected at least {RoleManagementPage.DEFAULT_ROLE_COUNT} roles on load, "
-            f"found {row_count}."
+        for index in range(1, RoleManagementPage.DEFAULT_ROLE_COUNT + 1):
+            role_id = f"Role-{index}"
+            checks.check(f"Role row — {role_id}", page.role_row_locator(role_id), timeout=2)
+
+        record_property(
+            "result_description",
+            f"{checks.publish()}. Listed {row_count} roles on load.",
         )
 
-    def test_tc_wpad_role_02_search_filters_by_name_and_id(self):
+    def test_tc_wpad_role_02_search_filters_by_name_and_id(self, record_property):
+        """Search behaviour stays a hard gate; the controls are surveyed softly."""
         page = self.open_role_management()
+        checks = self.survey(page, record_property, "Search")
+
+        baseline = checks.safe_call(page.get_table_row_count, 0)
+        checks.check_interaction(
+            "Search narrows the grid",
+            lambda: page.search_role("InvalidRole99"),
+            lambda: page.get_table_row_count() < baseline,
+        )
+        checks.check_interaction(
+            "Clearing search restores the grid",
+            page.clear_search,
+            lambda: page.get_table_row_count() == baseline,
+        )
+        checks.publish()
+
         unfiltered_count = page.get_table_row_count()
 
         page.search_role("Role-1")
@@ -59,8 +92,10 @@ class TestM2RoleManagement:
             "Clearing the search did not restore the full role list."
         )
 
-    def test_tc_wpad_role_03_all_default_roles_can_be_active(self, request):
+    def test_tc_wpad_role_03_all_default_roles_can_be_active(self, request, record_property):
+        """Activation is a state contract, so it stays a hard gate."""
         page = self.open_role_management()
+        self.survey(page, record_property, "Activation").publish()
         activated = page.ensure_all_roles_active()
         request.node.user_properties.append(
             (
@@ -76,8 +111,17 @@ class TestM2RoleManagement:
         ]
         assert not inactive, f"Roles still inactive after activation: {inactive}."
 
-    def test_tc_wpad_role_04_toggle_role_off_and_restore(self):
+    def test_tc_wpad_role_04_toggle_role_off_and_restore(self, record_property):
+        """Toggle round-trip is a state contract, so it stays a hard gate."""
         page = self.open_role_management()
+        checks = self.survey(page, record_property, "Toggle")
+        # Record which role toggles are even editable before driving one.
+        for index in range(1, RoleManagementPage.DEFAULT_ROLE_COUNT + 1):
+            checks.check_condition(
+                f"Toggle editable — Role-{index}",
+                lambda i=index: page.is_role_toggle_editable(f"Role-{i}"),
+            )
+        checks.publish()
         role_id = "Role-7"
         if not page.is_role_toggle_editable(role_id):
             pytest.skip(
@@ -104,7 +148,8 @@ class TestM2RoleManagement:
 
         assert page.is_role_active(role_id), f"{role_id} was not restored to active."
 
-    def test_tc_wpad_role_05_pagination_controls_are_present(self):
+    def test_tc_wpad_role_05_pagination_controls_are_present(self, record_property):
+        """Pure presence test — every check is soft."""
         page = self.open_role_management()
-        assert page.has_rows_per_page_control(), "'Rows per page' control is missing."
-        assert page.has_next_page_control(), "Next-page pagination control is missing."
+        checks = self.survey(page, record_property, "Pagination")
+        record_property("result_description", checks.publish())

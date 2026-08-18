@@ -23,6 +23,8 @@ from utilities.arithmetic_question_factory import (
 )
 from utilities.logger import LogGenerator
 from utilities.qar_recovery import recover_qar_need_improvement_items
+from tests.M1_Item_Bank_Mgmt.m1_surveys import enter_screen, survey_opened_item_set
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
 
@@ -451,6 +453,21 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         copy2(source_file, unique_file)
         return unique_file, cls.update_teacher_upload_file_questions(unique_file)
 
+    def survey_reviewer_screen(self, review_page, role):
+        """Survey a reviewer's opened item set, if this test is collecting.
+
+        Read-only: marks no criteria, so it cannot consume the one-time review
+        vote the set still needs. Re-published each phase because publish()
+        writes the whole accumulated list, so a failure later in this long
+        chain still leaves the rows gathered so far on the report card.
+        """
+        checks = getattr(self, "checks", None)
+        if checks is None:
+            return
+        enter_screen(checks, f"{role} — Opened Item Set")
+        survey_opened_item_set(checks, review_page)
+        checks.publish()
+
     def login_as(self, username):
         """Log in with one clean-session retry for a stuck SPA loading shell.
 
@@ -515,9 +532,11 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                     # instead of abandoning every remaining one and pass.
                     upload_page.reset_browser_session_to_login()
                     self.login_as(candidate)
-                    RWGReviewQueuePage(self.driver).open_review_item_set(
+                    rwg_queue_page = RWGReviewQueuePage(self.driver)
+                    rwg_queue_page.open_review_item_set(
                         item_set_id, item_set_url
                     )
+                    self.survey_reviewer_screen(rwg_queue_page, 'RWG')
                 except TimeoutException as error:
                     last_error = error
                     continue
@@ -960,7 +979,7 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
 
     def test_e2e_teacher_third_rwg_iteration_rejects_items_then_pit_publishes_approved_only(
         self,
-        request,
+        request, record_property,
     ):
         request.node.user_properties.append(
             ("result_checkpoint", "fresh teacher Excel upload for isolated triple-iteration flow")
@@ -968,6 +987,13 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         upload_page = TripleIterationUploadItemFilePage(self.driver)
         rwg_page = TripleIterationRWGReviewQueuePage(self.driver)
         pit_page = TripleIterationPITReviewQueuePage(self.driver)
+
+        # One collector for the whole teacher -> RWG -> PIT chain, re-pointed at
+        # each screen as the item set moves through it.
+        self.checks = ElementChecks(
+            upload_page, record_property, page_name="Teacher Contribution — Triple Revision Rejection"
+        )
+        self.checks.publish()
         evidence_screenshots = []
         upload_page.set_evidence_recorder(
             lambda detail: self.capture_checkpoint_evidence(

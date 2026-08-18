@@ -71,6 +71,36 @@ These are product, data, or environment gaps that are intentionally reported as 
 
 When an item is fixed in the product or fixture data, remove the related `pytest.xfail(...)` from the test and let the assertion run normally.
 
+## Open product question — Helpdesk 'Overdue' status vs the status tabs
+
+`test_tc_wpad_helpdesk_02_verify_tab_filters` fails on every run, in the same
+way, and it is the only genuine product finding the M2 suite currently
+produces. It is left as a hard failure deliberately, pending a product answer.
+
+**What happens:** the `In Progress` tab lists rows whose Status column reads
+`['In Progress', 'Overdue']`. The test asserts a status tab shows only its own
+status.
+
+**Why it is ambiguous.** `HelpdeskPage` models Status and SLA as separate
+things — `COLUMN_STATUS` (6) and `COLUMN_SLA_BREACH` (10, Yes/No) — and
+`KNOWN_STATUSES` is `(Open, In Progress, Resolved, Closed)`, which does **not**
+include `Overdue`. Yet `Overdue` is both a rendered Status value and a queue
+tab. So either:
+
+- **Product defect** — the `In Progress` filter is leaking tickets it should
+  exclude; or
+- **Test too strict** — `Overdue` is a derived status overlaying the workflow
+  state, so an in-progress ticket past its SLA legitimately appears in both the
+  `In Progress` and `Overdue` tabs.
+
+**Do not weaken the assertion to make the suite green** until this is decided.
+If the second reading is correct, the fix is to compare against the workflow
+status underneath the SLA overlay (or to read `sla_breach` separately), not to
+add `Overdue` to the list of accepted values — that would also stop the test
+detecting a real leak of `Resolved` or `Closed` tickets into the tab. The same
+ambiguity affects `helpdesk_04`, whose
+`assert found["status"] in KNOWN_STATUSES` would fail for any overdue ticket.
+
 ## Test-data handling note
 
 RWG, SRRWG, and PIT item-set actions are one-time workflow actions. An item set that was already acted on by RWG, SRRWG, or PIT should not be reused in a later test run for the same action path. Tests that exercise these reviewers must use a fresh eligible item set from the current queue or create/advance a new item set before taking the reviewer action.

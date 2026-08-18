@@ -8,6 +8,8 @@ from selenium.webdriver.common.by import By
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
 
@@ -117,7 +119,7 @@ class TestNegativeNonXlsxUploadRejected:
         return message
 
     def test_bug_m1_001_non_xlsx_and_bad_header_uploads_rejected_then_valid_xlsx_accepted(
-        self, tmp_path, request
+        self, tmp_path, request, record_property
     ):
         pdf_file = tmp_path / "invalid_item_upload.pdf"
         pdf_file.write_bytes(b"%PDF-1.4\n% BUG-M1-001 invalid PDF upload regression\n")
@@ -138,6 +140,16 @@ class TestNegativeNonXlsxUploadRejected:
         )
 
         upload_page = self.login_and_open_upload_step()
+
+        # Surveyed on arrival, before any invalid file is pushed at the page, so
+        # the element table describes the upload step as it should look rather
+        # than as a rejected upload left it.
+        checks = ElementChecks(
+            upload_page, record_property, page_name="Upload Item File — Invalid Uploads"
+        )
+        survey_chrome(checks, upload_page)
+        survey_upload_step(checks, upload_page)
+        record_property("result_description", checks.publish())
 
         def assert_pdf_rejected(page, timeout):
             pdf_error = page.wait_for_upload_rejection(timeout=timeout)

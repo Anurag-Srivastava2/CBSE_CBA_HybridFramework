@@ -6,6 +6,7 @@ import pytest
 from pages.admin.helpdesk_page import HelpdeskPage
 from pages.common.login_page import LoginPage
 from pages.common.support_page import SupportPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 # A real 1x1 PNG. The dropzone accepts PNG/JPG/WEBP/PDF up to 5 MB, so the
@@ -36,7 +37,7 @@ class TestM2SupportAndHelpdesk:
         return upload
 
     def login_as_admin(self):
-        username = ReadConfig.get_role_usernames("admin")[0]
+        username = ReadConfig.get_admin_username()
         login = LoginPage(self.driver)
         self.driver.get(ReadConfig.get_base_url())
         login.wait_for_login_form_or_authenticated_page()
@@ -62,7 +63,15 @@ class TestM2SupportAndHelpdesk:
         support = SupportPage(self.driver)
         support.open(ReadConfig.get_base_url())
 
-        assert support.is_on_page(), "Help & Support header or subtext is missing."
+        # Page furniture is surveyed softly; raising the ticket, its attachment
+        # and the helpdesk routing below all stay hard gates.
+        checks = ElementChecks(support, record_property, page_name="Help & Support")
+        checks.check_condition("Page header and subtext", support.is_on_page)
+        for tab in ("Open", "In Progress", "Resolved"):
+            checks.check_condition(
+                f"Tab — {tab}", lambda name=tab: support.get_tab_count(name) >= 0
+            )
+        checks.publish()
 
         token = str(int(time.time()))
         subject = f"QA automated support ticket {token}"

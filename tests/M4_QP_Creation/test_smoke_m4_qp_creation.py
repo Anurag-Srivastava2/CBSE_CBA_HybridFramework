@@ -4,6 +4,8 @@ from selenium.webdriver.common.keys import Keys
 
 from pages.teacher.dashboard_page import DashboardPage
 from pages.teacher.question_paper_builder_page import QuestionPaperBuilderPage
+from tests.M4_QP_Creation.qp_surveys import survey_builder, survey_chrome, survey_my_qp
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 from utilities.smoke_support import sign_in
 
@@ -26,17 +28,22 @@ class TestSmokeM4QPCreation:
 
     CREATE_NEW_PAPER_BUTTON = (By.XPATH, "//button[contains(normalize-space(),'Create New Paper')]")
 
-    # The QP suites drive teacher2 so they do not contend with the M5 teacher
-    # contribution flows, which use the primary teacher account.
-    QP_TEACHER_USERNAME = "teacher2@dev.com"
+    # The QP suites drive a non-primary teacher so they do not contend with the
+    # M5 teacher contribution flows, which use the primary teacher account.
+    # Resolved per xdist worker rather than hardcoded, so parallel workers do
+    # not sign each other out of the one account.
+    @property
+    def qp_teacher_username(self):
+        return ReadConfig.get_qp_teacher_username()
 
     def sign_in_as_teacher(self):
-        sign_in(self.driver, self.QP_TEACHER_USERNAME)
+        username = self.qp_teacher_username
+        sign_in(self.driver, username)
         # Login can land behind a welcome/announcement popup that swallows the
         # first navigation click.
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
         assert DashboardPage(self.driver).is_dashboard_loaded(), (
-            f"{self.QP_TEACHER_USERNAME} did not land on the teacher dashboard"
+            f"{username} did not land on the teacher dashboard"
         )
 
     def test_smoke_m4_01_qp_builder_opens_with_creation_modes(self, record_property):
@@ -45,11 +52,19 @@ class TestSmokeM4QPCreation:
         builder = QuestionPaperBuilderPage(self.driver)
         builder.open()
 
+        # Additive only: every assertion below stays exactly as hard as it
+        # was, so the smoke gate still fails loudly and fast.
+        checks = ElementChecks(
+            builder, record_property, page_name="QP Builder — Smoke"
+        )
+        survey_chrome(checks, builder)
+        survey_builder(checks, builder, mode="Manual Build")
+
         creation_modes = builder.get_creation_modes()
         record_property(
             "result_description",
-            f"QP Builder opened for {self.QP_TEACHER_USERNAME} with creation modes: "
-            f"{sorted(creation_modes) or 'none'}.",
+            f"QP Builder opened for {self.qp_teacher_username} with creation modes: "
+            f"{sorted(creation_modes) or 'none'}. {checks.publish()}",
         )
 
         assert "assessment configuration" in builder.body_text_casefold(), (
@@ -66,13 +81,19 @@ class TestSmokeM4QPCreation:
         builder = QuestionPaperBuilderPage(self.driver)
         builder.open_my_qp()
 
+        checks = ElementChecks(
+            builder, record_property, page_name="My QP — Smoke"
+        )
+        survey_chrome(checks, builder)
+        survey_my_qp(checks, builder)
+
         create_button_visible = builder.is_element_visible_quick(
             self.CREATE_NEW_PAPER_BUTTON, timeout=20
         )
         record_property(
             "result_description",
-            f"My QP listing opened for {self.QP_TEACHER_USERNAME}; "
-            f"'Create New Paper' available: {create_button_visible}.",
+            f"My QP listing opened for {self.qp_teacher_username}; "
+            f"'Create New Paper' available: {create_button_visible}. {checks.publish()}",
         )
 
         assert "my qp" in builder.body_text_casefold(), "My QP listing did not render"

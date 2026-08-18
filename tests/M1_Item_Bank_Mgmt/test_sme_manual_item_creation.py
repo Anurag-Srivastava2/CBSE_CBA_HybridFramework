@@ -21,6 +21,11 @@ from selenium.common.exceptions import TimeoutException
 
 from pages.common.login_page import LoginPage
 from pages.sme.manual_item_page import ManualItemPage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import (
+    survey_manual_form,
+    survey_typology_inventory,
+)
+from utilities.element_checks import ElementChecks
 from utilities.logger import LogGenerator
 from utilities.read_config import ReadConfig
 
@@ -292,6 +297,7 @@ class TestSMEManualItemCreation:
         self,
         request,
         manual_typology_items,
+        record_property,
     ):
         """Create one typology's item, submit it for QAR, then move to the next
         typology and repeat — rather than batching all typologies into one draft
@@ -304,7 +310,20 @@ class TestSMEManualItemCreation:
         page.wait_for_saved_draft_to_hydrate()
         page.clear_added_items()
 
+        # Surveyed and published *before* the inventory check below, because
+        # that check can xfail the test outright on KI-M1-TYPOLOGY-001 — and a
+        # survey that never publishes tells nobody what the page looked like
+        # when the known issue fired.
+        checks = ElementChecks(
+            page, record_property, page_name="SME Manual Item — Typology Coverage"
+        )
+        survey_manual_form(checks, page)
+        survey_typology_inventory(checks, page)
+        record_property("result_description", checks.publish())
+
         live_options = page.get_manual_item_typology_options()
+        # Left exactly as it was: this carries the KI-M1-TYPOLOGY-001 xfail
+        # guard, and it must keep running ahead of every assertion below.
         self.assert_live_typology_inventory(page, live_options)
 
         assert TEST_IMAGES, f"No .png images found under {TEST_IMAGES_DIR} to attach to items."
@@ -435,13 +454,25 @@ class TestSMEManualItemCreation:
         ManualItemPage.SUPPORTED_MANUAL_ITEM_TYPOLOGIES,
         ids=lambda typology: typology.lower().replace(" ", "-"),
     )
-    def test_sme_required_fields_block_empty_item_for_every_typology(self, typology):
+    def test_sme_required_fields_block_empty_item_for_every_typology(
+        self, typology, record_property
+    ):
         """An empty content payload must not create an item for any typology."""
         page = self.login_as_sme()
         page.open_item_creation_module()
         page.open_manual_item_tab()
         page.wait_for_saved_draft_to_hydrate()
         page.clear_added_items()
+
+        # Published before the metadata selection below, which carries the
+        # KI-M1-TYPOLOGY-001 xfail guard — an xfail must not cost us the record
+        # of what the form actually rendered.
+        checks = ElementChecks(
+            page, record_property, page_name=f"SME Manual Item — Required Fields ({typology})"
+        )
+        survey_manual_form(checks, page)
+        record_property("result_description", checks.publish())
+
         try:
             page.select_manual_item_metadata(typology, "1")
         except TimeoutException as error:

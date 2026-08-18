@@ -6,6 +6,13 @@ from selenium.common.exceptions import TimeoutException
 from pages.pit.review_queue_page import PITReviewQueuePage
 from pages.rwg.review_queue_page import RWGReviewQueuePage
 from pages.sr_rwg.review_queue_page import SRRWGReviewQueuePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import (
+    enter_screen,
+    survey_opened_item_set,
+    survey_review_queue,
+    survey_reviewer_chrome,
+)
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 from utilities.smoke_support import body_text, sign_in
 
@@ -89,6 +96,16 @@ class TestSmokeM1ReviewerQueues:
         )
 
         page.open_queue_module()
+
+        # Surveys are additive here: every assertion in this test stays exactly
+        # as hard as it was, so the smoke gate still fails loudly and fast. The
+        # element table is extra evidence on the card, not a replacement gate.
+        checks = ElementChecks(
+            page, record_property, page_name=f"{role_name} — Review Queue"
+        )
+        survey_reviewer_chrome(checks, page)
+        survey_review_queue(checks, page)
+
         queue_text = page.get_queue_body_text()
         item_set_ids = self.visible_item_set_ids(queue_text)
 
@@ -105,6 +122,8 @@ class TestSmokeM1ReviewerQueues:
                 page.open_review_item_set(item_set_ids[0])
                 opened = self.visible_item_set_ids(body_text(self.driver))
                 opened_id = opened[0] if opened else item_set_ids[0]
+                enter_screen(checks, f"{role_name} — Opened Item Set")
+                survey_opened_item_set(checks, page)
             except TimeoutException:
                 opened_id = ""
 
@@ -117,7 +136,8 @@ class TestSmokeM1ReviewerQueues:
 
         record_property(
             "result_description",
-            f"{role_name} {username} signed in and reached the review queue — {outcome}.",
+            f"{role_name} {username} signed in and reached the review queue — {outcome}. "
+            f"{checks.publish()}",
         )
         record_property("item_set_id", opened_id)
 

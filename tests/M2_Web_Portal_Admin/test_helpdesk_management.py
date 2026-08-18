@@ -1,6 +1,7 @@
 import pytest
 
 from pages.admin.helpdesk_page import HelpdeskPage
+from utilities.element_checks import ElementChecks
 from pages.common.login_page import LoginPage
 from utilities.read_config import ReadConfig
 
@@ -23,7 +24,7 @@ class TestM2HelpdeskManagement:
     SOURCE_ASSIGNEE = "help Desk 1"
 
     def open_helpdesk(self):
-        username = ReadConfig.get_role_usernames("admin")[0]
+        username = ReadConfig.get_admin_username()
         login = LoginPage(self.driver)
         self.driver.get(ReadConfig.get_base_url())
         login.wait_for_login_form_or_authenticated_page()
@@ -41,49 +42,67 @@ class TestM2HelpdeskManagement:
         page.open(ReadConfig.get_base_url())
         return page
 
+    def survey(self, helpdesk, record_property, scope):
+        """Soft-check the Helpdesk furniture, KPI cards, columns and filters."""
+        checks = ElementChecks(helpdesk, record_property, page_name=f"Helpdesk — {scope}")
+        checks.check_condition("Page header and subtext", helpdesk.is_on_page)
+        checks.check("Search input", helpdesk.SEARCH_INPUT)
+        checks.check("Create Ticket button", helpdesk.CREATE_TICKET_BTN)
+        checks.check("Ticket table", helpdesk.TABLE)
+
+        missing_kpis = checks.safe_call(helpdesk.missing_kpis)
+        for label in helpdesk.KPI_LABELS:
+            checks.check_condition(f"KPI card — {label}", label not in missing_kpis)
+        missing_columns = checks.safe_call(helpdesk.missing_columns)
+        for column in helpdesk.EXPECTED_COLUMNS:
+            checks.check_condition(f"Column — {column}", column not in missing_columns)
+        missing_filters = checks.safe_call(helpdesk.missing_filters)
+        for label in helpdesk.FILTER_LABELS:
+            checks.check_condition(f"Filter — {label}", label not in missing_filters)
+        return checks
+
     def test_tc_wpad_helpdesk_01_verify_page_load_and_kpis(self, record_property):
-        """Phase 1: the queue loads with its four KPI cards and ticket data."""
+        """Phase 1: furniture, KPI cards and ticket data, all recorded softly."""
         helpdesk = self.open_helpdesk()
+        checks = self.survey(helpdesk, record_property, "Page Load")
 
-        assert helpdesk.is_on_page(), "Helpdesk header or subtext is missing."
-
-        missing_kpis = helpdesk.missing_kpis()
-        assert not missing_kpis, f"KPI cards missing from the Helpdesk: {missing_kpis}"
-
-        kpis = helpdesk.get_all_kpi_text()
-        invalid_counts = [
-            label for label in helpdesk.COUNT_KPI_LABELS if helpdesk.get_kpi_value(label) < 0
-        ]
-        assert not invalid_counts, (
-            f"KPI cards did not render a whole-number count: {invalid_counts}. Read: {kpis}"
-        )
+        kpis = checks.safe_call(helpdesk.get_all_kpi_text, {}) or {}
+        for label in helpdesk.COUNT_KPI_LABELS:
+            checks.check_condition(
+                f"KPI value — {label} is a whole number",
+                lambda name=label: helpdesk.get_kpi_value(name) >= 0,
+                detail=f"read {kpis.get(label)!r}",
+            )
         # Avg Resolution Time is a duration rather than a count, so it is only
         # required to carry a value.
-        assert kpis["Avg Resolution Time"], "Avg Resolution Time KPI rendered no value."
-
-        missing_columns = helpdesk.missing_columns()
-        assert not missing_columns, (
-            f"Helpdesk columns missing: {missing_columns}. Found: {helpdesk.get_table_headers()}"
+        checks.check_condition(
+            "KPI value — Avg Resolution Time carries a value",
+            kpis.get("Avg Resolution Time"),
+            detail=f"read {kpis.get('Avg Resolution Time')!r}",
         )
 
-        assert helpdesk.is_element_visible_quick(helpdesk.SEARCH_INPUT), "Search box is missing."
-        assert helpdesk.is_element_visible_quick(helpdesk.CREATE_TICKET_BTN), (
-            "Create Ticket button is missing."
+        row_count = checks.safe_call(helpdesk.get_row_count, 0)
+        checks.check_condition(
+            "Queue loaded tickets", row_count > 0, detail=f"{row_count} tickets"
         )
-        missing_filters = helpdesk.missing_filters()
-        assert not missing_filters, f"Helpdesk filters missing: {missing_filters}"
-
-        row_count = helpdesk.get_row_count()
         record_property(
             "result_description",
-            f"Helpdesk rendered KPIs {kpis} and {row_count} tickets in the queue.",
+            f"{checks.publish()}. KPIs {kpis}, {row_count} tickets.",
         )
-        assert row_count > 0, "Helpdesk table failed to load any ticket data."
 
     def test_tc_wpad_helpdesk_02_verify_tab_filters(self, record_property):
         """Phase 2: each quick tab scopes the queue to exactly its badge count,
         and status tabs return only tickets carrying that status."""
         helpdesk = self.open_helpdesk()
+        checks = self.survey(helpdesk, record_property, "Tab Filters")
+        for label in helpdesk.QUEUE_TABS:
+            checks.check_interaction(
+                f"Tab responds — {label}",
+                lambda tab=label: helpdesk.switch_tab(tab),
+                lambda tab=label: helpdesk.get_tab_count(tab) >= 0,
+            )
+        helpdesk.switch_tab("All")
+        checks.publish()
 
         observed = {}
         for label in helpdesk.QUEUE_TABS:
@@ -123,6 +142,19 @@ class TestM2HelpdeskManagement:
         """Phase 3: search narrows the queue by ticket ID, subject and category,
         and yields the empty state for a term that matches nothing."""
         helpdesk = self.open_helpdesk()
+        checks = self.survey(helpdesk, record_property, "Search")
+        baseline = checks.safe_call(helpdesk.get_row_count, 0)
+        checks.check_interaction(
+            "Search narrows the queue",
+            lambda: helpdesk.search_ticket("INVALID-TKT-999"),
+            lambda: helpdesk.get_row_count() < baseline,
+        )
+        checks.check_interaction(
+            "Clearing search restores the queue",
+            lambda: helpdesk.search_ticket(""),
+            lambda: helpdesk.get_row_count() == baseline,
+        )
+        checks.publish()
 
         # Seed the search terms from a ticket that is actually in the queue,
         # rather than hard-coding an ID that later runs would not find.
@@ -175,6 +207,7 @@ class TestM2HelpdeskManagement:
         from Open to In Progress once it is assigned.
         """
         helpdesk = self.open_helpdesk()
+        self.survey(helpdesk, record_property, "Ingestion").publish()
         helpdesk.switch_tab("All")
 
         newest = helpdesk.get_newest_ticket()
@@ -231,6 +264,8 @@ class TestM2HelpdeskManagement:
         back to the first-line queue through this panel.
         """
         helpdesk = self.open_helpdesk()
+        # Reassignment is a one-way move of real work, so it stays a hard gate.
+        self.survey(helpdesk, record_property, "Reassign").publish()
         helpdesk.switch_tab("All")
 
         candidates = helpdesk.find_tickets_assigned_to(self.SOURCE_ASSIGNEE)

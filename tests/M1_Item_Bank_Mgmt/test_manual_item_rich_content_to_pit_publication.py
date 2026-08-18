@@ -27,6 +27,12 @@ from pages.rwg.review_queue_page import RWGReviewQueuePage
 from pages.sme.bulk_upload_page import BulkUploadPage
 from pages.sme.manual_item_page import ManualItemPage
 from pages.sr_rwg.review_queue_page import SRRWGReviewQueuePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import (
+    enter_screen,
+    survey_manual_form,
+    survey_opened_item_set,
+)
+from utilities.element_checks import ElementChecks
 from utilities.logger import LogGenerator
 from utilities.read_config import ReadConfig
 
@@ -76,6 +82,17 @@ class TestManualItemRichContentToPITPublication:
                 # every remaining one.
                 self.login_as(candidate, self.helper_page)
                 review_page.open_review_item_set(item_set_id, item_set_url)
+                # Survey each reviewer's opened set as the chain reaches it.
+                # Read-only: no criteria are marked here, so it cannot consume
+                # the one-time review vote this set still needs.
+                checks = getattr(self, "checks", None)
+                if checks is not None:
+                    enter_screen(checks, f"{role.upper()} — Opened Item Set")
+                    survey_opened_item_set(checks, review_page)
+                    # Re-published after every phase: publish() writes the whole
+                    # accumulated list, so a failure later in this long chain
+                    # still leaves the rows gathered up to that point on the card.
+                    checks.publish()
                 return candidate
             except TimeoutException as error:
                 last_error = error
@@ -118,7 +135,9 @@ class TestManualItemRichContentToPITPublication:
         pane_html = self.get_open_item_review_pane_html()
         return {name: marker in pane_html for name, marker in FORMATTING_MARKERS.items()}
 
-    def test_manual_item_rich_content_survives_to_pit_publication(self, request):
+    def test_manual_item_rich_content_survives_to_pit_publication(
+        self, request, record_property
+    ):
         run_token = uuid4().hex[:10]
         question_text = f"What comes immediately after 24? Rich content PIT run {run_token}"
         explanation_text = "25 comes immediately after 24."
@@ -140,6 +159,15 @@ class TestManualItemRichContentToPITPublication:
         manual_item_page.close_popup_if_open()
         manual_item_page.open_item_creation_module()
         manual_item_page.open_manual_item_tab()
+
+        # One collector for the whole SME -> RWG -> Sr. RWG -> PIT chain,
+        # re-pointed at each screen as the item set moves through it.
+        self.checks = ElementChecks(
+            manual_item_page, record_property, page_name="SME Manual Item — Rich Content"
+        )
+        survey_manual_form(self.checks, manual_item_page)
+        self.checks.publish()
+
         manual_item_page.wait_for_saved_draft_to_hydrate()
         manual_item_page.clear_added_items()
         manual_item_page.select_common_manual_item_metadata()

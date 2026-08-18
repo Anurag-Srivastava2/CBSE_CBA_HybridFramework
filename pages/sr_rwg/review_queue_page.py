@@ -6,6 +6,22 @@ from pages.common.review_queue_page import BaseReviewQueuePage
 class SRRWGReviewQueuePage(BaseReviewQueuePage):
     """Page object for Senior RWG approval and submission."""
 
+    # The Sr. RWG queue is not the RWG queue: it drops Submitted By and Last
+    # Updated, and carries Item Set Created Date instead. Taken from a live
+    # census of this role's own screen.
+    QUEUE_COLUMNS = (
+        "Item Set ID",
+        "Grade",
+        "Subject & Chapter",
+        "Item Count",
+        "Type",
+        "Iteration",
+        "Item Set Status",
+        "Item Set Created Date",
+        "Last Review Submit Date",
+        "Due On",
+    )
+
     SUBMIT_REVIEW_LOCATORS = [
         (
             By.XPATH,

@@ -5,6 +5,8 @@ from time import monotonic
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -87,7 +89,7 @@ class TestSMECrossRBACAPI:
         items = (detail.json().get("data") or {}).get("items") or []
         return item_set_id, (items[0].get("item_id") if items else None)
 
-    def test_tc_neg_m1_08_cross_sme_rbac_returns_403_forbidden(self):
+    def test_tc_neg_m1_08_cross_sme_rbac_returns_403_forbidden(self, record_property):
         """TC-NEG-M1-08: Verify that cross-SME item set access returns 403 Forbidden at API level.
         
         Steps:
@@ -110,6 +112,16 @@ class TestSMECrossRBACAPI:
         # Step 1: Login as SME1
         self.step(1, f"Logging in as SME1 ({sme1_user}) and extracting auth session")
         sme1_session, sme1_headers = self.get_auth_session(sme1_user, ReadConfig.get_password_for_username(sme1_user))
+
+        # This test reaches its API assertions through a real browser login,
+        # so the landing page it authenticates on is worth recording. The 403
+        # contract itself stays a hard assert - it is the whole point of the test.
+        landing = UploadItemFilePage(self.driver)
+        checks = ElementChecks(
+            landing, record_property, page_name="SME Cross-RBAC — Authenticated Landing"
+        )
+        survey_chrome(checks, landing)
+        record_property("result_description", checks.publish())
         
         # Step 2: Resolve a real item set (and item) owned by SME1
         self.step(2, "Resolving an item set owned by SME1 via the REST API")

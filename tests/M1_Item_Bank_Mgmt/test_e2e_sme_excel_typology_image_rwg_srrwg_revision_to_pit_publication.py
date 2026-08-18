@@ -24,6 +24,12 @@ from pages.pit.review_queue_page import PITReviewQueuePage
 from pages.rwg.review_queue_page import RWGReviewQueuePage
 from pages.sme.bulk_upload_page import BulkUploadPage
 from pages.sr_rwg.review_queue_page import SRRWGReviewQueuePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import (
+    enter_screen,
+    survey_opened_item_set,
+    survey_upload_step,
+)
+from utilities.element_checks import ElementChecks
 from utilities.logger import LogGenerator
 from utilities.qar_recovery import recover_qar_need_improvement_items
 from utilities.read_config import ReadConfig
@@ -308,6 +314,21 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         except Exception:
             pass
 
+    def survey_reviewer_screen(self, review_page, role):
+        """Survey a reviewer's opened item set, if this test is collecting.
+
+        Read-only: no criteria are marked, so it cannot consume the one-time
+        review vote the set still needs. Re-published each phase because
+        publish() writes the whole accumulated list, so a failure later in
+        this long chain still leaves the rows gathered so far on the card.
+        """
+        checks = getattr(self, "checks", None)
+        if checks is None:
+            return
+        enter_screen(checks, f"{role.upper()} — Opened Item Set")
+        survey_opened_item_set(checks, review_page)
+        checks.publish()
+
     def resolve_reviewer_username(
         self,
         upload_page,
@@ -352,6 +373,7 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
                 try:
                     self.login_as(scraped_username, upload_page)
                     review_page.open_review_item_set(item_set_id, item_set_url)
+                    self.survey_reviewer_screen(review_page, role)
                     return scraped_username
                 except TimeoutException:
                     pass
@@ -382,6 +404,7 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
                     # abandoning every remaining candidate and pass.
                     self.login_as(candidate, upload_page)
                     review_page.open_review_item_set(item_set_id, item_set_url)
+                    self.survey_reviewer_screen(review_page, role)
                 except TimeoutException as error:
                     last_error = error
                     continue
@@ -416,7 +439,7 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
 
     @pytest.mark.parametrize("template_name, typology", TYPOLOGY_CASES)
     def test_e2e_sme_typology_image_revision_rwg_srrwg_pit_publish(
-        self, request, template_name, typology
+        self, request, template_name, typology, record_property
     ):
         typology_index = TYPOLOGY_CASES.index((template_name, typology))
         request.node.user_properties.append(
@@ -430,6 +453,14 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
 
         sme_username = self.get_sme_username(typology_index)
         self.login_as(sme_username, upload_page)
+
+        # One collector for the whole SME -> RWG -> Sr. RWG -> PIT chain,
+        # re-pointed at each screen as the set moves through it.
+        self.checks = ElementChecks(
+            upload_page,
+            record_property,
+            page_name=f"SME Bulk Upload — {typology}",
+        )
 
         workbook_path, zip_path, run_token, image_filename = (
             self.build_run_workbook_and_image_zip(template_name, typology_index)

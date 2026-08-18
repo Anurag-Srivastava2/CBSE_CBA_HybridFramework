@@ -2,6 +2,7 @@ import pytest
 
 from pages.admin.assignment_queue_page import AssignmentQueuePage
 from pages.common.login_page import LoginPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -12,7 +13,7 @@ class TestM2AssignmentQueueBasics:
     reassignment and pagination. Driven with the admin account."""
 
     def open_queue(self):
-        username = ReadConfig.get_role_usernames("admin")[0]
+        username = ReadConfig.get_admin_username()
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             username, ReadConfig.get_password_for_username(username)
@@ -21,25 +22,62 @@ class TestM2AssignmentQueueBasics:
         page.open(ReadConfig.get_base_url())
         return page
 
+    EXPECTED_COLUMNS = (
+        "Set Code", "Stage", "Grade", "Subject", "Assigned To", "Status", "Due On", "Actions",
+    )
+
+    def survey(self, queue, record_property, scope):
+        """Soft-check the Assignment Queue furniture and its filter controls."""
+        checks = ElementChecks(queue, record_property, page_name=f"Assignment Queue — {scope}")
+        checks.check_condition("Page header and subtext", queue.is_on_page)
+        checks.check("Search input", queue.SEARCH_INPUT)
+        checks.check("Queue table", queue.TABLE)
+        checks.check("Rows per page control", queue.ROWS_PER_PAGE)
+        checks.check("Next page control", queue.NEXT_PAGE_BTN)
+        checks.check("Previous page control", queue.PREV_PAGE_BTN)
+        checks.check("Page indicator", queue.PAGE_INDICATOR)
+
+        headers = checks.safe_call(queue.get_column_headers)
+        for column in self.EXPECTED_COLUMNS:
+            checks.check_condition(
+                f"Column — {column}", column in headers, detail=f"found: {headers}"
+            )
+        for label in queue.FILTER_LABELS:
+            checks.check_condition(
+                f"Filter — {label}", lambda name=label: queue.is_filter_visible(name)
+            )
+        return checks
+
     def test_tc_wpad_item_02_verify_page_load_and_ui(self, record_property):
+        """Page furniture, columns and filters, all recorded softly."""
         queue = self.open_queue()
+        checks = self.survey(queue, record_property, "Page Load")
 
-        assert queue.is_on_page(), "Assignment Queue header or subtext is missing."
-
-        headers = queue.get_column_headers()
-        expected = ["Set Code", "Stage", "Grade", "Subject", "Assigned To", "Status", "Due On", "Actions"]
-        missing = [column for column in expected if column not in headers]
-        assert not missing, f"Assignment Queue table is missing columns {missing}. Found: {headers}"
-
-        row_count = queue.get_row_count()
+        row_count = checks.safe_call(queue.get_row_count, 0)
+        checks.check_condition(
+            "Queue loaded rows", row_count > 0, detail=f"{row_count} rows"
+        )
         record_property(
             "result_description",
-            f"Assignment Queue loaded {row_count} rows with columns {headers}.",
+            f"{checks.publish()}. Loaded {row_count} rows.",
         )
-        assert row_count > 0, "No items loaded in the Assignment Queue table."
 
     def test_tc_wpad_item_03_search_functionality(self, record_property):
+        """Search behaviour stays hard; the control's responsiveness is recorded."""
         queue = self.open_queue()
+        checks = self.survey(queue, record_property, "Search")
+        baseline = checks.safe_call(queue.get_row_count, 0)
+        checks.check_interaction(
+            "Search narrows the queue",
+            lambda: queue.search("ZZZ-NO-SUCH-SET-9999"),
+            lambda: queue.get_row_count() < baseline,
+        )
+        checks.check_interaction(
+            "Clearing search restores the queue",
+            lambda: queue.search(""),
+            lambda: queue.get_row_count() == baseline,
+        )
+        checks.publish()
 
         # A set code that exists in the queue.
         seed_code = queue.get_set_codes_in_view()[0]
@@ -72,10 +110,21 @@ class TestM2AssignmentQueueBasics:
         queue.search("")
 
     def test_tc_wpad_item_04_dropdown_filters(self, record_property):
+        """Each dropdown is driven and recorded; the filtering contract stays hard."""
         queue = self.open_queue()
+        checks = self.survey(queue, record_property, "Filters")
 
-        missing = queue.missing_filters()
-        assert not missing, f"Assignment Queue filter controls missing: {missing}"
+        # Does every dropdown open and offer options? A filter that renders but
+        # never populates passes presence checks while being unusable.
+        for label in queue.FILTER_LABELS:
+            checks.check_interaction(
+                f"Filter opens with options — {label}",
+                lambda: None,
+                lambda name=label: queue.get_filter_options(name),
+                detail="dropdown offered no options",
+            )
+        queue.open(ReadConfig.get_base_url())
+        checks.publish()
 
         queue.filter_by_stage("RWG")
         stages = queue.get_stages_in_view()
@@ -97,7 +146,9 @@ class TestM2AssignmentQueueBasics:
         )
 
     def test_tc_wpad_item_05_reassign_action(self, record_property):
+        """Reassignment mutates real queue state, so it stays a hard gate."""
         queue = self.open_queue()
+        self.survey(queue, record_property, "Reassign").publish()
 
         # Completed work exposes no action; only pending rows can be reassigned.
         queue.filter_by_status("Completed")
@@ -146,10 +197,9 @@ class TestM2AssignmentQueueBasics:
         )
 
     def test_tc_wpad_item_06_pagination(self, record_property):
+        """Controls surveyed softly; advancing the queue stays hard."""
         queue = self.open_queue()
-
-        assert queue.is_element_visible_quick(queue.ROWS_PER_PAGE), "Rows per page control is missing."
-        assert queue.is_element_visible_quick(queue.NEXT_PAGE_BTN), "Next page control is missing."
+        self.survey(queue, record_property, "Pagination").publish()
 
         first_page = queue.get_page_indicator()
         first_codes = queue.get_set_codes_in_view()

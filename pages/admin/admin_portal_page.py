@@ -47,6 +47,19 @@ class AdminPortalPage(BasePage):
             locators = [
                 (By.XPATH, f"//*[self::a or self::button][normalize-space()='{name}']"),
                 (By.XPATH, f"//*[self::a or self::button][contains(normalize-space(),'{name}')]"),
+                # The sidebar truncates its labels - 'Masters Management' renders
+                # as 'Master', 'Portal Settings' as 'Portal', 'Notifications' as
+                # 'Notifi'. Neither match above can ever hit those, so every
+                # multi-word section fell through to the URL-slug guess below and
+                # xfailed when the guess was wrong. This matches the other way
+                # round: a button whose visible label is a prefix of the wanted
+                # name. The length guard matters because starts-with(x, '') is
+                # true for every icon-only button on the page.
+                (
+                    By.XPATH,
+                    f"//*[self::a or self::button]"
+                    f"[string-length(normalize-space())>2 and starts-with('{name}', normalize-space())]",
+                ),
                 (By.XPATH, f"//*[contains(normalize-space(),'{name}')]/ancestor::*[self::a or self::button][1]"),
             ]
             for locator in locators:

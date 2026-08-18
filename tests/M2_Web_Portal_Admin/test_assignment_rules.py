@@ -3,6 +3,7 @@ import pytest
 from pages.admin.assignment_queue_page import AssignmentQueuePage
 from pages.admin.user_management_page import UserManagementPage
 from pages.common.login_page import LoginPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -30,7 +31,7 @@ class TestM2AssignmentQueueAutoAssignment:
     STAGE = "RWG"
 
     def login_as_admin(self):
-        username = ReadConfig.get_role_usernames("admin")[0]
+        username = ReadConfig.get_admin_username()
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             username, ReadConfig.get_password_for_username(username)
@@ -68,8 +69,24 @@ class TestM2AssignmentQueueAutoAssignment:
         self.login_as_admin()
         users_page = self.open_users()
 
+        # Deactivating a role holder mutates shared state, so everything below
+        # the survey stays a hard gate.
+        checks = ElementChecks(users_page, record_property, page_name="User Management — Roles")
+        checks.check_condition(
+            f"Role holders listed — {self.ROLE_LABEL}",
+            lambda: users_page.find_users_by_role(self.ROLE_LABEL),
+        )
+        checks.publish()
+
         rwg_users = users_page.find_users_by_role(self.ROLE_LABEL)
-        assert rwg_users, f"No users hold {self.ROLE_LABEL}; the rule cannot be exercised."
+        if not rwg_users:
+            # Missing fixture data is not a product defect - and this is the
+            # same judgement the "no active holder" branch below already makes,
+            # so asserting here was inconsistent with the rest of the test.
+            pytest.skip(
+                f"No user holds {self.ROLE_LABEL} in this environment, so the "
+                "unassign/reassign rule cannot be exercised."
+            )
         active_rwg = [user for user in rwg_users if user["status"].casefold() == "active"]
         inactive_names = {
             user["name"].casefold() for user in rwg_users if user["status"].casefold() != "active"

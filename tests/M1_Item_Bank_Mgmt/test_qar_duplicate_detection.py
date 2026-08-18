@@ -9,6 +9,8 @@ from openpyxl import load_workbook
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -186,9 +188,23 @@ class TestQARDuplicateDetection:
             f"QAR report:\n{evidence['report_text']}"
         )
 
-    def test_qar_duplicate_detection_near_duplicate_content_flagged(self, tmp_path, request):
+    def test_qar_duplicate_detection_near_duplicate_content_flagged(
+        self, tmp_path, request, record_property
+    ):
         run_id = uuid4().hex[:10]
         page = self.login_as_sme()
+
+        # Surveyed on the upload step before any workbook is pushed, so the
+        # element table shows the page as the test found it.
+        page.open_item_creation_module()
+        page.open_upload_item_file_tab()
+        page.open_upload_step()
+        checks = ElementChecks(
+            page, record_property, page_name="Upload Item File — Duplicate Detection"
+        )
+        survey_chrome(checks, page)
+        survey_upload_step(checks, page)
+        record_property("result_description", checks.publish())
 
         baseline_workbook = self.build_upload_workbook(
             tmp_path,

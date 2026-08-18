@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 from time import sleep
 
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -182,6 +182,193 @@ class UploadItemFilePage(BasePage):
             "or contains(normalize-space(),'required columns')]",
         ),
     ]
+
+    # --- Contribution workspace furniture -------------------------------
+    #
+    # Locators used by the element-presence surveys rather than by the upload
+    # workflow itself. Taken from a DOM census of the live upload step, so the
+    # survey reports against what the screen actually renders.
+
+    WORKSPACE_TITLE = (By.XPATH, "//h1[normalize-space()='Create New Item Set']")
+    BACK_BUTTON = (By.XPATH, "//button[contains(normalize-space(),'Back')]")
+
+    # Both the mode switcher and the prerequisites card use role='tab', so these
+    # match on exact text — a contains() would cross-match the two tablists.
+    MODE_TAB_LABELS = ("Upload Item File", "Add Items Manually")
+    WIZARD_STEP_LABELS = (
+        "Download Template",
+        "Upload File",
+        "Review & Tag Metadata",
+        "Confirm & Submit",
+    )
+    PREREQUISITE_TAB_LABELS = ("Required Columns", "Typology", "Validation Rules")
+
+    # Scoped to the leaf carrying the text: unscoped, this also matched 20
+    # ancestors up to <body>, so "present" would have meant almost nothing.
+    DROPZONE = (
+        By.XPATH,
+        "//*[not(*)][contains(normalize-space(),'Drag and drop files') "
+        "or contains(normalize-space(),'Browse')]",
+    )
+    ADD_ITEMS_INDIVIDUALLY_BTN = (
+        By.XPATH,
+        "//button[contains(normalize-space(),'Add items Individually')]",
+    )
+    INLINE_TEMPLATE_LINK = (
+        By.XPATH,
+        "//button[contains(normalize-space(),'download the template')]",
+    )
+    PREREQUISITES_HEADING = (By.XPATH, "//*[normalize-space()='Upload Prerequisites']")
+    UPLOAD_HISTORY_HEADING = (
+        By.XPATH,
+        "//*[normalize-space()='Previously Uploaded Files']",
+    )
+    UPLOAD_HISTORY_TABLE = (
+        By.XPATH,
+        "//table[.//th[contains(translate(normalize-space(), "
+        "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), "
+        "'file upload status')]]",
+    )
+    UPLOAD_HISTORY_HEADERS = (
+        By.XPATH,
+        "//table[.//th[contains(translate(normalize-space(), "
+        "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), "
+        "'file upload status')]]//th",
+    )
+    UPLOAD_HISTORY_COLUMNS = (
+        "File Name",
+        "Uploaded On",
+        "File Upload Status",
+        "Items Detected",
+        "Items Passed",
+        "Items Rejected",
+        "Actions",
+    )
+    UPLOAD_HISTORY_LOADING = (
+        By.XPATH,
+        "//*[contains(normalize-space(),'Loading uploaded files')]",
+    )
+
+    # Application chrome, shared with the dashboard.
+    HEADER = (By.TAG_NAME, "header")
+    SIDEBAR_NAV = (By.TAG_NAME, "nav")
+    SIDEBAR_TOGGLE = (By.XPATH, "//button[contains(normalize-space(),'Toggle Sidebar')]")
+    NOTIFICATION_BELL = (By.CSS_SELECTOR, "button[aria-label='Notifications']")
+    THEME_PICKER = (By.CSS_SELECTOR, "button[aria-label='Theme']")
+    SCREEN_READER_TOGGLE = (
+        By.CSS_SELECTOR,
+        "button[aria-label='Toggle screen-reader hints']",
+    )
+    LANG_EN = (By.XPATH, "//button[normalize-space()='EN']")
+    LANG_HI = (By.XPATH, "//button[normalize-space()='हिंदी']")
+
+    # --- Contribution workspace readers ---------------------------------
+
+    def is_visible(self, locator, timeout=5):
+        return self.is_element_visible_quick(locator, timeout)
+
+    def count_visible(self, locator):
+        """How many matches are actually on screen — 0 when none are."""
+        count = 0
+        for element in self.driver.find_elements(*locator):
+            try:
+                if element.is_displayed():
+                    count += 1
+            except WebDriverException:
+                continue
+        return count
+
+    @classmethod
+    def tab_locator(cls, label):
+        return (By.XPATH, f"//*[@role='tab'][normalize-space()={cls.xpath_literal(label)}]")
+
+    @classmethod
+    def wizard_step_locator(cls, label):
+        return (
+            By.XPATH,
+            "//*[contains(@class,'stepItem')]"
+            f"[contains(normalize-space(),{cls.xpath_literal(label)})]",
+        )
+
+    def missing_mode_tabs(self):
+        return [
+            label
+            for label in self.MODE_TAB_LABELS
+            if not self.count_visible(self.tab_locator(label))
+        ]
+
+    def missing_wizard_steps(self):
+        return [
+            label
+            for label in self.WIZARD_STEP_LABELS
+            if not self.count_visible(self.wizard_step_locator(label))
+        ]
+
+    def missing_prerequisite_tabs(self):
+        return [
+            label
+            for label in self.PREREQUISITE_TAB_LABELS
+            if not self.count_visible(self.tab_locator(label))
+        ]
+
+    def is_tab_active(self, label):
+        try:
+            state = self.driver.find_element(*self.tab_locator(label)).get_attribute(
+                "data-state"
+            )
+        except WebDriverException:
+            return False
+        return state == "active"
+
+    def switch_tab(self, label, timeout=15):
+        """Activate a tab by its exact label and wait for it to report active."""
+        self.click_element(self.tab_locator(label))
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: self.is_tab_active(label), timeout=timeout
+            )
+        except TimeoutException:
+            return False
+        return True
+
+    def wait_for_upload_history(self, timeout=60):
+        """Wait out the 'Loading uploaded files...' placeholder.
+
+        The history table is fetched after the upload step paints, so a survey
+        that samples it immediately records an absent table on an account that
+        actually has one.
+        """
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: bool(driver.find_elements(*self.UPLOAD_HISTORY_HEADERS))
+                or not driver.find_elements(*self.UPLOAD_HISTORY_LOADING),
+                timeout=timeout,
+            )
+        except TimeoutException:
+            return False
+        return bool(self.driver.find_elements(*self.UPLOAD_HISTORY_HEADERS))
+
+    def get_upload_history_headers(self):
+        headers = []
+        for element in self.driver.find_elements(*self.UPLOAD_HISTORY_HEADERS):
+            try:
+                text = element.text.strip()
+            except WebDriverException:
+                continue
+            if text:
+                headers.append(text)
+        return headers
+
+    def missing_upload_history_columns(self):
+        headers = [header.casefold() for header in self.get_upload_history_headers()]
+        return [
+            column
+            for column in self.UPLOAD_HISTORY_COLUMNS
+            if column.casefold() not in headers
+        ]
+
+    def get_upload_history_row_count(self):
+        return len(self.driver.find_elements(*self.UPLOAD_HISTORY_ROWS))
 
     # --- Upload item file actions ---
     def open_upload_item_file_tab(self):
@@ -1566,6 +1753,136 @@ class UploadItemFilePage(BasePage):
         By.XPATH,
         "//table[.//th[contains(normalize-space(),'Item Set ID')]]//th",
     )
+
+    # --- My Item Set listing survey locators ----------------------------
+    #
+    # Taken from a DOM census of /item-sets under an SME account. The SME
+    # sidebar differs from the teacher's (no QP Builder / My QP / Sets), and
+    # this listing carries a Sr. RWG tab the teacher dashboard's grid does not.
+
+    ITEM_SETS_HEADING = (By.XPATH, "//h1[normalize-space()='My Item Set']")
+    ITEM_SETS_SUBTITLE = (
+        By.XPATH,
+        "//*[not(*)][contains(normalize-space(),'Track all your item sets')]",
+    )
+    ITEM_SET_FILTER_LABELS = ("Grade", "Subject", "Chapter", "Status")
+    ITEM_SET_FILTER_BUTTONS = (By.CSS_SELECTOR, "button[class*='_filterBtn_']")
+    ITEM_SET_TAB_LABELS = (
+        "All",
+        "QAR",
+        "RWG",
+        "Sr. RWG",
+        "PIT",
+        "Published",
+        "Disabled",
+        "Draft-Items",
+    )
+    ITEM_SET_TAB_LIST = (By.CSS_SELECTOR, "[role='tablist']")
+    ITEM_SET_COLUMNS = (
+        "Item Set ID",
+        "Grade",
+        "Subject & Chapter",
+        "Item Count",
+        "Item Status",
+        "Item Set Status",
+        "Item Set Review Stage",
+        "Last Updated",
+        "Last Review Submit Date",
+        "Uploaded File",
+    )
+    ITEM_SET_ROWS_PER_PAGE = (By.CSS_SELECTOR, "[role='combobox']")
+    ITEM_SET_PREV_PAGE = (By.CSS_SELECTOR, "button[aria-label='Previous page']")
+    ITEM_SET_NEXT_PAGE = (By.CSS_SELECTOR, "button[aria-label='Next page']")
+    ITEM_SET_MORE_INFO = (By.CSS_SELECTOR, "button[aria-label='More information']")
+
+    # SME sidebar destinations — deliberately not the teacher's list.
+    SME_NAV_ITEMS = ("Home", "Repository", "Create", "Item", "Support", "Settings")
+
+    @classmethod
+    def item_set_tab_locator(cls, label):
+        return (
+            By.XPATH,
+            f"//*[@role='tab'][starts-with(normalize-space(),{cls.xpath_literal(label)})]",
+        )
+
+    @classmethod
+    def item_set_filter_locator(cls, label):
+        return (
+            By.XPATH,
+            "//button[contains(@class,'_filterBtn_')]"
+            f"[normalize-space()={cls.xpath_literal(label)}]",
+        )
+
+    @classmethod
+    def sme_nav_locator(cls, label):
+        """Locate a sidebar destination by its visible label.
+
+        Matched on the label <span>, not on the button. Each nav button also
+        carries a visually-hidden tooltip span, so the button's *textContent* —
+        which is what XPath normalize-space() reads — is the tooltip and the
+        label run together ("DashboardHome", "Item SetsItem"). An exact match on
+        the button therefore never fires, and a contains() match is ambiguous:
+        'Item' appears in Repository, Create and Item alike.
+        """
+        return (
+            By.XPATH,
+            "//button[contains(@class,'menu-button')]"
+            f"[.//span[normalize-space()={cls.xpath_literal(label)}]]",
+        )
+
+    def missing_from(self, labels, locator_builder):
+        """Which of `labels` has no visible match. Never raises."""
+        missing = []
+        for label in labels:
+            try:
+                present = self.count_visible(locator_builder(label))
+            except Exception:  # noqa: BLE001 - an unreadable label is an absent one
+                present = 0
+            if not present:
+                missing.append(label)
+        return missing
+
+    def get_item_set_table_headers(self):
+        headers = []
+        for element in self.driver.find_elements(*self.ITEM_SET_TABLE_HEADERS):
+            try:
+                text = element.text.strip()
+            except WebDriverException:
+                continue
+            if text:
+                headers.append(text)
+        return headers
+
+    def missing_item_set_columns(self):
+        headers = [header.casefold() for header in self.get_item_set_table_headers()]
+        return [
+            column
+            for column in self.ITEM_SET_COLUMNS
+            if column.casefold() not in headers
+        ]
+
+    def get_item_set_row_count(self):
+        return len(self.driver.find_elements(*self.ITEM_SET_LIST_ROWS))
+
+    def is_item_set_tab_active(self, label):
+        try:
+            state = self.driver.find_element(
+                *self.item_set_tab_locator(label)
+            ).get_attribute("data-state")
+        except WebDriverException:
+            return False
+        return state == "active"
+
+    def switch_item_set_tab(self, label, timeout=20):
+        """Activate an item-set tab and wait for it to report itself active."""
+        self.click_element(self.item_set_tab_locator(label))
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: self.is_item_set_tab_active(label), timeout=timeout
+            )
+        except TimeoutException:
+            return False
+        return True
     # Sets authored manually have no source workbook and render an em dash.
     UPLOADED_FILE_EMPTY_MARKERS = {"", "—", "–", "-"}
 

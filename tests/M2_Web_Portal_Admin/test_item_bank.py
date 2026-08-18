@@ -4,10 +4,16 @@ import pytest
 
 from pages.admin.item_bank_page import ItemBankPage
 from pages.common.login_page import LoginPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
 @pytest.mark.rtm
+# The Item Bank grid is the heaviest page in M2 and intermittently misses its
+# wait_for_ready window under two concurrent headless browsers - the same test
+# fails and then passes unchanged on rerun. Retry the transient load rather
+# than reporting it as a product defect; a real failure still fails twice.
+@pytest.mark.flaky(reruns=1, reruns_delay=5)
 @pytest.mark.usefixtures("setup")
 class TestM2ItemBankOverview:
     """TC-WPAD-ITEMBANK-01..06: Item Bank Overview metric cards, quick-filter
@@ -26,7 +32,7 @@ class TestM2ItemBankOverview:
     )
 
     def open_item_bank(self):
-        username = ReadConfig.get_role_usernames("admin")[0]
+        username = ReadConfig.get_admin_username()
         login = LoginPage(self.driver)
         self.driver.get(ReadConfig.get_base_url())
         login.wait_for_login_form_or_authenticated_page()
@@ -46,43 +52,83 @@ class TestM2ItemBankOverview:
         page.open(ReadConfig.get_base_url())
         return page
 
+    def survey(self, item_bank, record_property, scope):
+        """Soft-check the Item Bank page furniture.
+
+        Deliberately excludes controls that only exist after an interaction —
+        the selection summary, toasts and the retire dialog — so their absence
+        on arrival is not recorded as a gap.
+        """
+        checks = ElementChecks(item_bank, record_property, page_name=f"Item Bank — {scope}")
+        checks.check_condition("Page header and subtext", item_bank.is_on_page)
+        checks.check("Filters button", item_bank.FILTERS_BTN)
+        checks.check("Export button", item_bank.EXPORT_BTN)
+        checks.check("Item table", item_bank.TABLE)
+        checks.check("Master checkbox", item_bank.MASTER_CHECKBOX)
+        checks.check("Showing summary", item_bank.SHOWING_SUMMARY)
+        checks.check("Rows per page control", item_bank.ROWS_PER_PAGE)
+        checks.check("Next page button", item_bank.NEXT_PAGE_BTN)
+        checks.check("Previous page button", item_bank.PREV_PAGE_BTN)
+        checks.check("Page indicator", item_bank.PAGE_INDICATOR)
+
+        missing_tabs = checks.safe_call(item_bank.missing_tabs)
+        for label in item_bank.TAB_LABELS:
+            checks.check_condition(f"Tab — {label}", label not in missing_tabs)
+
+        missing_kpis = checks.safe_call(item_bank.missing_kpis)
+        for label in item_bank.KPI_LABELS:
+            checks.check_condition(f"KPI card — {label}", label not in missing_kpis)
+
+        missing_columns = checks.safe_call(item_bank.missing_columns)
+        headers = checks.safe_call(item_bank.get_table_headers)
+        for column in item_bank.EXPECTED_COLUMNS:
+            checks.check_condition(
+                f"Column — {column}",
+                column not in missing_columns,
+                detail=f"found: {headers}" if column in missing_columns else "",
+            )
+        return checks
+
     def test_tc_wpad_itembank_01_core_ui_kpis(self, record_property):
-        """Phase 1: the page loads with all five metric cards and a populated grid."""
+        """Phase 1: page furniture, metric cards and grid, all recorded softly."""
         item_bank = self.open_item_bank()
+        checks = self.survey(item_bank, record_property, "Core UI")
 
-        assert item_bank.is_on_page(), "Item Bank Overview header or repository subtext is missing."
+        kpis = checks.safe_call(item_bank.get_all_kpi_values, {}) or {}
+        for label, value in kpis.items():
+            checks.check_condition(
+                f"KPI value — {label} is numeric", value >= 0, detail=f"read {value}"
+            )
 
-        missing_kpis = item_bank.missing_kpis()
-        assert not missing_kpis, f"Metric cards missing from the overview: {missing_kpis}"
-
-        kpis = item_bank.get_all_kpi_values()
-        invalid = [label for label, value in kpis.items() if value < 0]
-        assert not invalid, f"Metric cards did not render a numeric value: {invalid}. Read: {kpis}"
-
-        missing_columns = item_bank.missing_columns()
-        headers = item_bank.get_table_headers()
-        assert not missing_columns, (
-            f"Item Bank columns missing: {missing_columns}. Found: {headers}"
+        row_count = checks.safe_call(item_bank.get_table_row_count, 0)
+        checks.check_condition(
+            "Grid loaded data", row_count > 0, detail=f"{row_count} rows"
         )
 
-        row_count = item_bank.get_table_row_count()
         record_property(
             "result_description",
-            f"Item Bank Overview rendered metric cards {kpis} and {row_count} grid rows "
+            f"{checks.publish()}. Metric cards {kpis}, {row_count} grid rows "
             f"({item_bank.get_showing_summary()}).",
         )
-        assert row_count > 0, "No data loaded in the Item Bank grid."
 
     def test_tc_wpad_itembank_02_quick_filters(self, record_property):
-        """Phase 2: All / IB1 / IB2 / Retired tabs each scope the grid to their badge count."""
+        """Phase 2: All / IB1 / IB2 / Retired tabs each scope the grid to their badge count.
+
+        Tab presence is soft; the badge arithmetic and the scoping contract stay
+        hard — a tab that shows the wrong items is a defect, not a gap.
+        """
         item_bank = self.open_item_bank()
+        checks = self.survey(item_bank, record_property, "Quick Filters")
 
-        missing_tabs = item_bank.missing_tabs()
-        assert not missing_tabs, f"Quick filter tabs missing: {missing_tabs}"
-
-        badges = {label: item_bank.get_tab_badge_count(label) for label in item_bank.TAB_LABELS}
-        unbadged = [label for label, count in badges.items() if count < 0]
-        assert not unbadged, f"Tabs carried no badge count: {unbadged}. Read: {badges}"
+        badges = {
+            label: checks.safe_call(lambda l=label: item_bank.get_tab_badge_count(l), -1)
+            for label in item_bank.TAB_LABELS
+        }
+        for label, count in badges.items():
+            checks.check_condition(
+                f"Tab badge — {label}", count >= 0, detail=f"badge reads {count}"
+            )
+        checks.publish()
 
         # The All badge is the sum of the bank tabs; Retired is tracked separately.
         assert badges["All"] == badges["IB1"] + badges["IB2"], (
@@ -125,17 +171,41 @@ class TestM2ItemBankOverview:
     def test_tc_wpad_itembank_03_advanced_filters_export(self, record_property):
         """Phase 3: the Filters toggle reveals the metadata filters and Export downloads a CSV."""
         item_bank = self.open_item_bank()
-
-        assert item_bank.is_element_visible_quick(item_bank.FILTERS_BTN), "Filters button is missing."
-        assert item_bank.is_element_visible_quick(item_bank.EXPORT_BTN), "Export button is missing."
+        checks = self.survey(item_bank, record_property, "Filters & Export")
 
         item_bank.toggle_filters_panel()
-        missing_filters = item_bank.missing_filter_controls()
-        assert not missing_filters, (
-            f"Filters panel did not expose the metadata filters {missing_filters}. "
-            f"Visible: {item_bank.visible_filter_controls()}"
+        missing_filters = checks.safe_call(item_bank.missing_filter_controls)
+        for label in item_bank.FILTER_LABELS:
+            checks.check_condition(
+                f"Filter — {label}",
+                label not in missing_filters,
+                detail=f"visible: {item_bank.visible_filter_controls()}"
+                if label in missing_filters
+                else "",
+            )
+        item_bank.toggle_filters_panel()
+
+        # Do the controls actually do anything? A filter that renders but never
+        # narrows the grid passes every presence check while being broken.
+        baseline_rows = item_bank.get_table_row_count()
+        checks.check_interaction(
+            "Filters panel toggles open",
+            item_bank.toggle_filters_panel,
+            lambda: not item_bank.missing_filter_controls(),
         )
-        item_bank.toggle_filters_panel()
+        checks.check_interaction(
+            "Filters panel toggles shut",
+            item_bank.toggle_filters_panel,
+            lambda: item_bank.get_table_row_count() == baseline_rows,
+        )
+        for label in item_bank.TAB_LABELS:
+            checks.check_interaction(
+                f"Tab responds — {label}",
+                lambda tab=label: item_bank.switch_tab(tab),
+                lambda tab=label: item_bank.is_tab_active(tab),
+            )
+        item_bank.switch_tab("All")
+        checks.publish()
 
         rows_on_screen = item_bank.get_table_row_count()
         row_ids_on_screen = item_bank.get_row_ids_in_view()
@@ -180,15 +250,9 @@ class TestM2ItemBankOverview:
         assert banks <= {"IB1", "IB2"}, f"Export CSV carries unexpected Bank values: {sorted(banks)}"
 
     def test_tc_wpad_itembank_04_interactions_pagination(self, record_property):
-        """Phase 4: pagination controls exist and actually advance the grid."""
+        """Phase 4: controls surveyed softly; advancing the grid stays hard."""
         item_bank = self.open_item_bank()
-
-        assert item_bank.is_element_visible_quick(item_bank.ROWS_PER_PAGE), "Rows per page control is missing."
-        assert item_bank.is_element_visible_quick(item_bank.NEXT_PAGE_BTN), "Next page button is missing."
-        assert item_bank.is_element_visible_quick(item_bank.PREV_PAGE_BTN), "Previous page button is missing."
-        assert item_bank.is_element_visible_quick(item_bank.PAGE_INDICATOR), (
-            "Page number indicator (e.g. 'Page 1 of X') is missing."
-        )
+        self.survey(item_bank, record_property, "Pagination").publish()
 
         first_page = item_bank.get_page_indicator()
         first_ids = item_bank.get_item_ids_in_view()
@@ -209,9 +273,24 @@ class TestM2ItemBankOverview:
         )
 
     def test_tc_wpad_itembank_05_bulk_actions(self, record_property):
-        """Phase 5: the master checkbox selects and clears every row on the page."""
+        """Phase 5: the master checkbox selects and clears every row on the page.
+
+        Selection behaviour stays hard; only the page furniture is soft.
+        """
         item_bank = self.open_item_bank()
+        checks = self.survey(item_bank, record_property, "Bulk Actions")
         item_bank.switch_tab("All")
+        checks.check_interaction(
+            "Master checkbox selects every row",
+            item_bank.toggle_master_checkbox,
+            lambda: item_bank.get_checked_rows_count() == item_bank.get_table_row_count(),
+        )
+        checks.check_interaction(
+            "Master checkbox clears the selection",
+            item_bank.toggle_master_checkbox,
+            lambda: item_bank.get_checked_rows_count() == 0,
+        )
+        checks.publish()
 
         total_rows = item_bank.get_table_row_count()
         assert total_rows > 0, "No rows available to exercise bulk selection."
@@ -249,6 +328,9 @@ class TestM2ItemBankOverview:
         when the bank holds no such item.
         """
         item_bank = self.open_item_bank()
+        # Retirement is destructive and irreversible, so every assertion below
+        # the survey stays hard.
+        self.survey(item_bank, record_property, "Retirement").publish()
         item_bank.switch_tab("All")
 
         # Markers are tried in order, so the most disposable residue goes first

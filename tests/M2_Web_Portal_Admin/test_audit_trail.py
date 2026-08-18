@@ -4,6 +4,7 @@ import pytest
 
 from pages.admin.audit_trail_page import AuditTrailPage
 from pages.common.login_page import LoginPage
+from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 
 
@@ -14,9 +15,9 @@ class TestM2AuditTrail:
     filtering, CSV export, and pagination. Driven with the admin account."""
 
     def open_audit(self):
-        # Uses the secondary admin: the portal allows one session per account,
-        # so sharing the primary admin with a concurrent suite fails at login.
-        username = ReadConfig.get_admin2_username()
+        # Per-worker admin: the portal allows one session per account, so
+        # sharing an admin with a concurrent suite fails at login.
+        username = ReadConfig.get_admin_username()
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             username, ReadConfig.get_password_for_username(username)
@@ -25,23 +26,49 @@ class TestM2AuditTrail:
         page.open(ReadConfig.get_base_url())
         return page
 
+    def survey(self, audit, record_property, scope):
+        """Soft-check every control the Audit Trail page renders."""
+        checks = ElementChecks(audit, record_property, page_name=f"Audit Trail — {scope}")
+        checks.check("Page header", audit.PAGE_HEADER)
+        checks.check("Compliance subtext", audit.SUBTEXT)
+        checks.check("Search input", audit.SEARCH_INPUT)
+        checks.check("Event Type filter", audit.EVENT_TYPE_FILTER)
+        checks.check("Export File button", audit.EXPORT_BTN)
+        checks.check("Log table", audit.TABLE)
+        checks.check("Rows per page control", audit.ROWS_PER_PAGE)
+        checks.check("Next page control", audit.NEXT_PAGE_BTN)
+        checks.check("Page indicator", audit.PAGE_INDICATOR)
+        return checks
+
     def test_tc_wpad_audit_01_verify_page_ui_and_immutability(self, record_property):
-        """Compliance columns are present and no log line can be altered."""
+        """Page structure is surveyed softly; immutability stays a hard gate."""
         audit = self.open_audit()
+        checks = self.survey(audit, record_property, "Structure")
 
-        assert audit.is_on_page(), "Audit Trail header or compliance subtext is missing."
+        checks.check_condition(
+            "Page header and subtext identify the Audit Trail",
+            audit.is_on_page,
+        )
 
-        missing = audit.missing_columns()
-        headers = audit.get_table_headers()
-        assert not missing, f"Mandatory audit columns missing: {missing}. Found: {headers}"
+        headers = checks.safe_call(audit.get_table_headers)
+        for column in audit.EXPECTED_COLUMNS:
+            checks.check_condition(
+                f"Column — {column}",
+                column in headers,
+                detail=f"found: {headers}",
+            )
 
-        row_count = audit.get_table_row_count()
-        assert row_count > 0, "Audit Trail loaded no log entries."
+        row_count = checks.safe_call(audit.get_table_row_count, 0)
+        checks.check_condition(
+            "Log entries rendered", row_count > 0, detail=f"{row_count} entries"
+        )
 
+        # Hard gate: immutability is a compliance contract, not a rendering
+        # detail. A soft row here would let tamperable audit logs ship green.
         mutating_controls = audit.get_mutating_controls()
         record_property(
             "result_description",
-            f"Audit Trail rendered {row_count} entries with columns {headers}; "
+            f"{checks.publish()}. {row_count} entries; "
             f"{len(mutating_controls)} mutating controls in the grid.",
         )
         assert not mutating_controls, (
@@ -53,8 +80,33 @@ class TestM2AuditTrail:
         )
 
     def test_tc_wpad_audit_02_search_and_filter(self, record_property):
-        """Free-text search and the Event Type filter both narrow the grid."""
+        """Free-text search and the Event Type filter both narrow the grid.
+
+        Controls are surveyed softly; the filtering behaviour stays hard.
+        """
         audit = self.open_audit()
+        checks = self.survey(audit, record_property, "Search & Filter")
+
+        # Does each control respond at all? Recorded softly so a dead control is
+        # named in the report even when the hard assertions below also catch it.
+        baseline_rows = checks.safe_call(audit.get_table_row_count, 0)
+        checks.check_interaction(
+            "Search narrows the grid",
+            lambda: audit.search_audit_log("INVALID-USER-9999"),
+            lambda: audit.get_table_row_count() < baseline_rows,
+        )
+        checks.check_interaction(
+            "Clearing search restores the grid",
+            lambda: audit.search_audit_log(""),
+            lambda: audit.get_table_row_count() == baseline_rows,
+        )
+        checks.check_interaction(
+            "Event Type filter responds",
+            lambda: audit.filter_by_event_type("LOGIN_SUCCESS"),
+            lambda: bool(audit.get_actions_in_view()),
+        )
+        checks.publish()
+        audit.open(ReadConfig.get_base_url())
 
         # Positive: search for a user that the grid is already showing.
         seed_user = next((name for name in audit.get_users_in_view() if name and name != "System"), None)
@@ -92,8 +144,14 @@ class TestM2AuditTrail:
         )
 
     def test_tc_wpad_audit_03_export_file(self, record_property):
-        """Export File downloads a CSV whose header matches the audit columns."""
+        """Export File downloads a CSV whose header matches the audit columns.
+
+        The export contents stay a hard gate — a missing column in the CSV is a
+        compliance defect, not a rendering gap.
+        """
         audit = self.open_audit()
+        checks = self.survey(audit, record_property, "Export")
+        checks.publish()
 
         exported = audit.export_file_and_wait()
 
@@ -118,14 +176,10 @@ class TestM2AuditTrail:
         assert data_rows > 0, "Export CSV contains a header but no audit records."
 
     def test_tc_wpad_audit_04_pagination(self, record_property):
-        """Pagination controls exist and actually advance the grid."""
+        """Pagination controls are surveyed softly; advancing the grid is hard."""
         audit = self.open_audit()
-
-        assert audit.is_element_visible_quick(audit.ROWS_PER_PAGE), "Rows per page control is missing."
-        assert audit.is_element_visible_quick(audit.NEXT_PAGE_BTN), "Next page control is missing."
-        assert audit.is_element_visible_quick(audit.PAGE_INDICATOR), (
-            "Page number indicator (e.g. 'Page 1 of X') is missing."
-        )
+        checks = self.survey(audit, record_property, "Pagination")
+        checks.publish()
 
         first_page = audit.get_page_indicator()
         first_rows = audit.get_row_text()

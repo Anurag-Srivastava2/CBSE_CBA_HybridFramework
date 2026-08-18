@@ -30,6 +30,7 @@ from utilities.environment_health import (
     wait_for_environment,
 )
 from utilities.logger import LogGenerator
+from utilities.page_evidence import PageEvidence, set_current_recorder
 from utilities.pdf_report_utils import PDFReportUtils
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
@@ -295,19 +296,12 @@ def _append_shared_extras(report, props):
 
 
 def _append_evidence_extras(report, evidence_screenshots):
+    # The gallery block already embeds every shot. Attaching each one again as
+    # its own image extra doubled the base64 payload of a self-contained report,
+    # which a per-page run makes expensive.
     step_evidence_html = build_step_evidence_html(evidence_screenshots)
     if step_evidence_html:
         report.extras.append(extras.html(step_evidence_html))
-    for evidence in evidence_screenshots:
-        try:
-            evidence_path = evidence.get("path")
-            evidence_name = evidence.get("name") or "Evidence Screenshot"
-            if evidence_path:
-                report.extras.append(
-                    extras.image(screenshot_as_base64(evidence_path), name=evidence_name)
-                )
-        except Exception:
-            continue
 
 
 def get_module_name(item):
@@ -517,6 +511,83 @@ def build_stage_counts_text(stages):
     return "\n".join(lines)
 
 
+def parse_element_checks(user_properties):
+    """Read the optional 'element_checks' test property: a JSON list of
+    {"page", "element", "status", "locator", "detail"} rows recorded by
+    utilities.element_checks.ElementChecks. These are soft checks — a FAILED
+    row means the element was absent, not that the test failed."""
+    raw = user_properties.get("element_checks") if hasattr(user_properties, "get") else None
+    if not raw:
+        return []
+    try:
+        return json.loads(raw)
+    except Exception:
+        return []
+
+
+def build_element_checks_html(checks):
+    if not checks:
+        return ""
+    rows = []
+    for check in checks:
+        status = str(check.get("status") or "").upper()
+        status_class = "passed-text" if status == "PASSED" else "failed-text"
+        kind = "Works?" if check.get("kind") == "interaction" else "Present?"
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(check.get('page') or ''))}</td>"
+            f"<td>{html.escape(str(check.get('element') or ''))}</td>"
+            f"<td>{kind}</td>"
+            f"<td class='{status_class}'>{html.escape(status)}</td>"
+            f"<td><code>{html.escape(str(check.get('locator') or check.get('detail') or ''))}</code></td>"
+            "</tr>"
+        )
+    passed = sum(1 for check in checks if str(check.get("status")).upper() == "PASSED")
+    failed = len(checks) - passed
+    interactions = [check for check in checks if check.get("kind") == "interaction"]
+    working = sum(
+        1 for check in interactions if str(check.get("status")).upper() == "PASSED"
+    )
+    heading = f"Element Checks &mdash; {passed}/{len(checks)} passed"
+    if failed:
+        heading += f", {failed} failed"
+    if interactions:
+        heading += f" ({working}/{len(interactions)} controls responded)"
+    # Collapsed like the Screenshot and Traceback blocks, so a 60-row survey
+    # does not bury the rest of the card — but opened when something failed,
+    # since a soft check nobody expands is a soft check nobody reads. The
+    # summary line carries the counts either way.
+    open_attribute = " open" if failed else ""
+    return (
+        f"<details class='details-block'{open_attribute}>"
+        f"<summary>{heading}</summary>"
+        "<p style='margin:8px 0;color:#5b6577;font-size:13px;'>Soft checks: a FAILED row "
+        "records a missing element or a control that did not respond, and does not fail "
+        "the test.</p>"
+        "<table class='summary-table'>"
+        "<thead><tr><th>Page</th><th>Element</th><th>Check</th><th>Result</th>"
+        "<th>Locator / Detail</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody>"
+        "</table>"
+        "</details>"
+    )
+
+
+def build_element_checks_text(checks):
+    if not checks:
+        return ""
+    passed = sum(1 for check in checks if str(check.get("status")).upper() == "PASSED")
+    lines = [f"Element Checks ({passed}/{len(checks)} passed):"]
+    for check in checks:
+        detail = check.get("locator") or check.get("detail") or ""
+        kind = "works " if check.get("kind") == "interaction" else "present"
+        lines.append(
+            f"  [{str(check.get('status')).upper():6}] ({kind}) {check.get('page')} / "
+            f"{check.get('element')}" + (f" — {detail}" if detail else "")
+        )
+    return "\n".join(lines)
+
+
 def render_message_html(message, status):
     """Escape a test message and color the text after the PASSED:/FAILED: prefix."""
     text = message or ""
@@ -617,7 +688,12 @@ def build_extent_report():
     for result in EXTENT_RESULTS:
         status_class = result["status"].lower()
         screenshot_entries = list(result.get("screenshots") or [])
-        if result.get("screenshot_base64"):
+        # The final PASS/FAIL shot is already in `screenshots` with its path, so
+        # the base64 copy only matters for a result that carries nothing else -
+        # appending it unconditionally rendered that shot twice, the second time
+        # under a bare "Screenshot" heading. (xdist runs never showed it: workers
+        # strip the base64 field and re-encode from paths.)
+        if result.get("screenshot_base64") and not screenshot_entries:
             screenshot_entries.append(
                 {
                     "name": "Screenshot",
@@ -653,6 +729,7 @@ def build_extent_report():
             if result.get("logged_in_user") else ""
         )
         stage_counts_html = result.get("stage_counts_html") or ""
+        element_checks_html = result.get("element_checks_html") or ""
         status_icon = {"passed": "&#10003;", "failed": "&#10007;", "skipped": "&#9888;"}.get(status_class, "")
         retry_badge_html = ""
         if result.get("retried"):
@@ -675,6 +752,7 @@ def build_extent_report():
                 else ""
             )
             + f"{stage_counts_html}"
+            f"{element_checks_html}"
             f"{image_html}"
             "</section>"
         )
@@ -1170,6 +1248,28 @@ def pytest_runtest_call(item):
         )
 
 
+@pytest.fixture(autouse=True)
+def page_evidence(request):
+    """Per-page screenshots for the report, in the order the pages were visited.
+
+    Autouse so a test does not have to ask: any ElementChecks survey picks the
+    recorder up and contributes its page. Tests wanting extra checkpoints (a
+    login screen, a toast, a popup) can request this fixture and call
+    `page_evidence.capture("Login")` directly.
+
+    The driver is resolved at capture time rather than here, so this fixture
+    stays independent of whether `setup` has run yet.
+    """
+    recorder = PageEvidence(request.node, lambda: getattr(request.cls, "driver", None))
+    # pytest-rerunfailures replays the same item object without clearing its user
+    # properties, so without this a retry would continue the failed attempt's
+    # series and the card would read as one run that visited twice as many pages.
+    recorder.reset()
+    set_current_recorder(recorder)
+    yield recorder
+    set_current_recorder(None)
+
+
 @pytest.fixture()
 def setup(request):
     if get_module_name(request.node) == "M1 - Item Bank Mgmt" and not is_configured_environment_reachable():
@@ -1302,6 +1402,9 @@ def pytest_runtest_makereport(item):
     stage_item_counts = parse_stage_item_counts(user_properties)
     stage_counts_html = build_stage_counts_html(stage_item_counts)
     stage_counts_text = build_stage_counts_text(stage_item_counts)
+    element_checks = parse_element_checks(user_properties)
+    element_checks_html = build_element_checks_html(element_checks)
+    element_checks_text = build_element_checks_text(element_checks)
     display_name = item.name
     suite_name = item.cls.__name__ if item.cls else Path(str(item.fspath)).stem
     module_name = get_module_name(item)
@@ -1358,6 +1461,8 @@ def pytest_runtest_makereport(item):
         details_lines += _evidence_context_lines(evidence_screenshots)
         if stage_counts_text:
             details_lines.append(stage_counts_text)
+        if element_checks_text:
+            details_lines.append(element_checks_text)
         details = "\n".join(details_lines)
         _append_shared_extras(report, {
             "item_set_id": item_set_id,
@@ -1387,12 +1492,17 @@ def pytest_runtest_makereport(item):
             report.extras.append(extras.text(logged_in_user, name="Logged In User"))
         if stage_counts_html:
             report.extras.append(extras.html(stage_counts_html))
+        if element_checks_html:
+            report.extras.append(extras.html(element_checks_html))
         _append_evidence_extras(report, evidence_screenshots)
         screenshot_base64 = None
         pass_screenshot_path = qar_success_screenshot
         if not pass_screenshot_path:
             if driver:
                 try:
+                    # Settles first (ScreenshotUtils default): a passing test's
+                    # last action often leaves a request in flight, and the shot
+                    # would show the spinner instead of the outcome.
                     pass_screenshot_path = ScreenshotUtils.capture(
                         driver, f"{item.name}_passed"
                     )
@@ -1443,6 +1553,7 @@ def pytest_runtest_makereport(item):
                 "module": module_name,
                 "logged_in_user": logged_in_user,
                 "stage_counts_html": stage_counts_html,
+                "element_checks_html": element_checks_html,
                 "retried": is_retry,
                 "execution_count": execution_count,
             }
@@ -1474,7 +1585,10 @@ def pytest_runtest_makereport(item):
         screenshot_path = None
         if driver:
             try:
-                screenshot_path = ScreenshotUtils.capture(driver, item.name)
+                # No settle wait here on purpose: when a test fails on a page that
+                # is stuck loading, that stuck page is the evidence, and waiting
+                # 8s for it on every failure buys nothing.
+                screenshot_path = ScreenshotUtils.capture(driver, item.name, settle=False)
                 screenshot_base64 = screenshot_as_base64(screenshot_path)
                 report.extras.append(
                     extras.image(
@@ -1517,8 +1631,12 @@ def pytest_runtest_makereport(item):
         context_lines += _evidence_context_lines(evidence_screenshots)
         if stage_counts_text:
             context_lines.append(stage_counts_text)
+        if element_checks_text:
+            context_lines.append(element_checks_text)
         if stage_counts_html:
             report.extras.append(extras.html(stage_counts_html))
+        if element_checks_html:
+            report.extras.append(extras.html(element_checks_html))
         if context_lines:
             failure_details = "\n".join(context_lines) + "\n\n" + failure_details
             _append_shared_extras(report, {
@@ -1554,6 +1672,7 @@ def pytest_runtest_makereport(item):
                 "module": module_name,
                 "logged_in_user": logged_in_user,
                 "stage_counts_html": stage_counts_html,
+                "element_checks_html": element_checks_html,
                 "retried": is_retry,
                 "execution_count": execution_count,
             }
