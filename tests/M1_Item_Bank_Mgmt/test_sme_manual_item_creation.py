@@ -13,6 +13,8 @@ typology fails this suite until test data and a form handler are added here.
 """
 
 import os
+import random
+from datetime import date
 from pathlib import Path
 from uuid import uuid4
 
@@ -31,6 +33,57 @@ from utilities.read_config import ReadConfig
 
 TEST_IMAGES_DIR = Path(__file__).resolve().parents[2] / "test_images"
 TEST_IMAGES = sorted(TEST_IMAGES_DIR.glob("*.png"))
+
+# Only one typology is exercised per run. Creating all twelve manual items and
+# pushing each through QAR costs ~29 minutes - the single most expensive test in
+# M1 - while one typology covers the same create -> QAR path in a few minutes.
+#
+# The pick is random but stable for the whole run: seeding on the UTC date keeps
+# every xdist worker, rerun and retry collecting the *same* typology (workers
+# that disagreed would abort the session), while still rotating coverage day to
+# day. Pin one explicitly to reproduce a failure:
+#   CBSE_MANUAL_TYPOLOGY_CASE="Fill in the Blank"
+def select_active_manual_typology():
+    supported = list(ManualItemPage.SUPPORTED_MANUAL_ITEM_TYPOLOGIES)
+    override = os.getenv("CBSE_MANUAL_TYPOLOGY_CASE", "").strip()
+    if override:
+        if override not in supported:
+            # Fail loudly at collection rather than silently ignoring the pin.
+            raise ValueError(
+                f"CBSE_MANUAL_TYPOLOGY_CASE={override!r} matches no supported manual "
+                f"typology. Valid values: {', '.join(supported)}"
+            )
+        return override
+    return random.Random(date.today().isoformat()).choice(supported)
+
+
+ACTIVE_MANUAL_TYPOLOGY = select_active_manual_typology()
+
+
+def build_manual_typology_params():
+    """SUPPORTED_MANUAL_ITEM_TYPOLOGIES stays the parametrize source so every
+    node id keeps resolving (tools/run_m1_groups.ps1 lists them individually);
+    the eleven typologies this run did not pick carry xfail(run=False), so they
+    report as expected failures without a browser ever starting."""
+    params = []
+    for typology in ManualItemPage.SUPPORTED_MANUAL_ITEM_TYPOLOGIES:
+        if typology == ACTIVE_MANUAL_TYPOLOGY:
+            params.append(pytest.param(typology))
+            continue
+        params.append(
+            pytest.param(
+                typology,
+                marks=pytest.mark.xfail(
+                    reason=(
+                        f"Manual typology coverage is limited to "
+                        f"{ACTIVE_MANUAL_TYPOLOGY!r} for run time. Set "
+                        f"CBSE_MANUAL_TYPOLOGY_CASE={typology!r} to exercise this one."
+                    ),
+                    run=False,
+                ),
+            )
+        )
+    return params
 
 
 def apply_rich_content_checks(page, image_path, editor_index=-1):
@@ -225,7 +278,19 @@ def build_manual_typology_items(run_id):
 
 @pytest.fixture
 def manual_typology_items():
-    return build_manual_typology_items(uuid4().hex[:10])
+    """Just the run's selected typology. build_manual_typology_items() still
+    returns the complete inventory - tests/test_manual_typology_coverage.py
+    asserts on that - so the narrowing happens here instead."""
+    all_items = build_manual_typology_items(uuid4().hex[:10])
+    selected = [
+        item for item in all_items if item["typology"] == ACTIVE_MANUAL_TYPOLOGY
+    ]
+    assert selected, (
+        f"No manual item test data for {ACTIVE_MANUAL_TYPOLOGY!r}; "
+        f"build_manual_typology_items() covers: "
+        f"{[item['typology'] for item in all_items]}"
+    )
+    return selected
 
 
 def identifying_text(item_data):
@@ -298,6 +363,7 @@ class TestSMEManualItemCreation:
         request,
         manual_typology_items,
         record_property,
+        page_evidence,
     ):
         """Create one typology's item, submit it for QAR, then move to the next
         typology and repeat — rather than batching all typologies into one draft
@@ -309,6 +375,10 @@ class TestSMEManualItemCreation:
         page.open_manual_item_tab()
         page.wait_for_saved_draft_to_hydrate()
         page.clear_added_items()
+        page_evidence.checkpoint(
+            "SME signed in on the manual authoring tab with the saved draft "
+            "cleared, so each typology below starts from zero staged items"
+        )
 
         # Surveyed and published *before* the inventory check below, because
         # that check can xfail the test outright on KI-M1-TYPOLOGY-001 — and a
@@ -322,6 +392,13 @@ class TestSMEManualItemCreation:
         record_property("result_description", checks.publish())
 
         live_options = page.get_manual_item_typology_options()
+        # Recorded before the guard below, which can xfail the test outright on
+        # KI-M1-TYPOLOGY-001 — a checkpoint taken afterwards would never be
+        # filed for exactly the run a reader most wants to see.
+        page_evidence.checkpoint(
+            f"Live Item Typology dropdown offers {len(live_options)} option(s): "
+            f"{list(live_options)}"
+        )
         # Left exactly as it was: this carries the KI-M1-TYPOLOGY-001 xfail
         # guard, and it must keep running ahead of every assertion below.
         self.assert_live_typology_inventory(page, live_options)
@@ -353,11 +430,22 @@ class TestSMEManualItemCreation:
 
                 page.add_manual_item_for_typology(item_data, before_submit=check_rich_content)
 
-                assert int(page.get_added_items_count()) == 1, (
+                staged_count = int(page.get_added_items_count())
+                page_evidence.checkpoint(
+                    f"{typology}: item authored with marks "
+                    f"{item_data.get('marks', '1')} and image "
+                    f"{image_path.name}; Added Items count: {staged_count}"
+                )
+                assert staged_count == 1, (
                     f"{typology}: expected exactly 1 added item before QAR submit."
                 )
                 display_text = identifying_text(item_data)
                 card_text = page.wait_for_added_item_card_text(display_text, typology)
+                page_evidence.checkpoint(
+                    f"{typology}: staged card carries the typology tag "
+                    f"({page.typology_tag_is_visible(typology, card_text)}) — "
+                    f"{(card_text or 'no card found')[:110]}"
+                )
                 assert card_text, f"Added-item card was not found for {typology}: {display_text}"
                 assert page.typology_tag_is_visible(typology, card_text), (
                     f"The added card for {typology} did not show the expected typology tag: {card_text}"
@@ -369,6 +457,9 @@ class TestSMEManualItemCreation:
                 item_id = page.submit_item_set_for_qar(review_search_text)
                 qar_message = page.wait_for_qar_success_popup()
                 qar_screenshot = page.capture_qar_success_screenshot(f"{request.node.name}_{typology}")
+                page_evidence.checkpoint(
+                    f"{typology}: submitted for QAR as {item_id} — {qar_message}"
+                )
 
                 assert item_id and item_id != "ID not found before QAR submit", (
                     f"{typology}: item ID not found before QAR submit."
@@ -390,6 +481,10 @@ class TestSMEManualItemCreation:
                 failure_screenshot = page.capture_qar_success_screenshot(
                     f"{request.node.name}_{typology}_FAILED"
                 )
+                page_evidence.checkpoint(
+                    f"{typology}: create+QAR cycle failed — "
+                    f"{str(error).splitlines()[0] if str(error) else type(error).__name__}"
+                )
                 print(f"[{typology}] FAILED: {error}")
                 results.append(
                     {
@@ -403,6 +498,11 @@ class TestSMEManualItemCreation:
 
         passed = [result for result in results if result["status"] == "passed"]
         failed = [result for result in results if result["status"] == "failed"]
+        page_evidence.checkpoint(
+            f"Per-typology create+QAR results: {len(passed)} passed, "
+            f"{len(failed)} failed"
+            + (f" ({[result['typology'] for result in failed]})" if failed else "")
+        )
         print(f"Per-typology create+QAR results: {len(passed)} passed, {len(failed)} failed")
         for result in results:
             print(f"  [{result['status'].upper()}] {result['typology']}")
@@ -422,13 +522,24 @@ class TestSMEManualItemCreation:
                 )
             )
 
-        expected_count = len(page.SUPPORTED_MANUAL_ITEM_TYPOLOGIES)
+        # Counts the typologies this run actually selected (see
+        # ACTIVE_MANUAL_TYPOLOGY), not the full supported inventory - the
+        # inventory itself is still checked by assert_live_typology_inventory
+        # above, which reads the live dropdown on every run.
+        expected_count = len(manual_typology_items)
         assert len(results) == expected_count
         typologies = [result["typology"] for result in results]
         item_ids = [result["item_id"] for result in results]
         request.node.user_properties.extend(
             [
                 ("manual_typology_coverage", f"{len(typologies)}/{expected_count}"),
+                ("active_manual_typology", ACTIVE_MANUAL_TYPOLOGY),
+                (
+                    "manual_typology_selection",
+                    f"{ACTIVE_MANUAL_TYPOLOGY} "
+                    f"(1 of {len(ManualItemPage.SUPPORTED_MANUAL_ITEM_TYPOLOGIES)}; "
+                    "set CBSE_MANUAL_TYPOLOGY_CASE to pin another)",
+                ),
                 ("manual_item_typologies", ", ".join(typologies)),
                 ("manual_item_id", ", ".join(item_ids)),
                 (
@@ -451,11 +562,11 @@ class TestSMEManualItemCreation:
 
     @pytest.mark.parametrize(
         "typology",
-        ManualItemPage.SUPPORTED_MANUAL_ITEM_TYPOLOGIES,
+        build_manual_typology_params(),
         ids=lambda typology: typology.lower().replace(" ", "-"),
     )
     def test_sme_required_fields_block_empty_item_for_every_typology(
-        self, typology, record_property
+        self, typology, record_property, page_evidence
     ):
         """An empty content payload must not create an item for any typology."""
         page = self.login_as_sme()
@@ -475,6 +586,10 @@ class TestSMEManualItemCreation:
 
         try:
             page.select_manual_item_metadata(typology, "1")
+            page_evidence.checkpoint(
+                f"{typology} selected on the manual form with metadata and marks "
+                "set, and every content field left empty"
+            )
         except TimeoutException as error:
             if typology == "Multiple Choice Question":
                 pytest.xfail(
@@ -495,6 +610,16 @@ class TestSMEManualItemCreation:
         after_count = int(page.get_added_items_count())
         required_messages = page.get_visible_required_validation_messages()
         validation_messages = page.get_visible_validation_messages()
+        page_evidence.checkpoint(
+            f"{typology}: Add Item attempted on an empty payload "
+            f"(clickable: {clicked}); Added Items {before_count} -> {after_count}"
+        )
+        page_evidence.checkpoint(
+            f"{typology}: required-field signals — required: "
+            f"{required_messages or 'none'}; validation: "
+            f"{validation_messages or 'none'}; Continue enabled: "
+            f"{page.is_continue_enabled()}"
+        )
 
         assert before_count == after_count == 0, (
             f"{typology} created an item despite all typology-specific required "

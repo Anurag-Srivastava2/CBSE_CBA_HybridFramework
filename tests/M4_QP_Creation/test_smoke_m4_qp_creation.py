@@ -6,6 +6,7 @@ from pages.teacher.dashboard_page import DashboardPage
 from pages.teacher.question_paper_builder_page import QuestionPaperBuilderPage
 from tests.M4_QP_Creation.qp_surveys import survey_builder, survey_chrome, survey_my_qp
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 from utilities.smoke_support import sign_in
 
@@ -42,11 +43,18 @@ class TestSmokeM4QPCreation:
         # Login can land behind a welcome/announcement popup that swallows the
         # first navigation click.
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
-        assert DashboardPage(self.driver).is_dashboard_loaded(), (
+        dashboard_loaded = DashboardPage(self.driver).is_dashboard_loaded()
+        checkpoint(
+            f"QP teacher {username} signed in; teacher dashboard loaded: "
+            f"{dashboard_loaded}"
+        )
+        assert dashboard_loaded, (
             f"{username} did not land on the teacher dashboard"
         )
 
-    def test_smoke_m4_01_qp_builder_opens_with_creation_modes(self, record_property):
+    def test_smoke_m4_01_qp_builder_opens_with_creation_modes(
+        self, record_property, page_evidence
+    ):
         """QP Builder reaches Assessment Configuration and offers its creation modes."""
         self.sign_in_as_teacher()
         builder = QuestionPaperBuilderPage(self.driver)
@@ -66,6 +74,12 @@ class TestSmokeM4QPCreation:
             f"QP Builder opened for {self.qp_teacher_username} with creation modes: "
             f"{sorted(creation_modes) or 'none'}. {checks.publish()}",
         )
+        page_evidence.checkpoint(
+            "QP Builder reached Assessment Configuration: "
+            f"{'assessment configuration' in builder.body_text_casefold()}; "
+            f"creation modes offered: {sorted(creation_modes) or 'none'} "
+            "(Hybrid is a known gap, KI-M4-QP-001)"
+        )
 
         assert "assessment configuration" in builder.body_text_casefold(), (
             "QP Builder did not reach the Assessment Configuration step"
@@ -75,7 +89,7 @@ class TestSmokeM4QPCreation:
         missing_modes = {"Manual", "Automated"} - creation_modes
         assert not missing_modes, f"QP Builder is missing creation modes: {sorted(missing_modes)}"
 
-    def test_smoke_m4_02_my_qp_listing_opens(self, record_property):
+    def test_smoke_m4_02_my_qp_listing_opens(self, record_property, page_evidence):
         """My QP renders the teacher's papers listing and the create entry point."""
         self.sign_in_as_teacher()
         builder = QuestionPaperBuilderPage(self.driver)
@@ -94,6 +108,10 @@ class TestSmokeM4QPCreation:
             "result_description",
             f"My QP listing opened for {self.qp_teacher_username}; "
             f"'Create New Paper' available: {create_button_visible}. {checks.publish()}",
+        )
+        page_evidence.checkpoint(
+            f"My QP listing rendered: {'my qp' in builder.body_text_casefold()}; "
+            f"'Create New Paper' available: {create_button_visible}"
         )
 
         assert "my qp" in builder.body_text_casefold(), "My QP listing did not render"

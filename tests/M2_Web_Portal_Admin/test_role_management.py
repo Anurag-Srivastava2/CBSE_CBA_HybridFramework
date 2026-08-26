@@ -3,6 +3,7 @@ import pytest
 from pages.admin.role_management_page import RoleManagementPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -24,7 +25,9 @@ class TestM2RoleManagement:
         )
         page = RoleManagementPage(self.driver)
         page.wait_for_application_ready()
-        return page.open()
+        opened = page.open()
+        checkpoint(f"Admin {admin_username} opened Role Management")
+        return opened
 
     def survey(self, page, record_property, scope):
         """Soft-check the Role Management page furniture."""
@@ -35,7 +38,9 @@ class TestM2RoleManagement:
         checks.check_condition("Next page control", page.has_next_page_control)
         return checks
 
-    def test_tc_wpad_role_01_page_loads_with_default_roles(self, record_property):
+    def test_tc_wpad_role_01_page_loads_with_default_roles(
+        self, record_property, page_evidence
+    ):
         """Page furniture and the default role list, all recorded softly."""
         page = self.open_role_management()
         checks = self.survey(page, record_property, "Load")
@@ -50,12 +55,18 @@ class TestM2RoleManagement:
             role_id = f"Role-{index}"
             checks.check(f"Role row — {role_id}", page.role_row_locator(role_id), timeout=2)
 
+        page_evidence.checkpoint(
+            f"Role Management listed {row_count} role(s) on load; "
+            f"{RoleManagementPage.DEFAULT_ROLE_COUNT} defaults expected"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. Listed {row_count} roles on load.",
         )
 
-    def test_tc_wpad_role_02_search_filters_by_name_and_id(self, record_property):
+    def test_tc_wpad_role_02_search_filters_by_name_and_id(
+        self, record_property, page_evidence
+    ):
         """Search behaviour stays a hard gate; the controls are surveyed softly."""
         page = self.open_role_management()
         checks = self.survey(page, record_property, "Search")
@@ -77,26 +88,46 @@ class TestM2RoleManagement:
 
         page.search_role("Role-1")
         by_id_count = page.get_table_row_count()
+        page_evidence.checkpoint(
+            f"Search for 'Role-1' narrowed the grid from {unfiltered_count} to "
+            f"{by_id_count} row(s)"
+        )
         assert 0 < by_id_count < unfiltered_count or by_id_count == 1, (
             f"Search by role ID did not filter the grid: {by_id_count} rows of "
             f"{unfiltered_count}."
         )
 
         page.search_role("InvalidRole99")
-        assert page.get_table_row_count() == 0, (
+        missing_role_count = page.get_table_row_count()
+        page_evidence.checkpoint(
+            f"Search for a role that does not exist left {missing_role_count} "
+            "row(s) — must be 0"
+        )
+        assert missing_role_count == 0, (
             "Grid should be empty when searching for a role that does not exist."
         )
 
         page.clear_search()
-        assert page.get_table_row_count() == unfiltered_count, (
+        restored_count = page.get_table_row_count()
+        page_evidence.checkpoint(
+            f"Clearing the search restored the grid to {restored_count} row(s) "
+            f"(started at {unfiltered_count})"
+        )
+        assert restored_count == unfiltered_count, (
             "Clearing the search did not restore the full role list."
         )
 
-    def test_tc_wpad_role_03_all_default_roles_can_be_active(self, request, record_property):
+    def test_tc_wpad_role_03_all_default_roles_can_be_active(
+        self, request, record_property, page_evidence
+    ):
         """Activation is a state contract, so it stays a hard gate."""
         page = self.open_role_management()
         self.survey(page, record_property, "Activation").publish()
         activated = page.ensure_all_roles_active()
+        page_evidence.checkpoint(
+            "All default roles active"
+            + (f"; had to switch on: {', '.join(activated)}" if activated else " on arrival")
+        )
         request.node.user_properties.append(
             (
                 "result_description",
@@ -109,9 +140,14 @@ class TestM2RoleManagement:
             for index in range(1, RoleManagementPage.DEFAULT_ROLE_COUNT + 1)
             if not page.is_role_active(f"Role-{index}")
         ]
+        page_evidence.checkpoint(
+            f"Roles still inactive after activation: {inactive or 'none'}"
+        )
         assert not inactive, f"Roles still inactive after activation: {inactive}."
 
-    def test_tc_wpad_role_04_toggle_role_off_and_restore(self, record_property):
+    def test_tc_wpad_role_04_toggle_role_off_and_restore(
+        self, record_property, page_evidence
+    ):
         """Toggle round-trip is a state contract, so it stays a hard gate."""
         page = self.open_role_management()
         checks = self.survey(page, record_property, "Toggle")
@@ -123,6 +159,10 @@ class TestM2RoleManagement:
             )
         checks.publish()
         role_id = "Role-7"
+        page_evidence.checkpoint(
+            f"Toggle for {role_id} is editable by this admin: "
+            f"{page.is_role_toggle_editable(role_id)}"
+        )
         if not page.is_role_toggle_editable(role_id):
             pytest.skip(
                 f"ROLE_TOGGLE_READ_ONLY: the Active control for {role_id} is rendered "
@@ -133,10 +173,14 @@ class TestM2RoleManagement:
 
         page.toggle_role_status(role_id)
         try:
+            toast = page.get_toast_message()
+            page_evidence.checkpoint(
+                f"{role_id} toggled off — active now: "
+                f"{page.is_role_active(role_id)}; toast: {toast!r}"
+            )
             assert not page.is_role_active(role_id), (
                 f"{role_id} should be inactive after toggling it off."
             )
-            toast = page.get_toast_message()
             assert "success" in toast.casefold(), (
                 f"Expected a success toast after toggling {role_id}, got {toast!r}."
             )
@@ -146,10 +190,20 @@ class TestM2RoleManagement:
             if not page.is_role_active(role_id):
                 page.toggle_role_status(role_id)
 
+        page_evidence.checkpoint(
+            f"{role_id} handed back active: {page.is_role_active(role_id)}"
+        )
         assert page.is_role_active(role_id), f"{role_id} was not restored to active."
 
-    def test_tc_wpad_role_05_pagination_controls_are_present(self, record_property):
+    def test_tc_wpad_role_05_pagination_controls_are_present(
+        self, record_property, page_evidence
+    ):
         """Pure presence test — every check is soft."""
         page = self.open_role_management()
         checks = self.survey(page, record_property, "Pagination")
+        page_evidence.checkpoint(
+            f"Pagination furniture — rows-per-page control: "
+            f"{page.has_rows_per_page_control()}, next-page control: "
+            f"{page.has_next_page_control()}"
+        )
         record_property("result_description", checks.publish())

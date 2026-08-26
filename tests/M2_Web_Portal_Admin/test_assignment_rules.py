@@ -4,6 +4,7 @@ from pages.admin.assignment_queue_page import AssignmentQueuePage
 from pages.admin.user_management_page import UserManagementPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -64,7 +65,7 @@ class TestM2AssignmentQueueAutoAssignment:
         return queue.get_assigned_users_in_view()
 
     def test_tc_wpad_assign_01_inactive_role_unassigns_and_reactivation_reassigns(
-        self, record_property
+        self, record_property, page_evidence
     ):
         self.login_as_admin()
         users_page = self.open_users()
@@ -91,6 +92,10 @@ class TestM2AssignmentQueueAutoAssignment:
         inactive_names = {
             user["name"].casefold() for user in rwg_users if user["status"].casefold() != "active"
         }
+        page_evidence.checkpoint(
+            f"{len(rwg_users)} {self.ROLE_LABEL} holder(s) enumerated through the "
+            f"Roles filter; active at start: {[u['name'] for u in active_rwg]}"
+        )
         record_property(
             "result_description",
             f"{self.ROLE_LABEL} holders: {[u['name'] for u in rwg_users]}; "
@@ -108,6 +113,10 @@ class TestM2AssignmentQueueAutoAssignment:
             for user in active_rwg:
                 if self.set_user_active(users_page, user["name"], should_be_active=False):
                     deactivated.append(user["name"])
+            page_evidence.checkpoint(
+                f"Step 1 — took the whole {self.ROLE_LABEL} offline; deactivated "
+                f"{deactivated}"
+            )
             assert deactivated, f"Could not deactivate any {self.ROLE_LABEL} account."
             for name in deactivated:
                 users_page.search_user(name)
@@ -123,6 +132,11 @@ class TestM2AssignmentQueueAutoAssignment:
                     for name in assignees
                     if name.casefold() not in UNASSIGNED_MARKERS and name.casefold() in offline_names
                 }
+            )
+            page_evidence.checkpoint(
+                f"Step 2 — overdue {self.STAGE} assignees while the role is "
+                f"offline: {sorted(set(assignees)) or 'none'}; work still held by "
+                f"a deactivated reviewer: {still_assigned or 'none'}"
             )
             record_property(
                 "result_description",
@@ -140,6 +154,10 @@ class TestM2AssignmentQueueAutoAssignment:
             users_page = self.open_users()
             self.set_user_active(users_page, primary_user, should_be_active=True)
             users_page.search_user(primary_user)
+            page_evidence.checkpoint(
+                f"Step 3 — reactivated {primary_user}; reads Active: "
+                f"{users_page.is_user_active(primary_user)}"
+            )
             assert users_page.is_user_active(primary_user), (
                 f"{primary_user} did not return to Active after reactivation."
             )
@@ -162,6 +180,11 @@ class TestM2AssignmentQueueAutoAssignment:
                     and primary_user.casefold() not in name.casefold()
                 }
             )
+            page_evidence.checkpoint(
+                f"Step 4 — overdue {self.STAGE} assignees after reactivating "
+                f"{primary_user!r}: {sorted(set(updated)) or 'none'}; still held "
+                f"by someone else: {misrouted or 'none'}"
+            )
             if misrouted:
                 pytest.xfail(
                     "KI-M2-ASSIGN-002 [M2 Assignment Queue] Overdue "
@@ -182,6 +205,11 @@ class TestM2AssignmentQueueAutoAssignment:
                             restore_failures.append(f"{name}: {error}")
                 except Exception as error:
                     restore_failures.append(str(error))
+                checkpoint(
+                    "Environment handed back — reactivated "
+                    f"{[n for n in deactivated]}; restore failures: "
+                    f"{restore_failures or 'none'}"
+                )
                 if restore_failures:
                     pytest.fail(
                         "RWG accounts could not be reactivated and are still disabled in the "

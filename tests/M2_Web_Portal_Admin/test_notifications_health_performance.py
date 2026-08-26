@@ -4,6 +4,7 @@ from selenium.common.exceptions import TimeoutException
 from pages.admin.admin_portal_page import AdminPortalPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -21,6 +22,7 @@ class TestM2NotificationsHealthPerformance:
         self.driver.find_element("tag name", "body").send_keys("\ue00c")
         page = AdminPortalPage(self.driver)
         page.wait_for_application_ready()
+        checkpoint(f"Admin {username} signed in")
         return page
 
     def test_tc_wpad_12_p01_otp_notification_email_and_sms_within_60_seconds(self):
@@ -33,7 +35,9 @@ class TestM2NotificationsHealthPerformance:
             "KI-M2-NOTIFY-002 [M2 Notifications] QAR pass notification requires creating a fresh item set and reading email/SMS channels."
         )
 
-    def test_tc_wpad_13_p01_system_health_dashboard_shows_core_services(self, record_property):
+    def test_tc_wpad_13_p01_system_health_dashboard_shows_core_services(
+        self, record_property, page_evidence
+    ):
         """Each monitored service is recorded individually, so a partial health
         dashboard reports which service is missing rather than just the first."""
         page = self.login_as_admin()
@@ -50,9 +54,14 @@ class TestM2NotificationsHealthPerformance:
             )
 
         checks = ElementChecks(page, record_property, page_name="System Health")
+        listed = [m for m in ("database", "api", "qar", "notification") if m in text]
         for marker in ("database", "api", "qar", "notification"):
             checks.check_condition(f"Service listed — {marker}", marker in text)
         statuses = [s for s in ("operational", "degraded", "outage") if s in text]
+        page_evidence.checkpoint(
+            f"System Health lists {listed or 'no'} core service(s); status "
+            f"keywords on the page: {statuses or 'none'}"
+        )
         checks.check_condition(
             "A service status is reported",
             statuses,
@@ -72,7 +81,9 @@ class TestM2NotificationsHealthPerformance:
         )
 
     @pytest.mark.performance
-    def test_tc_wpad_perf_02_audit_log_796_entries_filters_within_3_seconds(self, record_property):
+    def test_tc_wpad_perf_02_audit_log_796_entries_filters_within_3_seconds(
+        self, record_property, page_evidence
+    ):
         page = self.login_as_admin()
         try:
             page.open_named_section("Audit Logs", "Audit")
@@ -87,6 +98,10 @@ class TestM2NotificationsHealthPerformance:
             )
 
         checks = ElementChecks(page, record_property, page_name="Audit Logs — Performance")
+        page_evidence.checkpoint(
+            f"Audit Logs page rendered: {'audit' in text}; the seeded 796-entry "
+            f"volume marker is visible: {'796' in text}"
+        )
         checks.check_condition("Audit log page rendered", "audit" in text)
         checks.check_condition(
             "796-entry fixture visible", "796" in text, detail="expected the seeded volume marker"

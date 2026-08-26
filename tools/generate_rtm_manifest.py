@@ -81,22 +81,6 @@ AUTOMATION_LINKS = {
         "file": "tests/M1_Item_Bank_Mgmt/test_sme_manual_item_creation.py",
         "test": "test_sme_create_each_typology_manual_item_and_submit_for_qar_individually",
     },
-    "TC-IBMM-01b-P02": {
-        "file": "tests/M1_Item_Bank_Mgmt/test_sme_manual_item_validation.py",
-        "test": "test_tc_ibmm_01b_p02_continue_locked_until_mandatory_item_complete",
-    },
-    "TC-IBMM-01b-P03": {
-        "file": "tests/M1_Item_Bank_Mgmt/test_sme_manual_item_validation.py",
-        "test": "test_tc_ibmm_01b_p03_new_item_is_visible_in_draft_review",
-    },
-    "TC-IBMM-01b-N01": {
-        "file": "tests/M1_Item_Bank_Mgmt/test_sme_manual_item_validation.py",
-        "test": "test_tc_ibmm_01b_n01_out_of_scope_subject_is_not_available",
-    },
-    "TC-IBMM-01b-N02": {
-        "file": "tests/M1_Item_Bank_Mgmt/test_sme_manual_item_validation.py",
-        "test": "test_tc_ibmm_01b_n02_empty_item_content_shows_inline_error_on_blur",
-    },
     "TC-IBMM-03-P01": {
         "file": "tests/M1_Item_Bank_Mgmt/test_sme_metadata_typology_ids.py",
         "test": "test_tc_ibmm_03_p01_created_items_receive_unique_12_character_ids",

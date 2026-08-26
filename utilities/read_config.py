@@ -259,13 +259,41 @@ class ReadConfig:
 
     @staticmethod
     def get_password_for_username(username):
-        """Per-user password override (CBSE_<LOCALPART>_PASSWORD), falling
-        back to the shared CBSE_ALL_USERS_PASSWORD when no override is set.
+        """Resolve a login's password, most specific override first.
+
+        The local part alone does not identify an account: sme1@dev.com and
+        sme1@test.com both compact to 'sme1', so a CBSE_SME1_PASSWORD set for
+        one of them silently reassigns the other's password too. The two
+        domain-aware keys below disambiguate.
+
+        Lookup order:
+          1. CBSE_<LOCALPART>_<DOMAIN>_PASSWORD - one specific account
+          2. CBSE_<LOCALPART>_PASSWORD          - any account with that name
+          3. CBSE_<DOMAIN>_DEFAULT_PASSWORD     - every account at that domain
+          4. CBSE_ALL_USERS_PASSWORD            - the shared fallback
+
+        The domain default sits *below* the local-part key rather than above
+        it, so that adding one gives an existing account whose local-part
+        override is already configured - admin@test.com being the case here -
+        exactly the password it resolves to today.
         """
-        local_part = str(username).split("@", 1)[0].strip().lower()
-        compact_key = re.sub(r"[^a-z0-9]", "", local_part)
-        override = os.getenv(f"CBSE_{compact_key.upper()}_PASSWORD", "").strip()
-        return override or ReadConfig.get_all_users_password()
+        local_part, _, domain = str(username).strip().lower().partition("@")
+        compact_local = re.sub(r"[^a-z0-9]", "", local_part)
+        compact_domain = re.sub(r"[^a-z0-9]", "", domain)
+
+        candidate_keys = []
+        if compact_local and compact_domain:
+            candidate_keys.append(f"CBSE_{compact_local.upper()}_{compact_domain.upper()}_PASSWORD")
+        if compact_local:
+            candidate_keys.append(f"CBSE_{compact_local.upper()}_PASSWORD")
+        if compact_domain:
+            candidate_keys.append(f"CBSE_{compact_domain.upper()}_DEFAULT_PASSWORD")
+
+        for key in candidate_keys:
+            override = os.getenv(key, "").strip()
+            if override:
+                return override
+        return ReadConfig.get_all_users_password()
 
     @staticmethod
     def get_role_usernames(role):

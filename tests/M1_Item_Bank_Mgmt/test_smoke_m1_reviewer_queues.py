@@ -75,7 +75,7 @@ class TestSmokeM1ReviewerQueues:
         ],
     )
     def test_smoke_m1_05_reviewer_opens_queue_and_assigned_item_set(
-        self, record_property, role_key, page_class, role_name
+        self, record_property, role_key, page_class, role_name, page_evidence
     ):
         """A reviewer signs in, lands on their dashboard, opens the review
         queue and opens one item set assigned to them.
@@ -91,11 +91,16 @@ class TestSmokeM1ReviewerQueues:
         page = page_class(self.driver)
 
         sign_in(self.driver, username)
-        assert body_text(self.driver).strip(), (
+        landed = bool(body_text(self.driver).strip())
+        page_evidence.checkpoint(
+            f"{role_name} {username} signed in; landing page rendered content: {landed}"
+        )
+        assert landed, (
             f"{role_name} {username} landed on an empty page after login"
         )
 
         page.open_queue_module()
+        page_evidence.checkpoint(f"{role_name} opened the Review Queue module")
 
         # Surveys are additive here: every assertion in this test stays exactly
         # as hard as it was, so the smoke gate still fails loudly and fast. The
@@ -108,6 +113,18 @@ class TestSmokeM1ReviewerQueues:
 
         queue_text = page.get_queue_body_text()
         item_set_ids = self.visible_item_set_ids(queue_text)
+
+        # Captured here, before the open-set navigation below moves the browser
+        # off the grid. Both are element reads, not page-text reads.
+        queue_heading_present = bool(
+            self.driver.find_elements(*page.QUEUE_PAGE_HEADING)
+        )
+        queue_columns_missing = page.missing_queue_columns()
+        page_evidence.checkpoint(
+            f"Queue rendered — heading present: {queue_heading_present}, "
+            f"{len(item_set_ids)} item set(s) listed, "
+            f"missing columns: {queue_columns_missing or 'none'}"
+        )
 
         # Opening a set is attempted but not required. Whether a reviewer holds
         # actionable work is workflow state that changes hour to hour: sets
@@ -124,8 +141,19 @@ class TestSmokeM1ReviewerQueues:
                 opened_id = opened[0] if opened else item_set_ids[0]
                 enter_screen(checks, f"{role_name} — Opened Item Set")
                 survey_opened_item_set(checks, page)
+                page_evidence.checkpoint(
+                    f"{role_name} opened assigned item set {opened_id}"
+                )
             except TimeoutException:
                 opened_id = ""
+                page_evidence.checkpoint(
+                    f"{item_set_ids[0]} is listed but did not open for {role_name}; "
+                    "recorded as workflow state, not a gate"
+                )
+        else:
+            page_evidence.checkpoint(
+                f"{role_name} queue is empty — no work allotted to {username} right now"
+            )
 
         if opened_id:
             outcome = f"opened assigned set {opened_id}"
@@ -144,7 +172,20 @@ class TestSmokeM1ReviewerQueues:
         # The gate's actual subject: this role can sign in and its review queue
         # renders. That is true whenever the build is healthy, regardless of
         # what work happens to be waiting.
-        assert "queue" in queue_text.casefold(), (
-            f"{role_name} review queue did not render for {username}. "
-            f"Page text: {queue_text[:600]}"
+        #
+        # Asserted on the queue's own <h1>, not on the word "queue" appearing
+        # somewhere in the page text: "queue" is in the nav label and in
+        # several other screens' headings, so the old substring match stayed
+        # green even when this page failed to render.
+        assert queue_heading_present, (
+            f"{role_name} review queue page did not render for {username} - "
+            "no <h1> reading 'Review Queue' was found. "
+            f"Page text: {queue_text[:400]}"
+        )
+        # An empty queue legitimately renders no grid, so the columns are only
+        # required once the queue actually lists work.
+        assert not (item_set_ids and queue_columns_missing), (
+            f"{role_name} queue listed {len(item_set_ids)} item set(s) for "
+            f"{username} but its grid did not render. "
+            f"Missing columns: {queue_columns_missing}."
         )

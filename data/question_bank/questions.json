@@ -3013,7 +3013,13 @@
     "explanation": "294 - 196 = 98, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:cf43d13e336964982f378cdb64e8b38f0515d4e1d63b9d5719f1f08676d595cb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T07:25:03.827629+00:00",
+        "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000107",
@@ -3034,7 +3040,13 @@
     "explanation": "1436 + 679 = 2115, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:56a775962bbb8cfdb5cd3ef39226ecdbd9f7a67dec890d74aaa65f61524c471b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T07:45:32.082741+00:00",
+        "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000108",
@@ -3055,7 +3067,13 @@
     "explanation": "4617 - 3895 = 722, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:c948bfd6af69a77be3b7a39deccfd3e6ed68782e0fbbc31d0fe916c02b07cc63",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:28:58.488374+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000109",
@@ -3076,7 +3094,13 @@
     "explanation": "82 + 71 = 153, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:2ed3e200847cbde77e359ead9bbececebd30cdb55358d54b66317f1d6361ecac",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:50:56.039020+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000110",
@@ -3097,7 +3121,13 @@
     "explanation": "484 - 225 = 259, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:861838d80b279cddcab815597d3ed91728b345bcda364dec553bef8b3a9d2977",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:55:26.983223+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000111",
@@ -3118,7 +3148,13 @@
     "explanation": "466 + 347 = 813, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:9299edf90ed0280693616590ee91183dee8af07fd7fa6d2ee24740f387afec59",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:03:05.262666+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000112",
@@ -3139,7 +3175,13 @@
     "explanation": "3431 - 2407 = 1024, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:a0c3335203f0115b220b587e28f698cde3a813a55790aa0892155884cf949acd",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:06:37.872512+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000113",
@@ -3160,7 +3202,13 @@
     "explanation": "81 + 16 = 97, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:60d57b30201a890246cd769207464d96bad3fef3d84d9b39cc24a98618017038",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:16:52.834657+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000114",
@@ -3181,7 +3229,13 @@
     "explanation": "768 - 712 = 56, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:e8a651ba45d020accec5a79f91348efdf1a4f50a3c2db45125e2287eddb507e9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:22:11.251986+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000115",
@@ -3202,7 +3256,13 @@
     "explanation": "406 + 226 = 632, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:2e38ac2ae2f50897f4eb30bc0715c074b0f04474a52a08597cb065999740d368",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:27:02.293604+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000116",
@@ -3223,7 +3283,13 @@
     "explanation": "4190 - 3645 = 545, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:486e98e4c89bd1d05beac58ff38cb390a841b8d512ee23bdd7464131f98974d2",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:27:06.082988+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000117",
@@ -3244,7 +3310,13 @@
     "explanation": "51 + 45 = 96, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:8986c0de688f37e321a891ac5e00c0640471f4e7da7ec13ebce325949ffbc75f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:33:25.872269+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000118",
@@ -3265,7 +3337,13 @@
     "explanation": "822 - 151 = 671, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:02257630fcb712ba003043322246d4f096ff89bcd85235298c4714b11ff55107",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:50:32.639788+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000119",
@@ -3286,7 +3364,13 @@
     "explanation": "1950 + 1606 = 3556, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:7b9b507fcb45832d790c2fb4ad3096af6e6d4f9939429588d8390da44f1c4849",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:30:10.825364+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000120",
@@ -3307,7 +3391,13 @@
     "explanation": "2092 - 1076 = 1016, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:05201d670526dfdb7824a362109f4f4f20c9d1fddde04a32d261dd4ae75c76f9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:33:24.161962+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000121",
@@ -3328,7 +3418,13 @@
     "explanation": "83 + 81 = 164, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:02c04f8710d6f5aa5c3e46e75ed8c055e0a6b0b41ef0e60fe8e07e073350fb77",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:43:17.837790+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000122",
@@ -3349,7 +3445,13 @@
     "explanation": "758 - 535 = 223, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:c32ed677555762d03fd9eaab649a6a4f4b8149f3747fb9f4a40b89d23d57c149",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:48:05.128332+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000123",
@@ -3370,7 +3472,13 @@
     "explanation": "1023 + 929 = 1952, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:a7826c7345116367bacef1339b1fec52870cc6bbf183b702d5c94c5d34036b16",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:49:02.318509+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000124",
@@ -3391,7 +3499,13 @@
     "explanation": "891 - 562 = 329, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:03f91c5f55fce56e53ad9fb7a0c1fac752c879eaef4a43f04526bb7b669b8b29",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:58:50.119463+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000125",
@@ -3412,7 +3526,13 @@
     "explanation": "78 + 22 = 100, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:b93c22c53ac45d12db1f38ad8d62df8999a2e14769f9d1d79bb7115c3cb7b235",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T12:10:18.347369+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000126",
@@ -3433,7 +3553,13 @@
     "explanation": "787 - 343 = 444, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:ed916783f68d066751533afb8bcb0451257f4d053e3249cc1b8521f261f7239b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T12:16:33.600855+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000127",
@@ -3454,7 +3580,13 @@
     "explanation": "835 + 810 = 1645, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:9455637bd47d4e04a688ad2e77e882a65d7b9ab79d8fa26f72dfb6cccb50e199",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T12:20:33.119409+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000128",
@@ -3475,7 +3607,13 @@
     "explanation": "4983 - 1271 = 3712, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:7ea9ffafdce0d16af5d65c3eff83aff43b7d2c84f4e3aa89794e8b23917ddced",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T12:31:44.359089+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000129",
@@ -3496,7 +3634,13 @@
     "explanation": "42 + 33 = 75, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:6a3ca38b0f5cba8d77b642100808092702285a6cb5a9da9bd4038b3fa0247473",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T13:56:31.410839+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000130",
@@ -3517,7 +3661,13 @@
     "explanation": "860 - 581 = 279, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:a024f8451d21eb62ed6e9564ba803cfd7da3a7e93337a64509afc3e14792cc0b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T13:59:32.058306+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000131",
@@ -3538,7 +3688,13 @@
     "explanation": "1885 + 1736 = 3621, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:9770e3eb7925eb83689e87980e36ae67f388593b2d115bb4e7a45be9a1c4af3b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T14:20:49.837112+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000132",
@@ -3559,7 +3715,13 @@
     "explanation": "3566 - 2784 = 782, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:675ba7c54ff790dff3eb01daa7a8b3e2fa067570bb84b5757d037c42f1243289",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T14:57:11.162154+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000133",
@@ -3580,7 +3742,13 @@
     "explanation": "55 + 16 = 71, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:09327209873dcf1a256b38cc56ffa3f78fadfde7395f2adbfa6a5a4937908992",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T15:20:02.817747+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000134",
@@ -3601,7 +3769,13 @@
     "explanation": "625 - 574 = 51, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:ed321d197ab3fd50ce852f4bf5cba2c98357f3f6d546e405aa7e51ebea9c5cad",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T04:03:31.677316+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000135",
@@ -3622,7 +3796,13 @@
     "explanation": "985 + 335 = 1320, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:42c1afc7be76d32f19aa481723b66d4233693be8a1aea0049582a007ec774373",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T04:27:40.046009+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000136",
@@ -3643,7 +3823,13 @@
     "explanation": "2725 - 1168 = 1557, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:80598249c67519b7995aa3525ebde35f35dc516a3e69ff64929d69aad57c407b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T05:41:47.388149+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000137",
@@ -3664,7 +3850,13 @@
     "explanation": "62 + 48 = 110, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:0babc1beeff1687cc7ec201ced4dfbafc3c5bf602699b679182ecf1ce3c25f51",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T06:05:37.247121+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000138",
@@ -3685,7 +3877,13 @@
     "explanation": "776 - 759 = 17, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:aa931332803fc188c84fe4c76f6467f4dab6bb09f52514f90eeb8f4cdb5a20d4",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T07:04:48.210445+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000139",
@@ -3706,7 +3904,13 @@
     "explanation": "1201 + 596 = 1797, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:af308f7f0c3b3f32a0957042f59badd377bc24d58db64e30787d601ce91275fd",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T07:31:17.445367+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000140",
@@ -3727,7 +3931,13 @@
     "explanation": "4871 - 2189 = 2682, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:790b28860ebd70734666dd0dce6039e958ac3f3d9ef0384f6587a96951326a00",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T11:21:19.481787+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000141",
@@ -3748,7 +3958,13 @@
     "explanation": "79 + 77 = 156, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:84e51ce4ff4446cce3bb66c8e93846b05ee47975b0f8c08bbe8c751066f306a6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T11:25:53.094950+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000142",
@@ -3769,7 +3985,13 @@
     "explanation": "417 - 353 = 64, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:cdc414d4584f34082ec1b73bb86ea1652b0fdda7ffcb08a1c0e944433995a33b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T15:29:40.260010+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000143",
@@ -3790,7 +4012,13 @@
     "explanation": "1421 + 610 = 2031, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:b090d0246b31f0bf40e752a1600f56d28b21d810e667bc0edc1dec21289925c2",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T15:31:37.950862+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000144",
@@ -3811,7 +4039,13 @@
     "explanation": "1268 - 586 = 682, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:6b794460354c65b1b8c873f4d601b0db7ba0f9bc8329e4c866d8b51d44f6662f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T06:03:01.124304+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000145",
@@ -3832,7 +4066,13 @@
     "explanation": "88 + 57 = 145, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:aca0ac81c5d729f5cee21611f32aa731de97f7ca8422abc0d66f17b5c6f268ed",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T06:10:52.235621+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000146",
@@ -3853,7 +4093,13 @@
     "explanation": "740 - 331 = 409, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:0a2fe732fea4cb55f1b0e53dc3ec0d43b3580fcda74449ae59d1d4e798929e16",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:36:44.750954+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000147",
@@ -3874,7 +4120,13 @@
     "explanation": "1371 + 397 = 1768, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:a9eb19e7140ad10cfd93f0ac45484e296e5f19bb6ccd775ea42ce134e4567c4a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:39:01.248561+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000148",
@@ -3895,7 +4147,13 @@
     "explanation": "2337 - 1129 = 1208, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:4e361b77221c2e717c3e4be7889f2ef07abc0a87161f053f3a51b97460eb2b9f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:46:54.891869+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000149",
@@ -3916,7 +4174,13 @@
     "explanation": "74 + 69 = 143, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:ee3f7d0c80e2fbe28d91deb95ab7aa0dd16d5e4d44ab4777c7c79c62e788e02f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:51:42.366337+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000150",
@@ -3937,7 +4201,13 @@
     "explanation": "638 - 449 = 189, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:643e5aa6b7f5d1c40eb76cf04c004b049c48e6d72a48e6f5a3175f64c02758e9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:55:15.174992+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000151",
@@ -3958,7 +4228,13 @@
     "explanation": "1080 + 304 = 1384, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:e97f6395a6d79579c8474b740c87648160de4e9199c7af9073ed6b168f2c1834",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:58:22.169659+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000152",
@@ -3979,7 +4255,13 @@
     "explanation": "1993 - 1060 = 933, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:082bf5c768826fa3dced047ecd15c8908439f111df4dd74cf87e6a1263449c98",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:02:10.376602+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000153",
@@ -4000,7 +4282,13 @@
     "explanation": "69 + 24 = 93, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:683e6d54d5d16d5d9623dbe3a559d9c74ddd5e42859988569cead2e042b18257",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:05:09.659267+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000154",
@@ -4021,7 +4309,13 @@
     "explanation": "887 - 358 = 529, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:5ae657a7aea3c5040124b17d94d262da52622cfd98b61b491e58ef78a60a7f55",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:40:53.757677+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000155",
@@ -4042,7 +4336,13 @@
     "explanation": "1247 + 1227 = 2474, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:f1058fb19be96fe2a2fd5ae5ed8227bc96db54045c06a1d2cd3903630a185788",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:46:38.087012+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000156",
@@ -4063,7 +4363,13 @@
     "explanation": "4041 - 4022 = 19, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:dfe837abe974955b9acffe2c0b9d7bb49166b5e969e06fb74d77358f7588b974",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:05:35.111240+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000157",
@@ -4084,7 +4390,13 @@
     "explanation": "20 + 19 = 39, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:ada5e74f4c433e7d1caf1c115c9ef1a5dc85c0ed6af6cc1ee8d2dab7774ca94b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:19:00.230722+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000158",
@@ -4105,7 +4417,13 @@
     "explanation": "339 - 217 = 122, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:98a254c467ad985713d83b0b86eabb40bd20a7502ad99abcfec684d0754c16e8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:25:06.417910+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000159",
@@ -4126,7 +4444,13 @@
     "explanation": "1046 + 535 = 1581, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:d3866d2b1a9271e60647fc596702c5cb54f241a5defa1a8930141cde13a0cb23",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T12:15:04.432330+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000160",
@@ -4147,7 +4471,13 @@
     "explanation": "4897 - 2876 = 2021, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:552687ff8910636d8628b1a0a612270affd469ed401a3104f108640177c1217d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T12:26:51.571249+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000161",
@@ -4168,7 +4498,13 @@
     "explanation": "77 + 25 = 102, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:d3dc7c134fa344e5b7cce6b8cab215f55049acc52da1605082055175b5451383",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T05:32:28.585039+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000162",
@@ -4189,7 +4525,13 @@
     "explanation": "927 - 622 = 305, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:fcdb2531fdf1d99f46ed4e4bbe9095f3d66088e4ef65f3737683dc2712c6cd57",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000163",
@@ -4210,7 +4552,13 @@
     "explanation": "1426 + 822 = 2248, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:0d777c4d8fa94687b669698597039fc938ed63025de92e6783dca156ee37705d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000164",
@@ -4231,7 +4579,13 @@
     "explanation": "4487 - 3998 = 489, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:51d139bf574144e85195887a15931d3d44eb1a7e390d30e24727d97b66c0324b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000165",
@@ -4252,7 +4606,13 @@
     "explanation": "60 + 31 = 91, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:93aa0c4ca9eb9c69cffde2bb2bd18f8edeacb5148f0b84b11480b8b8c7f924b0",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000166",
@@ -4273,7 +4633,13 @@
     "explanation": "975 - 645 = 330, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:9a5f71c83c0c6faff4080e101941c77cd073b01e7451ba83dfdd3997fd66f419",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000167",
@@ -4294,7 +4660,13 @@
     "explanation": "1425 + 267 = 1692, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:af851e1235285d1e5a44ab31abec471858e9f9580e17459611e76a1941f909b8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:07:06.020744+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000168",
@@ -4315,7 +4687,13 @@
     "explanation": "2287 - 1753 = 534, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:59aad27845f428b210df7e91362b510eaafe7c15c9f946fe42f7253a6495a2fb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:09:15.695533+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000169",
@@ -4336,7 +4714,13 @@
     "explanation": "98 + 65 = 163, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:cf4279aea0be14bec54ef2e8cc04107a960baed0470cf6c4753348c1842b6f51",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:13:37.577056+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000170",
@@ -4357,7 +4741,13 @@
     "explanation": "648 - 233 = 415, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:6da873653bcaabc530ea855c92e340f55f7d068443bebd05f19a6cbc5337335d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:18:34.068078+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000171",
@@ -4378,7 +4768,13 @@
     "explanation": "1356 + 1133 = 2489, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:d925ad3abc6179617f1f91c3bd79580d095e63beb9e2014216420e526715c2df",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:20:14.333546+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000172",
@@ -4399,7 +4795,13 @@
     "explanation": "2133 - 1993 = 140, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:18bbf197bbe4c0ea79399a76b353e7c49e61f103f246aa647c8df859e7aed14a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:22:00.648432+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000173",
@@ -4420,7 +4822,13 @@
     "explanation": "97 + 90 = 187, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:90e794bb93994e06ce9dd500ca6f5e2cd6847618204d6cffcca22dbf14bf61e1",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:24:44.681341+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000174",
@@ -4441,7 +4849,13 @@
     "explanation": "569 - 368 = 201, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:f22061ac6ba9a0fac28f953af111a1d63347015b5a9a6b8256500eb79e34840d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:26:31.706959+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000175",
@@ -4462,7 +4876,13 @@
     "explanation": "1753 + 1241 = 2994, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:99f73828acfabf1f875923c71fae5be7ec9a1cff410824e85a96facb897637cd",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:28:14.786262+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000176",
@@ -4483,7 +4903,13 @@
     "explanation": "4293 - 3439 = 854, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:d737532c6e9bd02bde1d5fb19f97bc0a8b80896acb8ef5ca4a7221f79c78bdf3",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:34:22.892741+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000177",
@@ -4504,7 +4930,13 @@
     "explanation": "76 + 22 = 98, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:8a7a7c8b5b6e0e7d5bf0b49d5c624e086e16ad4cdbe9f1fe2f2a4d7a8fa99605",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:35:53.318156+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000178",
@@ -4525,7 +4957,13 @@
     "explanation": "633 - 221 = 412, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:26a5d4ae62b0efae641494cab0585f1003edfb281855362c37054287b7a0c84e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:37:23.002836+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000179",
@@ -4546,7 +4984,13 @@
     "explanation": "1932 + 1533 = 3465, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:1e8b1a196d0cba2d0d7a2d97f2c767b7c41d938fb3643c54198333b3cbdbd439",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T08:17:57.485525+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000180",
@@ -4567,7 +5011,13 @@
     "explanation": "3723 - 580 = 3143, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:17327456634d5dde3e0f515217e11b804670d480262b3f9e8929c2ee955d062d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T08:25:36.860054+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000181",
@@ -4588,7 +5038,13 @@
     "explanation": "69 + 66 = 135, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:1bd9aa0eba9cf9edcb59f7a510c104e279abf67ad5671851461286c92dba4f90",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:12:15.169508+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000182",
@@ -4609,7 +5065,13 @@
     "explanation": "557 - 313 = 244, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:ecae96bcb705981ccaabe4a0c3fd8c69ddc2e7f3ef86f4c9780b2e0951cc626e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:13:15.722543+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000183",
@@ -4630,7 +5092,13 @@
     "explanation": "1257 + 936 = 2193, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:09fb8cf79b9f84cf5ef133843f5aaa711de259472a5abaa6bc67fd037a5543fe",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:13:26.683789+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000184",
@@ -4651,7 +5119,13 @@
     "explanation": "4548 - 3301 = 1247, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:5239a905cfaff3ca773128efc2f73f05a7f2fe91f317c69b51a7f54970dae916",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:16:29.269454+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000185",
@@ -4672,7 +5146,13 @@
     "explanation": "41 + 24 = 65, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:fb41956c20b1d37243ded8b49b2b5e3e68b8efa6ea0f7cfaa9e0462ffc80d9b5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:22:10.075392+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000186",
@@ -4693,7 +5173,13 @@
     "explanation": "915 - 612 = 303, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:4d08c4b0a7334940b5b9022c4993193c18c45a0a8751670d74b6a5dfa0069669",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T10:35:15.733437+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000187",
@@ -4714,7 +5200,13 @@
     "explanation": "1854 + 1314 = 3168, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:f7f04a84b393de47d79f0da1ed956b89afe0852a7baf0eee8a331da05eea5dc9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:51:24.525300+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000188",
@@ -4735,7 +5227,13 @@
     "explanation": "3488 - 1554 = 1934, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:18192e226c30b59500630d827cc8a93094fcc1279d14f0fd42f871869d3885a6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:52:13.853223+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000189",
@@ -4756,7 +5254,13 @@
     "explanation": "80 + 66 = 146, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:055e1d8b5e687871c49e391113b18c6accc9a75b5310af8c5dde156c744f04cb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:52:28.537184+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000190",
@@ -4777,7 +5281,13 @@
     "explanation": "875 - 249 = 626, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:6710fa8a7e3e94c3f1ffb7bca9fbfa3c5327b2577f57b8cf7a6c5b138954f8be",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:57:36.214940+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000191",
@@ -4798,7 +5308,13 @@
     "explanation": "1220 + 1203 = 2423, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:c7d144691b186b2b376eeafc0753dc38f287926a7b8df06236245e83d55c450b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:58:41.261727+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000192",
@@ -4819,7 +5335,13 @@
     "explanation": "2470 - 1191 = 1279, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:3a725d2054b8ec6458b1ff324f2f2b4787365be11a751e533b4168f51a76aa30",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:59:36.526958+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000193",
@@ -4840,7 +5362,13 @@
     "explanation": "66 + 49 = 115, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:7c2fd1bc3668ab9ac5a8fa5965c43329581002236fac7c58b5181441d8e10839",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T06:52:28.564616+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000194",
@@ -4861,7 +5389,13 @@
     "explanation": "757 - 220 = 537, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:d0ae9bcdb6ca3bd658a17220d93758e8e7c6be2192f5503a800ec6aeab77207a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T06:54:02.077258+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000195",
@@ -4882,7 +5416,13 @@
     "explanation": "943 + 417 = 1360, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:3e6da6170915b23043c656e227f86b4b60e32b2f75954f564f126d9c04b9934e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T07:00:04.142321+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000196",
@@ -4903,7 +5443,13 @@
     "explanation": "2747 - 1542 = 1205, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:7642b8fb461dbe57f2d2d2907d6199ac91cc37a515f49d378947c2c6794f0052",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T07:01:36.631612+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000197",
@@ -7202,7 +7748,13 @@
     "explanation": "4 x 9 = 36, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:71960291411a460161dc3fdaa3acba88608b238d725a03bb64cbab543443ea1f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T07:25:03.827629+00:00",
+        "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000304",
@@ -7218,7 +7770,13 @@
     "explanation": "4 x 10 = 40, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:91ec114c189da97a7f128b961b4e6d5bedc43343cd2ca48aaeca9b45298759f1",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T07:45:32.082741+00:00",
+        "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000305",
@@ -7234,7 +7792,13 @@
     "explanation": "4 x 11 = 44, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:0d0502566b20d80ad22df6124d0d399e3103c74380674da76691fec7b8828cfa",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:28:58.488374+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000306",
@@ -7250,7 +7814,13 @@
     "explanation": "4 x 12 = 48, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:ff097a2bde472f253702452946965604591fd11b477edff4d78b329965dd02be",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:50:56.039020+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000307",
@@ -7266,7 +7836,13 @@
     "explanation": "4 x 13 = 52, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:b51d2873667d2d505f2dc5b7c0c06666c1c6da0b0adc5ae6d19b67b3ec543540",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:55:26.983223+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000308",
@@ -7282,7 +7858,13 @@
     "explanation": "4 x 14 = 56, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:1897f9061e3e3d3ae6ee796362fc840d61e224667f56af237e3baef8bc445e99",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:03:05.262666+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000309",
@@ -7298,7 +7880,13 @@
     "explanation": "4 x 15 = 60, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:6c75c3b093a8d45e47aa4a2d9292e3d2e2915353043d3a09eeb3b7f7ae031074",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:16:52.834657+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000310",
@@ -7314,7 +7902,13 @@
     "explanation": "4 x 16 = 64, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:39a4ddd1294aa0d738ebab30e1df1fc96be0fa8d6c944e6f16c5eb04ce614eff",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:22:11.251986+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000311",
@@ -7330,7 +7924,13 @@
     "explanation": "4 x 17 = 68, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:b8b133744bf7a4a2960d5da41d98d0db0f73a94008301f5aa34927a1af2f9f63",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:27:02.293604+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000312",
@@ -7346,7 +7946,13 @@
     "explanation": "4 x 18 = 72, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:06b1b091b87d761b9e3d93a66869442fc7b124c0df68089bbd8b32462994ad68",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:27:06.082988+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000313",
@@ -7362,7 +7968,13 @@
     "explanation": "4 x 19 = 76, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:45db99aff7edb4aac9a33d38e809cd0fec501be5820a3f705acf69fca4e44e2c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:50:32.639788+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000314",
@@ -7378,7 +7990,13 @@
     "explanation": "4 x 20 = 80, recalled from the multiplication table of 4.",
     "marks": 1,
     "content_hash": "sha256:fcb65b5c8feda99a9e60af9ccb7a5ca78986680bfb7be890168356be8da2675f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:30:10.825364+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000315",
@@ -7394,7 +8012,13 @@
     "explanation": "5 x 5 = 25, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:9691146bc9cc376088be8f24883538007c706f36144535b55b8a13fd3847caa6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:33:24.161962+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000316",
@@ -7410,7 +8034,13 @@
     "explanation": "5 x 6 = 30, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:7d76833e2911db6cf168581cd9a9ad15f543d91712cf5c4d5af3d9ce65eb7d85",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:43:17.837790+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000317",
@@ -7426,7 +8056,13 @@
     "explanation": "5 x 7 = 35, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:a40f3d5ce179e27261ece912b02e184144d0fea6e0e7e91aba85bf03eff86a97",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:48:05.128842+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000318",
@@ -7442,7 +8078,13 @@
     "explanation": "5 x 8 = 40, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:b44056e2d27649118fd64a77271bb19715f41dac10f2aeec52e4a1efb2e9e71d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:49:02.318509+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000319",
@@ -7458,7 +8100,13 @@
     "explanation": "5 x 9 = 45, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:9996bcd857dcf79c4ab190bf2921ba9a784a8933b683ad4946afe5ab00fc07ef",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:58:50.119463+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000320",
@@ -7474,7 +8122,13 @@
     "explanation": "5 x 10 = 50, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:698293802ad8fd5bc88935a16681e1eedf81178d859d266623bbc9351783b8b9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T12:10:18.347369+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000321",
@@ -7490,7 +8144,13 @@
     "explanation": "5 x 11 = 55, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:546ccd997ee4640be8732bc1487f647b33819d926c712610f253c1fa2ec03313",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T12:16:33.600855+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000322",
@@ -7506,7 +8166,13 @@
     "explanation": "5 x 12 = 60, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:e8455c3feb3dac3c5a2813246cccff65b615bb2ca56091d0e3dd604fcf255d13",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T12:20:33.119409+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000323",
@@ -7522,7 +8188,13 @@
     "explanation": "5 x 13 = 65, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:8d6a5c98e6b185358d3406a07ff82dcf3032f65cd46da253bfc165c1179b0774",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T13:56:31.410839+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000324",
@@ -7538,7 +8210,13 @@
     "explanation": "5 x 14 = 70, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:4a2611369bd474a748741ddccd14092d7439a6f0d3cfacb01ec0b00dfbfe66fc",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T13:59:32.058306+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000325",
@@ -7554,7 +8232,13 @@
     "explanation": "5 x 15 = 75, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:61e0c85227a4f8b5531f79600dbf683adbbcd4c88519828f8c8edfad3a1434df",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T14:20:49.837112+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000326",
@@ -7570,7 +8254,13 @@
     "explanation": "5 x 16 = 80, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:73fdc94138786600adab27310ddff73a1f89bcba84dda8a1e37d28c555aaf9cb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T14:57:11.162154+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000327",
@@ -7586,7 +8276,13 @@
     "explanation": "5 x 17 = 85, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:d502effbbfe8ce4c42b13383e6e59d3f13033a319fb32f49895d18513d281861",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T15:20:02.817747+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000328",
@@ -7602,7 +8298,13 @@
     "explanation": "5 x 18 = 90, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:ec44835d3e25012b87b5ba5a23f7438daf375d5dec6019c373653afd1a662b9e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T04:03:31.677316+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000329",
@@ -7618,7 +8320,13 @@
     "explanation": "5 x 19 = 95, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:36558679d71e72f2f52f533661498bf67fa6e7e7ff015dc1855a20f8391b6c96",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T04:27:40.046009+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000330",
@@ -7634,7 +8342,13 @@
     "explanation": "5 x 20 = 100, recalled from the multiplication table of 5.",
     "marks": 1,
     "content_hash": "sha256:f8774021766dd9188672cd0af542563be3066420a19beebebf02fcace7b55062",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T05:41:47.388149+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000331",
@@ -7650,7 +8364,13 @@
     "explanation": "6 x 6 = 36, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:e43f8a1f969e9fe614f729cbb053b28288cff7623a26dcf9fe279b7ff7f7baed",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T06:05:37.247121+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000332",
@@ -7666,7 +8386,13 @@
     "explanation": "6 x 7 = 42, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:a9457b584f5b57e8682299308976fc461e8f8a7db1032f177173b91ddc31595f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T07:04:48.210445+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000333",
@@ -7682,7 +8408,13 @@
     "explanation": "6 x 8 = 48, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:34f6e946004c76722e56bd113741b5bd787a9eb47bf380e887247aec4a85a905",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T07:31:17.446388+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000334",
@@ -7698,7 +8430,13 @@
     "explanation": "6 x 9 = 54, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:a92f75139491e84ec019f0d0b7ca19fe6afa79b2fd6902bff5cad76ed2ed0d84",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T11:21:19.481787+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000335",
@@ -7714,7 +8452,13 @@
     "explanation": "6 x 10 = 60, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:4fb033617e12db145d893d16f5bc113b666df5fe6dc637d8cc00a5f9f98bb082",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T15:29:40.260010+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000336",
@@ -7730,7 +8474,13 @@
     "explanation": "6 x 11 = 66, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:2a17d463c52beb3419959d6b0965679b145c7ada4df0e86a011561e81aa29879",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T15:31:37.950862+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000337",
@@ -7746,7 +8496,13 @@
     "explanation": "6 x 12 = 72, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:28eb12a73e3388746dbe2d962f0bc89c4d60a53f9be4011bf8dab8976c4c2481",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T06:03:01.124304+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000338",
@@ -7762,7 +8518,13 @@
     "explanation": "6 x 13 = 78, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:361c399919b704d1dd1683136757c41f7e713def2d8e0f623dce64c6a0c331f6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:36:44.750954+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000339",
@@ -7778,7 +8540,13 @@
     "explanation": "6 x 14 = 84, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:410ee4229e108cc73ef1dfc2e86481742c2030078041b7e5537ab41365c41c3b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:39:01.248561+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000340",
@@ -7794,7 +8562,13 @@
     "explanation": "6 x 15 = 90, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:e3fd7801e25f0f5c952153eea52ac1ca4790e88f6d266d4008ac3aca39c3c863",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:46:54.891869+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000341",
@@ -7810,7 +8584,13 @@
     "explanation": "6 x 16 = 96, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:c760e3059780b8fb7f2d3ac8e6419b5f3a141be25dbcc6e70a8254406dcc58cd",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:51:42.366337+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000342",
@@ -7826,7 +8606,13 @@
     "explanation": "6 x 17 = 102, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:d791fc22cf4dbd7df47f42d4c8b91e9b4d3ed7523b399af29ca555086c9d43ae",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:55:15.174992+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000343",
@@ -7842,7 +8628,13 @@
     "explanation": "6 x 18 = 108, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:98110ad3e3b88b1c08e5bd023a6671e1d4a8b2e853129460ef4dcaab01b423ea",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:58:22.169659+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000344",
@@ -7858,7 +8650,13 @@
     "explanation": "6 x 19 = 114, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:5708ece044c6331b4a75905cf05027391e6c7db9ef527db83626403249345f64",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:02:10.376602+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000345",
@@ -7874,7 +8672,13 @@
     "explanation": "6 x 20 = 120, recalled from the multiplication table of 6.",
     "marks": 1,
     "content_hash": "sha256:e4ef165c005f459986025e2e6db0894086707158a48da5481e9d63aee1ba2945",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:05:09.659267+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000346",
@@ -7890,7 +8694,13 @@
     "explanation": "7 x 7 = 49, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:f5073ad1e97bb80d4fa5a8b0611ff0731f34241529c54acd41fdb4c5f415a161",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:40:53.757677+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000347",
@@ -7906,7 +8716,13 @@
     "explanation": "7 x 8 = 56, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:8922aa6b07c1e7224e6c4599bf8be433c885dcb9865bdf64920292691729db58",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:46:38.087012+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000348",
@@ -7922,7 +8738,13 @@
     "explanation": "7 x 9 = 63, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:9c56820d605f4d240e09928e7cda46690966788fa09a2238a821c2d04e03d563",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:05:35.111240+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000349",
@@ -7938,7 +8760,13 @@
     "explanation": "7 x 10 = 70, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:8db13467ce91f5995fcd72dabfc6b252b43731da40cd7eef5c901c3e434ac631",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:19:00.230722+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000350",
@@ -7954,7 +8782,13 @@
     "explanation": "7 x 11 = 77, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:a0ec9652b298b8b7513ec8f9d8c27e75d26745a54e78bc86613f90580905ea89",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:25:06.417910+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000351",
@@ -7970,7 +8804,13 @@
     "explanation": "7 x 12 = 84, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:e48e5cca0f3c3e247e7077a89aeffb34eedf0497aeede4b18035c3e528850662",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T12:15:04.432330+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000352",
@@ -7986,7 +8826,13 @@
     "explanation": "7 x 13 = 91, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:4ee351e13b918a180dcdeb270fda385c8b249d7b5c0bc7de69abf0a483224d5d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T05:32:28.585039+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000353",
@@ -8002,7 +8848,13 @@
     "explanation": "7 x 14 = 98, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:39564e8b08abf6c6b4d89c5824111a1e556de25dcb80815129cd65debecaac3f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000354",
@@ -8018,7 +8870,13 @@
     "explanation": "7 x 15 = 105, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:127dcba912eb4fce4a0238c3d3e0850cabccbcc96c7bfa19495a5ccc7bdf3385",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000355",
@@ -8034,7 +8892,13 @@
     "explanation": "7 x 16 = 112, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:ebdc22db1509fa874d750b67004e32a343ec00e4002a34018b4cdb28ddc54024",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000356",
@@ -8050,7 +8914,13 @@
     "explanation": "7 x 17 = 119, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:41a1d495c1960a9d4fd24e4c57255af53d36aad706bb268754f765b30d136c87",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000357",
@@ -8066,7 +8936,13 @@
     "explanation": "7 x 18 = 126, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:4f55202aae770796c86c68af31f9a1c93781833e167ba718dd1d1e7355edfa0f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000358",
@@ -8082,7 +8958,13 @@
     "explanation": "7 x 19 = 133, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:d0bae61210baeccf61a988250acac76fb9eb16f82f246ede6bf9b8f4b8fc2060",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:07:06.021766+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000359",
@@ -8098,7 +8980,13 @@
     "explanation": "7 x 20 = 140, recalled from the multiplication table of 7.",
     "marks": 1,
     "content_hash": "sha256:c1a27a0f9e4f147273a37d60855ed2816563b5fbd5cda6d233105591225cb3c6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:09:15.695533+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000360",
@@ -8114,7 +9002,13 @@
     "explanation": "8 x 8 = 64, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:b7d93f6e06fc5677b49ac39c9f57475705085c52d5a79a8780e3088e7d58b274",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:13:37.577056+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000361",
@@ -8130,7 +9024,13 @@
     "explanation": "8 x 9 = 72, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:29a2ed5cfe95508e3c496dec40faec88aa05bc70e8197aa76d660f13d16ddb83",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:18:34.068078+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000362",
@@ -8146,7 +9046,13 @@
     "explanation": "8 x 10 = 80, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:49649ef09aceebcc5eb3df27ee94d9f50d7f948006d29c1c72d7723bfb239270",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:20:14.333546+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000363",
@@ -8162,7 +9068,13 @@
     "explanation": "8 x 11 = 88, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:0ae403df9fd9f07fd9f671c54b187a324bd98b047a425d5a2be020070b2a2350",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:22:00.648432+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000364",
@@ -8178,7 +9090,13 @@
     "explanation": "8 x 12 = 96, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:1b0a4823d25451006cc72f4e75332164cca1a25274fc9372ff4e49bc8225e0d8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:24:44.681341+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000365",
@@ -8194,7 +9112,13 @@
     "explanation": "8 x 13 = 104, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:2f02525403eb367bfd8df671ff733242c32a6a8c46e5ccd2180ad28f8087d128",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:26:31.706959+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000366",
@@ -8210,7 +9134,13 @@
     "explanation": "8 x 14 = 112, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:da40300be27c6b660a8534adf5efd6b499cb6c4b9e2f9b0cae7066d3e3ecd430",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:28:14.786262+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000367",
@@ -8226,7 +9156,13 @@
     "explanation": "8 x 15 = 120, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:9b0d30506accaf917ed20963ae07b869e965203d0ea9638cd1876e86f9d0c3e4",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:34:22.892741+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000368",
@@ -8242,7 +9178,13 @@
     "explanation": "8 x 16 = 128, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:526af1073c8650839bff80a08546015af85b922b4cdefb1f1d77045a54864b89",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:35:53.318156+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000369",
@@ -8258,7 +9200,13 @@
     "explanation": "8 x 17 = 136, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:a34e0aecd6537c8e68ec84017dd9e4f80810e7a696d9503c005d85972b096d08",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:37:23.002836+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000370",
@@ -8274,7 +9222,13 @@
     "explanation": "8 x 18 = 144, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:117d582c1db8101c34de79999dc48aa074b42de5e8571b24bdbf00ca1c138f3a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T08:17:57.485525+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000371",
@@ -8290,7 +9244,13 @@
     "explanation": "8 x 19 = 152, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:eecbf24eb716548d465257b93a378cc02d0330bbabf4a61d8e9698554b6299ac",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T08:25:36.860054+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000372",
@@ -8306,7 +9266,13 @@
     "explanation": "8 x 20 = 160, recalled from the multiplication table of 8.",
     "marks": 1,
     "content_hash": "sha256:49ead9fb0c9e8911e88b0047c0005de768c0e6c246978ad7f3f9b8ccc4ba2173",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:12:15.169508+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000373",
@@ -8322,7 +9288,13 @@
     "explanation": "9 x 9 = 81, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:a4e4bcf05da22988ae7e3a4b73bd5e9097c8e66679d9983cad608e4a9f226785",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:13:15.722543+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000374",
@@ -8338,7 +9310,13 @@
     "explanation": "9 x 10 = 90, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:26bd1577746677fb2f475dda094681ba2524638828740d8ecf60cee268fef7a4",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:13:26.683789+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000375",
@@ -8354,7 +9332,13 @@
     "explanation": "9 x 11 = 99, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:083357f1d8a101d0b740c0893ac9dc1e0a5fe62b902008c7fda82545ff8be03f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:16:29.269454+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000376",
@@ -8370,7 +9354,13 @@
     "explanation": "9 x 12 = 108, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:ba9a9de87e7e272842c0d6d094a99ff0638bcc4168a96c3153ac36bcb3c5c50f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T10:35:15.733437+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000377",
@@ -8386,7 +9376,13 @@
     "explanation": "9 x 13 = 117, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:267d9be04340e1dd7b59a9ca5a6c859add043941d218e5d1e200f129814a7b9c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:51:24.525300+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000378",
@@ -8402,7 +9398,13 @@
     "explanation": "9 x 14 = 126, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:0c51201dbada613d7d15fa1f2c85a5bf0db5d0ffbff1a839ee1b140dc8ef40f2",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:52:13.853223+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000379",
@@ -8418,7 +9420,13 @@
     "explanation": "9 x 15 = 135, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:bf8afd96fa3ceedf445386ccc2fe2f2cc2acb8d2b4a18804dd4fa358e72a0377",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:52:28.537184+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000380",
@@ -8434,7 +9442,13 @@
     "explanation": "9 x 16 = 144, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:6cc9b1bd2a23994dbf751cf45bb6805c8616a5c58e38343b65276a45a03f769b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:57:36.214940+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000381",
@@ -8450,7 +9464,13 @@
     "explanation": "9 x 17 = 153, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:c62e53c95e7ad7c3291066681477ad05d23ae0226f83bfa3764074a8693d4892",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:58:41.261727+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000382",
@@ -8466,7 +9486,13 @@
     "explanation": "9 x 18 = 162, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:81cb46ccd6ed0301748b047763d5f43ceed9ee8c70fa9419ed87e78ae4252e33",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T06:52:28.564616+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000383",
@@ -8482,7 +9508,13 @@
     "explanation": "9 x 19 = 171, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:7b3994622ae76071ea802014f0a1a167b3ea925f260f421e8f81a052d4b76b30",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T06:54:02.077258+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000384",
@@ -8498,7 +9530,13 @@
     "explanation": "9 x 20 = 180, recalled from the multiplication table of 9.",
     "marks": 1,
     "content_hash": "sha256:21b7d6835b29c322cf47233b37bea63cf994d4a9beed4cbe055875b03ea8bc5b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T07:00:04.142321+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000385",
@@ -8514,7 +9552,13 @@
     "explanation": "10 x 10 = 100, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:7470a55620f0fc95073d487de069a98467777b4b7febde883adbdaacaf24a520",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T07:01:36.632612+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000386",
@@ -10345,7 +11389,13 @@
     "explanation": "139 is not greater than 286; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:e50b582b8258d20b85a6a6d09b1792aae292e7ae660b8976ff2d9daffadb69d4",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T07:25:03.827629+00:00",
+        "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000487",
@@ -10361,7 +11411,13 @@
     "explanation": "446 is indeed greater than 382, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:bdbba0c4cf187847ccc4407ee62c8a7e155ea09940a436b180ffd2b2619eeb4b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T07:45:32.082741+00:00",
+        "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000488",
@@ -10377,7 +11433,13 @@
     "explanation": "206 is not greater than 238; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:107cabd28c7d50a1f407f2f14e1a648c442335b53219a0618781a7d3e62b32cc",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:28:58.488374+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000489",
@@ -10393,7 +11455,13 @@
     "explanation": "485 is indeed greater than 305, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:9b6e70638c84cfc2ce7fe18400f516c742045683c6ce62d5f04ee2f4f6ef1d84",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:50:56.039020+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000490",
@@ -10409,7 +11477,13 @@
     "explanation": "150 is not greater than 419; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:37307a5890fb45b341edd4e299887689ec6774700aacf0594b7c228fd163c2fe",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:55:26.983223+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000491",
@@ -10425,7 +11499,13 @@
     "explanation": "39 is not greater than 314; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:37ba47a9bfd407ce436cb4f93e42fc5f38406d4ca4e68967d7b32d6247b0849e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:16:52.834657+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000492",
@@ -10441,7 +11521,13 @@
     "explanation": "4 is not greater than 263; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:ac8ebc56e27c0c2f5d7a2af4bb8c5a9e72ca508a35c1a8969952a4c7c31cce47",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:22:11.251986+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000493",
@@ -10457,7 +11543,13 @@
     "explanation": "101 is not greater than 472; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:589d8ff77ad9b8ea8ff48747a3ba9b2b7e01d42699da76cc10529f4cbb774ba2",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:27:06.082988+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000494",
@@ -10473,7 +11565,13 @@
     "explanation": "248 is not greater than 256; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:3d4535ae9907e05ef55665b7aac509e27530e7f29bcb73b55b2ad7ac604e64cb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:50:32.639788+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000495",
@@ -10489,7 +11587,13 @@
     "explanation": "64 is not greater than 297; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:693a8bd4886fe19979fea89de3e5bbeeb583772ebf35797fa6f5633e2b0f17df",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:30:10.826363+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000496",
@@ -10505,7 +11609,13 @@
     "explanation": "495 is indeed greater than 191, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:195ce349576eac889fac811666ec98ffa872b9886e573798bbc7c4dd94c9e7d9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:33:24.161962+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000497",
@@ -10521,7 +11631,13 @@
     "explanation": "464 is indeed greater than 379, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:f283ae50924f9b9630fd4eb2082b1803ce286ed9953d3f327f24b3d4301d9dc0",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:48:05.128842+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000498",
@@ -10537,7 +11653,13 @@
     "explanation": "208 is indeed greater than 115, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:7c12695d4c67af09fea3d6348464fea250adf75a8744203ba2460091f6f910d7",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:49:02.318509+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000499",
@@ -10553,7 +11675,13 @@
     "explanation": "195 is not greater than 453; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:5d5d9be30569be5e44618bebe8baf72f4e62aa6270c256b08a9d2b09454eef69",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T11:58:50.119463+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000500",
@@ -10569,7 +11697,13 @@
     "explanation": "130 is not greater than 440; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:425dd82093d5e6959fc9d5157c944f679c5283c3a219b9b501bb3db715ccbfc8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T12:20:33.119409+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000501",
@@ -10585,7 +11719,13 @@
     "explanation": "146 is not greater than 468; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:91e33c7c6d166fa2c3928bcfbf93ff61c05f82151e115f5690693a2d6a8d7982",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T13:56:31.410839+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000502",
@@ -10601,7 +11741,13 @@
     "explanation": "486 is indeed greater than 425, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:98f59d40439c9caa4e1782891d5694041a7a21858655fcc4e68206075b8db9e2",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T14:20:49.837112+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000503",
@@ -10617,7 +11763,13 @@
     "explanation": "258 is not greater than 440; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:40e0b1dd255aa48decac3a29c797b7a9fe30ada03f421c38b3c99337f5852e3a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T14:57:11.162154+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000504",
@@ -10633,7 +11785,13 @@
     "explanation": "447 is indeed greater than 385, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:627108c65e05624f2992dabad18b1c8f51b4be5c71015e8363850315aeac0893",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T15:20:02.817747+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000505",
@@ -10649,7 +11807,13 @@
     "explanation": "489 is indeed greater than 193, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:ac3a603515fbf7199bab5a5d64bd65c7d1c57d32de133d89b2dd7124a09c6b98",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T04:03:31.677316+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000506",
@@ -10665,7 +11829,13 @@
     "explanation": "2 is not greater than 216; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:5fdff88c4cc7615606e33a52655ead0852c7ba3bbb3dd7e2d09724e2bf85ef9d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T04:27:40.046009+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000507",
@@ -10681,7 +11851,13 @@
     "explanation": "438 is indeed greater than 97, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:acf7e88c1b2801ccccf270d22b74424f318d3e4d500ab41342aa46f3b33ff7e5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T05:41:47.388149+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000508",
@@ -10697,7 +11873,13 @@
     "explanation": "407 is indeed greater than 356, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:f1d20e502b7743af86800b93fbd7c875203fc86af4986e37977441405206ee70",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T06:05:37.247121+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000509",
@@ -10713,7 +11895,13 @@
     "explanation": "49 is not greater than 100; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:baa50565fc5eeec9832a230a2cb8b8c626fc681ffbfe953d800b3b54c49e7b20",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T07:04:48.210445+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000510",
@@ -10729,7 +11917,13 @@
     "explanation": "328 is not greater than 381; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:940107966602d48b40b56f60c43c96d2379df53c36356f2457357ab3fd4c418c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-19T07:31:17.446388+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000511",
@@ -10745,7 +11939,13 @@
     "explanation": "17 is not greater than 127; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:714ef8e3f5c000ef0b4833cf7757d4a5c2fc1cd4f4e8ba49fcc4e98f54e4b92c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:36:44.750954+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000512",
@@ -10761,7 +11961,13 @@
     "explanation": "103 is not greater than 437; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:aca85008d64848bbad859e0702de6ad9d322c7b05a84749321c2f5254656f302",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:39:01.248561+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000513",
@@ -10777,7 +11983,13 @@
     "explanation": "365 is indeed greater than 79, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:8c23cd49bbe99133b5d4f560fe1508b63dbad242758371417a6865965a3bb8a6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:46:54.891869+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000514",
@@ -10793,7 +12005,13 @@
     "explanation": "139 is indeed greater than 77, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:439cdff1705bebf6e1a59c615ef7dcd3aae5c6d43c6428796d0e88163131d635",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:51:42.366337+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000515",
@@ -10809,7 +12027,13 @@
     "explanation": "463 is indeed greater than 411, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:3051a033dbbe63480ca3054940736ff8febd9b558e2588f20509659c91440956",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:55:15.174992+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000516",
@@ -10825,7 +12049,13 @@
     "explanation": "441 is indeed greater than 248, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:36a8f4f92dcf47f57aadb96c793bf3989e692eb521a0e646a760f39eedaba86f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T09:58:22.169659+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000517",
@@ -10841,7 +12071,13 @@
     "explanation": "17 is not greater than 299; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:2aa322ff348b398ca958e1114fd549ccc731e470222716ded7c8a8750ee43c1c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:02:10.376602+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000518",
@@ -10857,7 +12093,13 @@
     "explanation": "200 is not greater than 357; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:bb1d7fdae5833dde70cf745592b2018c5de20790d4f89ce20df0b3d91bcfb83c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:05:09.659267+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000519",
@@ -10873,7 +12115,13 @@
     "explanation": "310 is indeed greater than 265, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:18c7f7e00934c890baf50f60cc86bd371d9a64cf08263945bb15b03855af30fa",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:40:53.757677+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000520",
@@ -10889,7 +12137,13 @@
     "explanation": "39 is not greater than 497; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:bf6ba7c2ac24cad9ebebac94c7d30935b9910953a95bd5689ba1e481f4a64b66",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T10:46:38.087012+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000521",
@@ -10905,7 +12159,13 @@
     "explanation": "447 is indeed greater than 226, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:65ca4fca7460a913159f8f6b86b7a6362cd6fd8f8bc391cc165e2084c55692f6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:05:35.111240+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000522",
@@ -10921,7 +12181,13 @@
     "explanation": "322 is indeed greater than 285, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:7529f23c89b011076133926cd620abc2e0227a461d1222f6811e949012531fdb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:19:00.230722+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000523",
@@ -10937,7 +12203,13 @@
     "explanation": "383 is indeed greater than 92, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:d63ab50917af36c6074db38f7b61ee89cd5cbac1d45b3e991384cae6b8f54580",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-20T11:25:06.417910+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000524",
@@ -10953,7 +12225,13 @@
     "explanation": "129 is not greater than 190; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:a4df90ccc103342fc970916089b3643153b2e7fd2025f6e0370da7d5c86ebff3",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T05:32:28.585039+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000525",
@@ -10969,7 +12247,13 @@
     "explanation": "390 is indeed greater than 175, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:81e816d7d13f68a7eabbe784ee15bef8e8a9112a6b1bb3432e0b091eb235f6fb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000526",
@@ -10985,7 +12269,13 @@
     "explanation": "20 is not greater than 62; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:dd87d98e4390423f6284d014c424d4a61eeaaaafed6dc44dff1cec9d95d339e4",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000527",
@@ -11001,7 +12291,13 @@
     "explanation": "9 is not greater than 61; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:9e5cc3933482e25e58b3e41650c174e6cd85781635244ad931f5e97893a4d8b6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000528",
@@ -11017,7 +12313,13 @@
     "explanation": "358 is indeed greater than 256, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:af406c9f9b8d20db2e066f18c9413d62bb1ac97ebf808ce555797bcbaf845f50",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000529",
@@ -11033,7 +12335,13 @@
     "explanation": "367 is indeed greater than 237, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:f874ace1747c03dc81dc3859c2e3c0fdc628070cd0c0d976cd09b655236346fb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000530",
@@ -11049,7 +12357,13 @@
     "explanation": "99 is indeed greater than 12, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:c8b130a2bac4fdf4c55bfef872521b64ff02ee073a3af9c277974be1f6412bf8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:07:06.021766+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000531",
@@ -11065,7 +12379,13 @@
     "explanation": "73 is not greater than 486; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:f89220360bffae4f3d4ef734a94666c6373fb1e18ced1470f550e026391ced1c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:09:15.695533+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000532",
@@ -11081,7 +12401,13 @@
     "explanation": "208 is not greater than 348; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:85c4b18bc471fac4b80203dfa6e7c9c52f8b69f8b58dd521190bd4e2bbb2d517",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:13:37.577056+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_07_qar_reports_plagiarism_and_bias_for_every_item (call)"
+      }
+    }
   },
   {
     "id": "QB-000533",
@@ -11097,7 +12423,13 @@
     "explanation": "154 is not greater than 440; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:5b1b42edd0be33ffc918026c806a3b8eed1a1f09557276947ed9d0bb51ebe0df",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:18:34.068078+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000534",
@@ -11113,7 +12445,13 @@
     "explanation": "119 is not greater than 243; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:cf4fd5fec0f5aa25400c55dd0c4a04b52a6bd51cbae99d03e8b4e185c7ab134e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:20:14.333546+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000535",
@@ -11129,7 +12467,13 @@
     "explanation": "150 is not greater than 479; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:4bd03cc670b12716be3788ae14099f248227b50fabd35e775267aed2b42d4da8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:22:00.648432+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000536",
@@ -11145,7 +12489,13 @@
     "explanation": "145 is indeed greater than 72, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:6ef16b77cae33238a80d6d1c266fd1dfd8a9f647e41ed2e43e8cd1bf0cd1637d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:24:44.681341+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000537",
@@ -11161,7 +12511,13 @@
     "explanation": "354 is indeed greater than 123, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:519633b94a934a8c5a9ee350b433dd51f3d2266019c37ff2b00efa7942e27818",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:26:31.706959+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000538",
@@ -11177,7 +12533,13 @@
     "explanation": "319 is indeed greater than 201, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:b389f4d53e25546f9676f12c08e0426b0b79ca451039343d3bc48e913c7fe6fb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:28:14.786262+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000539",
@@ -11193,7 +12555,13 @@
     "explanation": "436 is indeed greater than 271, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:67cd255f940f451c48e29ee2994d816fb81c420b19d427fffb3b75326226d4ca",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:34:22.892741+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000540",
@@ -11209,7 +12577,13 @@
     "explanation": "353 is indeed greater than 299, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:7b8b22ec9c630c8d0dbc8789b05a7626de29379a50e32242b1daf707db0a2726",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:35:53.318156+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000541",
@@ -11225,7 +12599,13 @@
     "explanation": "165 is not greater than 435; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:a69c4c073514c421fa1fcb27641a43a436f348b5371be9876d979c119cef3ada",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T07:37:23.002836+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000542",
@@ -11241,7 +12621,13 @@
     "explanation": "340 is indeed greater than 117, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:5010be73246c9e92698346c78169c8061e0197788052d78676e6b22073196c90",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T08:17:57.485525+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000543",
@@ -11257,7 +12643,13 @@
     "explanation": "107 is not greater than 414; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:bd412e6c9cbf2e839c0d09142225e8b24744b67e890da9fc7ff2624ef1d96e79",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T08:25:36.860054+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000544",
@@ -11273,7 +12665,13 @@
     "explanation": "268 is not greater than 295; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:68a2022606618486403b51228a6b06942c0a69600d853dff96bdb37ebb0efc7a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:12:15.169508+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000545",
@@ -11289,7 +12687,13 @@
     "explanation": "288 is not greater than 412; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:f15a771d020b34e300a994579bb63f3f960c38f148404317883fe1896ebd2bd7",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:13:15.722543+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000546",
@@ -11305,7 +12709,13 @@
     "explanation": "454 is not greater than 456; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:d215f7d87eaf9a75b32ad1d0c1de3075d39fedc8e928cb7af667cd92642b1c63",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T09:13:26.683789+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000547",
@@ -11321,7 +12731,13 @@
     "explanation": "452 is indeed greater than 242, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:c2de717191bb4fdc2c75f917dbdead8cb955be4f9471b588dfd8e181b9b18048",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T10:35:15.733437+00:00",
+        "used_in_run": "manual"
+      }
+    }
   },
   {
     "id": "QB-000548",
@@ -11337,7 +12753,13 @@
     "explanation": "206 is not greater than 499; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:bfc6a1b6913bba32ccee4d61c197fd92a0aa294a912830edec309c56984fb149",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:51:24.525300+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000549",
@@ -11353,7 +12775,13 @@
     "explanation": "465 is indeed greater than 38, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:ae1bbc913785b7c116be1d02d4706362ac2ec6f57d4cad2fad360d5603720a92",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:52:13.853223+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_report_names_every_category (setup)"
+      }
+    }
   },
   {
     "id": "QB-000550",
@@ -11369,7 +12797,13 @@
     "explanation": "153 is not greater than 485; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:36848b1e5e96253e93fe935f66f6727f1309f1aee96f31d7ca3f4c1124617cb3",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T04:52:28.537184+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000551",
@@ -11385,7 +12819,13 @@
     "explanation": "16 is not greater than 140; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:36c23e76c52f678be95a6a4623422c737257a2395ad0b2cbf530b48afb788f38",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T06:52:28.564616+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000552",
@@ -11401,7 +12841,13 @@
     "explanation": "310 is indeed greater than 269, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:858b7ffb52e7e29b130ff6128e8d7f9486c649de29d8fb5f8d83f1d9e4eecd0e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T06:54:02.077258+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000553",
@@ -11417,7 +12863,13 @@
     "explanation": "244 is not greater than 343; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:e14d365ce1dfc86cde0005818a228ff90448fd28823aa5a11585300691fd9a0a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T07:00:04.142321+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_06_plagiarism_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000554",
@@ -11433,7 +12885,13 @@
     "explanation": "318 is indeed greater than 119, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:dec3c5a865b644cbdd56101ba76d1d671067e932fd7e97a3fd11de33d093061b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-25T07:01:36.632612+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py::TestQARPlagiarismAndBiasSections::test_tc_ibmm_07_p01_bias_check_reports_a_score (setup)"
+      }
+    }
   },
   {
     "id": "QB-000555",
@@ -12454,7 +13912,13 @@
     "explanation": "1 metres = 100 centimetres, so 35 metres = 35 x 100 = 3500 centimetres.",
     "marks": 1,
     "content_hash": "sha256:bf513c65332ac39688a80c4d0cfbc6a67781c1dc4d337cbdf4e53811ac40d988",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T07:25:03.827629+00:00",
+        "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000614",
@@ -12470,7 +13934,13 @@
     "explanation": "1 kilograms = 1000 grams, so 22 kilograms = 22 x 1000 = 22000 grams.",
     "marks": 1,
     "content_hash": "sha256:5a29f6bb3e28838496544dce1ccd4c9c698c0ca586667403087a174c0001247a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T07:45:32.082741+00:00",
+        "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000615",
@@ -12486,7 +13956,13 @@
     "explanation": "1 kilograms = 1000 grams, so 21 kilograms = 21 x 1000 = 21000 grams.",
     "marks": 1,
     "content_hash": "sha256:3a0b61efe09da9927dbdd84ae87aec9ded54a8ddd2f96b3f806ce7ab1f35049b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T08:55:26.984255+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000616",
@@ -12502,7 +13978,13 @@
     "explanation": "1 kilograms = 1000 grams, so 12 kilograms = 12 x 1000 = 12000 grams.",
     "marks": 1,
     "content_hash": "sha256:a27650bf6108d305c1ca53628dc3e387161df861c1b2689e2c9e78b424166af3",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:16:52.834657+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000617",
@@ -12518,7 +14000,13 @@
     "explanation": "1 metres = 100 centimetres, so 48 metres = 48 x 100 = 4800 centimetres.",
     "marks": 1,
     "content_hash": "sha256:b81c9fc456f6055c056c58eeee0afde888232ba892a7b98a4cad08aca3abccc6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-18T10:27:06.082988+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000618",
@@ -12534,7 +14022,13 @@
     "explanation": "1 kilometres = 1000 metres, so 48 kilometres = 48 x 1000 = 48000 metres.",
     "marks": 1,
     "content_hash": "sha256:c6003bed47d59f4e495fd1ed5c022fa9f39e985b75968ed50c313850f9930b04",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000619",
@@ -12550,7 +14044,13 @@
     "explanation": "1 minutes = 60 seconds, so 12 minutes = 12 x 60 = 720 seconds.",
     "marks": 1,
     "content_hash": "sha256:b85bdaeec0ef68356f6f237d9dde812f35943f9c83d6e465144724b1773b222c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000620",
@@ -12566,7 +14066,13 @@
     "explanation": "1 metres = 100 centimetres, so 21 metres = 21 x 100 = 2100 centimetres.",
     "marks": 1,
     "content_hash": "sha256:229a5c958664691aa159c7c84d9361ad0289446a793e3d2c0abc6b366fc85132",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000621",
@@ -12582,7 +14088,13 @@
     "explanation": "1 metres = 100 centimetres, so 36 metres = 36 x 100 = 3600 centimetres.",
     "marks": 1,
     "content_hash": "sha256:0a81030d4c7ca7c1b4eeb4ebbe6ea033980805c3dea98d12b0ebd7e1e2de33bd",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000622",
@@ -12598,7 +14110,13 @@
     "explanation": "1 hours = 60 minutes, so 33 hours = 33 x 60 = 1980 minutes.",
     "marks": 1,
     "content_hash": "sha256:1734d7f6627d4f3cec2df9ff1b99a7325722db771fece8e25bf5335e6a1135b0",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000623",
@@ -13862,7 +15380,13 @@
     "explanation": "SI = (P x R x T)/100 = (2300 x 12 x 1)/100 = 276.",
     "marks": 2,
     "content_hash": "sha256:f14adbf368d91ccfb85110488cf0a2e97731086842fd38f8b8de76c3cd5b1ef6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000702",
@@ -13878,7 +15402,13 @@
     "explanation": "SI = (P x R x T)/100 = (9800 x 4 x 3)/100 = 1176.",
     "marks": 2,
     "content_hash": "sha256:2a3214c4548f7a1929343b25dc4ff458f62f635e0e8ff80b541a291cfcb9abff",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000703",
@@ -13894,7 +15424,13 @@
     "explanation": "SI = (P x R x T)/100 = (9300 x 4 x 1)/100 = 372.",
     "marks": 2,
     "content_hash": "sha256:0c157f0dce51bbfe38978b4cd0bd96c6cb00b942ce0886d2e027a1252d7451cb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000704",
@@ -13910,7 +15446,13 @@
     "explanation": "SI = (P x R x T)/100 = (7400 x 2 x 4)/100 = 592.",
     "marks": 2,
     "content_hash": "sha256:3390535a4d86f5492948fa714fa1957e0502143cfffc51539e983d20a2331916",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000705",
@@ -13926,7 +15468,13 @@
     "explanation": "SI = (P x R x T)/100 = (3800 x 6 x 5)/100 = 1140.",
     "marks": 2,
     "content_hash": "sha256:ffc3e1ff7a689c60b5cbfb61cbc9681707f2a191309a8cbb2a67faa7622b3d6c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000706",
@@ -15462,7 +17010,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(15+9) = 48 m; Area = length x breadth = 15 x 9 = 135 sq. m.",
     "marks": 3,
     "content_hash": "sha256:9f30286fd6387184023f18c1b10c14a670b152644516be5541f79bd4f13a4037",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000802",
@@ -15478,7 +17032,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(30+3) = 66 m; Area = length x breadth = 30 x 3 = 90 sq. m.",
     "marks": 3,
     "content_hash": "sha256:f9ce8a32bfc98de6bbec75d569876625d3f709e44002ab84e975f08e34535954",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000803",
@@ -15494,7 +17054,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(57+13) = 140 m; Area = length x breadth = 57 x 13 = 741 sq. m.",
     "marks": 3,
     "content_hash": "sha256:cdf608d0f5b2e0f623e2ffb2ccb719b0d590f8bc21f8441255867f414786c619",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000804",
@@ -15510,7 +17076,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(47+11) = 116 m; Area = length x breadth = 47 x 11 = 517 sq. m.",
     "marks": 3,
     "content_hash": "sha256:7aff4a172b5387eabf158118d6fed7b27e91f961b247018875f8bc9e1fcfb6d0",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000805",
@@ -15526,7 +17098,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(47+43) = 180 m; Area = length x breadth = 47 x 43 = 2021 sq. m.",
     "marks": 3,
     "content_hash": "sha256:7e40c2da3c447b320bc343155bd5fe1ecdc011fcf4df23c588c133971a47338f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000806",
@@ -16427,7 +18005,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:8c8ce8e398ae8b62357bb8e4564a9af9302dc4f730fd3ae108c4b424d2616d9e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000862",
@@ -16448,7 +18032,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:4cf294587d159f19955ac009cdefb0b72ba5e7be0955368d7582d206048a9810",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000863",
@@ -16469,7 +18059,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:0c456b1608d71f966ba1111f70ed5997e66ce17732b0da5aa36a1cdab4b48b2e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000864",
@@ -16490,7 +18086,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:26915937c0895d0ee7b936c2a5c751f1ead104dc55596c0398ab62238779279d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000865",
@@ -16511,7 +18113,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:d2965eb71957832080b826b460e830282ab6b70cee49a6626e048b1b5f457a4f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000866",
@@ -17687,7 +19295,13 @@
     "explanation": "8 plus 15 equals 23, so Diya has 23 stamps.",
     "marks": 2,
     "content_hash": "sha256:4b273482aac526eafb113f69bed21d0004b8a751486a363dbe7e700cd37eea2b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000922",
@@ -17708,7 +19322,13 @@
     "explanation": "11 plus 27 equals 38, so Tara has 38 books.",
     "marks": 2,
     "content_hash": "sha256:4c3ac5c65b8c459fea9a5b83dc734bbc2cdd80c9f32208de2f81cb8aae4f656a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000923",
@@ -17729,7 +19349,13 @@
     "explanation": "10 plus 29 equals 39, so Diya has 39 books.",
     "marks": 2,
     "content_hash": "sha256:3dedef2a94b28afd6e492b12a2709a8ecf4f8bda1d2b15506e0b5fe59f465921",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000924",
@@ -17750,7 +19376,13 @@
     "explanation": "16 plus 26 equals 42, so Neha has 42 stamps.",
     "marks": 2,
     "content_hash": "sha256:f9c169d57625ea6b35c20b2e9a25f900dc4dc5374b573fcde100007a40095fb0",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000925",
@@ -17771,7 +19403,13 @@
     "explanation": "39 plus 12 equals 51, so Arjun has 51 toys.",
     "marks": 2,
     "content_hash": "sha256:fb4ca4446001eda9fd48250cea8e6d4d08b40ebdbda1baaa40ca53d32801b0fa",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000926",
@@ -18947,7 +20585,13 @@
     "explanation": "37 plus 15 equals 52, so Ishaan collected 52 toys in total.",
     "marks": 2,
     "content_hash": "sha256:0fededed79282f347c5b128eb9fc1e4e561bd23f29715bb3dfb2db2ac5a1eb93",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000982",
@@ -18968,7 +20612,13 @@
     "explanation": "21 plus 18 equals 39, so Riya collected 39 buttons in total.",
     "marks": 2,
     "content_hash": "sha256:a6dfbf4e558e84aa2a43a0a93aaeeaedcbd0949b1e5dc2814136577949a58c00",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000983",
@@ -18989,7 +20639,13 @@
     "explanation": "34 plus 15 equals 49, so Rohan collected 49 marbles in total.",
     "marks": 2,
     "content_hash": "sha256:4640c715b3b25bd248f9367b4590c0ccdaf52828fe413fde37d35c47afbc02f7",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000984",
@@ -19010,7 +20666,13 @@
     "explanation": "5 plus 36 equals 41, so Aditi collected 41 coins in total.",
     "marks": 2,
     "content_hash": "sha256:75a19ed570afec2404577681dffd246ba543117123299ff262f234423d8dbbf6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000985",
@@ -19031,7 +20693,13 @@
     "explanation": "33 plus 8 equals 41, so Karan collected 41 coins in total.",
     "marks": 2,
     "content_hash": "sha256:b4f18e6a494b4a705394103e360e840c8d3c0fccc2c0be76b14ab8a12962b5af",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000986",
@@ -20202,7 +21870,13 @@
     "explanation": "Since 141 comes after 108 when counting upward, 141 is greater than 108; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:236a7724695bc3ec7c20c78fcdbe4243803eb5e736277906426cf8b626a6089e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001042",
@@ -20218,7 +21892,13 @@
     "explanation": "Since 176 comes after 104 when counting upward, 176 is greater than 104; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:a506f773e21639ba569e8210b0150a9e063676e694b0897fa80149fbf719f047",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001043",
@@ -20234,7 +21914,13 @@
     "explanation": "Since 59 comes after 13 when counting upward, 59 is greater than 13; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:1c4e15212042b04489eb5575044499a3f85e0528df1ff170972dcd992c3dc73b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001044",
@@ -20250,7 +21936,13 @@
     "explanation": "Since 160 comes after 8 when counting upward, 160 is greater than 8; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:ef357861ff82ead184627be19108ceca53658e2b37d905264237112349e5b403",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001045",
@@ -20266,7 +21958,13 @@
     "explanation": "Since 174 comes after 111 when counting upward, 174 is greater than 111; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:fce06a12f1eca55e0859b763d7f92d6ea42f92b158d5e78b15c661d6196aa8aa",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-21T06:49:10.731173+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001046",

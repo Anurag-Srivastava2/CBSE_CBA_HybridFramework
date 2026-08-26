@@ -62,7 +62,9 @@ class TestE2EQARImageModerationBulk:
         assert match, f"QAR returned an unexpected item ID: {item_id}"
         return int(match.group(1))
 
-    def test_all_images_and_questions_in_one_sheet_upload_moderation(self, request):
+    def test_all_images_and_questions_in_one_sheet_upload_moderation(
+        self, request, page_evidence
+    ):
         prefix = f"QAR_AUTO_IMG_BULK_{uuid4().hex[:10]}"
         source_cases = load_real_image_cases(SOURCE_ZIP_PATH, prefix)
         blocked_cases = [
@@ -101,10 +103,20 @@ class TestE2EQARImageModerationBulk:
         )
         upload_page = BulkUploadPage(self.driver)
         upload_page.close_popup_if_open()
+        page_evidence.checkpoint(
+            f"SME {sme_username} signed in to upload {len(upload_cases)} images "
+            f"in one sheet, {len(blocked_cases)} of which are expected to be "
+            "blocked. Filenames are neutralised so moderation has to judge the "
+            "image, not its name"
+        )
         validation = upload_page.upload_excel_and_images_zip_for_validation(
             workbook_path,
             zip_path,
             timeout=180,
+        )
+        page_evidence.checkpoint(
+            f"Excel + images ZIP accepted: {validation['accepted']} — "
+            f"{validation['message']}"
         )
         assert validation["accepted"], (
             f"Upload of all {len(upload_cases)} images was rejected before "
@@ -112,6 +124,10 @@ class TestE2EQARImageModerationBulk:
         )
 
         submission = upload_page.submit_for_qar(prefix, analysis_timeout=300)
+        page_evidence.checkpoint(
+            f"Submitted for QAR as set {submission['item_set_id']} with "
+            f"{len(submission['item_ids'])} item(s); {len(upload_cases)} expected"
+        )
         assert len(submission["item_ids"]) == len(upload_cases), (
             f"Expected {len(upload_cases)} fresh items, received "
             f"{submission['item_ids']}."
@@ -119,6 +135,10 @@ class TestE2EQARImageModerationBulk:
 
         report = QARReportPage(self.driver)
         report.wait_until_processed(submission["item_set_id"], timeout=300)
+        page_evidence.checkpoint(
+            f"QAR finished processing set {submission['item_set_id']}; reading "
+            f"{IMAGE_MODERATION_CHECK_NAME} per item"
+        )
 
         screenshot_dir = artifact_dir / "qar_report_screenshots"
         screenshot_dir.mkdir(parents=True, exist_ok=True)
@@ -139,6 +159,13 @@ class TestE2EQARImageModerationBulk:
             )
             self.driver.save_screenshot(str(item_screenshot))
 
+            page_evidence.checkpoint(
+                f"Item {number:03d} ({source_case.category}, expected "
+                f"{source_case.expected_outcome}) uploaded as "
+                f"{upload_case.filename} — {IMAGE_MODERATION_CHECK_NAME} scored "
+                f"{evidence['score']} against threshold {evidence['threshold']}; "
+                f"item status {status}"
+            )
             per_item_results.append(
                 {
                     "item_id": item_id,
@@ -212,6 +239,17 @@ class TestE2EQARImageModerationBulk:
             for item in per_item_results
             if (item["expected_outcome"] == "BLOCK") != _is_flagged(item)
         ]
+        page_evidence.checkpoint(
+            f"{len(per_item_results) - len(mismatches)}/{len(per_item_results)} "
+            "items moderated as expected; mismatches: "
+            + (
+                ", ".join(
+                    f"{item['item_id']} expected {item['expected_outcome']}"
+                    for item in mismatches
+                )
+                or "none"
+            )
+        )
         assert not mismatches, (
             f"{len(mismatches)} of {len(per_item_results)} items had an Image "
             "Moderation result inconsistent with their expected outcome: "

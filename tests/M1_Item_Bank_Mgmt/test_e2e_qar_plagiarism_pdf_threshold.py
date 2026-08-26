@@ -37,6 +37,7 @@ class TestE2EQARPlagiarismPDFThreshold:
         request,
         tmp_path,
         record_property,
+        page_evidence,
     ):
         run_token = f"QAR_AUTO_PDF_PLAG_{uuid4().hex[:10]}"
         workbook_path, source_evidence = build_qar_plagiarism_workbook(
@@ -53,6 +54,11 @@ class TestE2EQARPlagiarismPDFThreshold:
         self.login_as_sme()
         upload_page = BulkUploadPage(self.driver)
         upload_page.close_popup_if_open()
+        page_evidence.checkpoint(
+            f"SME signed in with {self.ITEM_COUNT} verbatim copies of published "
+            f"item-bank-export.pdf items, each >= {EXPECTED_PLAGIARISM_THRESHOLD}% "
+            f"similar to its source (run {run_token})"
+        )
 
         # Chrome only: this nightly check drives the bulk-upload page object,
         # which does not expose the upload-step furniture the other suites
@@ -63,10 +69,18 @@ class TestE2EQARPlagiarismPDFThreshold:
         survey_chrome(checks, upload_page)
         record_property("result_description", checks.publish())
         validation = upload_page.upload_excel_for_validation(workbook_path)
+        page_evidence.checkpoint(
+            f"Fixture workbook accepted by upload validation: "
+            f"{validation['accepted']} — {validation['message']}"
+        )
         assert validation["accepted"], (
             f"PDF plagiarism fixture was rejected before QAR: {validation['message']}"
         )
         submission = upload_page.submit_for_qar("1LPH5FTO-3")
+        page_evidence.checkpoint(
+            f"Submitted for QAR as set {submission['item_set_id']} with "
+            f"{len(submission['item_ids'])} item(s): {submission['item_ids']}"
+        )
         assert len(submission["item_ids"]) == self.ITEM_COUNT, (
             f"Expected {self.ITEM_COUNT} copied PDF items, got {submission['item_ids']}."
         )
@@ -77,6 +91,9 @@ class TestE2EQARPlagiarismPDFThreshold:
             item_id: report.get_item_status(item_id)
             for item_id in submission["item_ids"]
         }
+        page_evidence.checkpoint(
+            f"QAR finished; per-item verdicts: {initial_statuses}"
+        )
         incorrectly_approved = {
             item_id: status
             for item_id, status in initial_statuses.items()
@@ -87,12 +104,23 @@ class TestE2EQARPlagiarismPDFThreshold:
             f"the 97% threshold: {incorrectly_approved}."
         )
 
+        page_evidence.checkpoint(
+            f"No verbatim PDF copy slipped through as approved/passed at the "
+            f"{EXPECTED_PLAGIARISM_THRESHOLD}% threshold"
+        )
+
         qar_evidence = []
         for item_id, source in zip(submission["item_ids"], source_evidence):
             check = report.get_open_item_check_evidence(
                 item_id,
                 "Plagiarism Detection",
                 expand=True,
+            )
+            page_evidence.checkpoint(
+                f"{item_id} (copied from {source['source_item_id']}, PDF page "
+                f"{source['source_pdf_page']}, {source['source_similarity']}% similar) "
+                f"— Plagiarism Detection scored {check['score']}, status "
+                f"{initial_statuses[item_id]}"
             )
             assert check["card"], (
                 f"No Plagiarism Detection card was visible after opening {item_id}."

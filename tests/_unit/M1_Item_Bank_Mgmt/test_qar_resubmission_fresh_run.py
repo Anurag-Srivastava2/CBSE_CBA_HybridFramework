@@ -77,7 +77,9 @@ class TestQARResubmissionFreshRun:
             
         return session, headers
 
-    def test_tc_neg_m1_09_resubmission_triggers_fresh_qar_run(self, tmp_path):
+    def test_tc_neg_m1_09_resubmission_triggers_fresh_qar_run(
+        self, tmp_path, page_evidence
+    ):
         """TC-NEG-M1-09: Verify resubmitting a revised item set triggers a fresh QAR run.
         
         Steps:
@@ -94,10 +96,11 @@ class TestQARResubmissionFreshRun:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_sme2_username(),
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_sme2_username()),
         )
         page = UploadItemFilePage(self.driver)
         page.close_popup_if_open()
+        page_evidence.checkpoint("SME2 signed in")
 
         # Step 2: Build scenario workbook
         self.step(2, "Building scenario workbook with near-duplicate items")
@@ -125,6 +128,10 @@ class TestQARResubmissionFreshRun:
         page.click_submit_for_qar_and_wait_for_results()
         initial_toast = page.wait_for_ocr_success_message()
         self.logger.info(f"Initial QAR completion toast: {initial_toast}")
+        page_evidence.checkpoint(
+            f"Run 1 — {len(questions)} near-duplicate questions uploaded as set "
+            f"{item_set_id} and checked by QAR: {initial_toast}"
+        )
 
         # Step 4: Revise the failed items
         self.step(4, "Revising the failed items to unique question texts")
@@ -132,10 +139,17 @@ class TestQARResubmissionFreshRun:
         page.open_item_set_from_sets_list(item_set_id)
         revised_items = page.revise_items_in_open_item_set(item_set_id)
         self.logger.info(f"Revised items: {revised_items}")
+        page_evidence.checkpoint(
+            f"Revised {len(revised_items)} failed item(s) to unique question text: "
+            f"{revised_items}"
+        )
 
         # Step 5: Re-run QAR
         self.step(5, "Re-running QAR on the revised item set")
         print("[CHECK] Re-run QAR button is enabled after revisions", flush=True)
+        page_evidence.checkpoint(
+            f"Re-run QAR enabled after the revisions: {page.is_rerun_qar_enabled()}"
+        )
         assert page.is_rerun_qar_enabled(), "Re-run QAR button is disabled after revisions!"
         print("[PASS] Re-run QAR button enabled.", flush=True)
 
@@ -147,6 +161,9 @@ class TestQARResubmissionFreshRun:
         # Step 6: Verify updated results and timeline
         self.step(6, "Verifying updated QAR scores and timeline")
         print(f"[CHECK] QAR rerun completed under SLA of 120 seconds", flush=True)
+        page_evidence.checkpoint(
+            f"Run 2 finished in {elapsed:.2f}s against a 120s SLA: {rerun_result}"
+        )
         assert elapsed <= 120, f"QAR rerun exceeded SLA: {elapsed:.2f}s"
         print(f"[PASS] QAR rerun completed in {elapsed:.2f}s", flush=True)
 
@@ -155,6 +172,20 @@ class TestQARResubmissionFreshRun:
 
         # Check duplicate score improves / new QAR results shown
         print("[CHECK] New QAR Report generated with updated scores and timeline", flush=True)
+        page_evidence.checkpoint(
+            "Fresh-run markers on the report: "
+            + (
+                ", ".join(
+                    marker
+                    for marker in (
+                        "run 2", "rerun", "second run", "history", "timeline",
+                        "passed", "approved",
+                    )
+                    if marker in normalized
+                )
+                or "none — the report looks unchanged, which is the cached-result bug"
+            )
+        )
         assert "run 2" in normalized or "rerun" in normalized or "second run" in normalized or "history" in normalized or "timeline" in normalized or "passed" in normalized or "approved" in normalized, (
             f"Expected timeline or reports to show updated QAR run, but got:\n{report_text}"
         )
@@ -182,6 +213,9 @@ class TestQARResubmissionFreshRun:
         self.logger.info(f"History API URL: {history_url}")
         
         print(f"[CHECK] GET {history_url} returns 2 distinct QAR run records", flush=True)
+        page_evidence.checkpoint(
+            f"GET {api_path} returned {response.status_code}"
+        )
         assert response.status_code == 200, (
             f"Expected status 200 for QAR history API, but got {response.status_code}. Response: {response.text}"
         )
@@ -194,6 +228,11 @@ class TestQARResubmissionFreshRun:
         # Verify timestamps are different
         timestamps = [record.get("timestamp") or record.get("created_at") or record.get("time") for record in data]
         self.logger.info(f"Extracted QAR run timestamps: {timestamps}")
+        page_evidence.checkpoint(
+            f"QAR history holds {len(data)} run record(s) with "
+            f"{len(set(timestamps))} distinct timestamp(s) — two distinct runs "
+            "prove the resubmission was not served from cache"
+        )
         assert len(set(timestamps)) >= 2, f"Expected distinct timestamps for each QAR run, got {timestamps}"
         
         print(f"[PASS] Confirmed {len(data)} distinct QAR run records with separate timestamps.", flush=True)

@@ -13,6 +13,8 @@ phase fails.
 Not named `test_*`, so pytest does not collect it.
 """
 
+from pages.teacher.dashboard_page import DashboardPage
+
 # Every absent element costs its full timeout, and these surveys run 20-60
 # checks against elements that all paint together.
 CHECK_TIMEOUT = 2
@@ -23,6 +25,30 @@ def enter_screen(checks, page_name):
     checks.page_name = page_name
     checks.capture_page_evidence(page_name)
     return checks
+
+
+def missing_teacher_nav_items(page):
+    """Which teacher sidebar destinations are absent on `page`.
+
+    The chrome is the app shell, so it is the same on every screen a teacher is
+    on — but the page objects are not. The teacher DashboardPage carries the
+    teacher nav list and its own lookup, while the contribution workspace is the
+    shared SME/teacher UploadItemFilePage, whose list describes the *SME*.
+    Reading the labels off whichever page object happened to be passed would
+    survey a teacher session against the SME sidebar, the exact mix-up
+    survey_teacher_chrome exists to prevent, so the labels always come from the
+    teacher dashboard and only the lookup is borrowed from the page at hand.
+    """
+    locate = getattr(page, "nav_item_locator", None) or page.sme_nav_locator
+    missing = []
+    for label in DashboardPage.NAV_ITEMS:
+        try:
+            present = page.count_visible(locate(label))
+        except Exception:  # noqa: BLE001 - an unreadable destination is an absent one
+            present = 0
+        if not present:
+            missing.append(label)
+    return missing
 
 
 def survey_teacher_chrome(checks, page):
@@ -41,8 +67,8 @@ def survey_teacher_chrome(checks, page):
     checks.check("Language — EN", page.LANG_EN, timeout=CHECK_TIMEOUT)
     checks.check("Language — हिंदी", page.LANG_HI, timeout=CHECK_TIMEOUT)
 
-    missing_nav = checks.safe_call(page.missing_nav_items)
-    for label in page.NAV_ITEMS:
+    missing_nav = checks.safe_call(lambda: missing_teacher_nav_items(page))
+    for label in DashboardPage.NAV_ITEMS:
         checks.check_condition(f"Nav — {label}", label not in missing_nav)
     return checks
 

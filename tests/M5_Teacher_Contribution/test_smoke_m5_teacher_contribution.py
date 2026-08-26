@@ -10,6 +10,7 @@ from tests.M5_Teacher_Contribution.m5_surveys import (
     survey_upload_history,
 )
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 from utilities.smoke_support import sign_in
 
@@ -43,7 +44,12 @@ class TestSmokeM5TeacherContribution:
 
     def sign_in_as_teacher(self):
         sign_in(self.driver, ReadConfig.get_username())
-        assert DashboardPage(self.driver).is_dashboard_loaded(), (
+        dashboard_loaded = DashboardPage(self.driver).is_dashboard_loaded()
+        checkpoint(
+            f"Teacher {ReadConfig.get_username()} signed in; dashboard loaded: "
+            f"{dashboard_loaded}"
+        )
+        assert dashboard_loaded, (
             f"{ReadConfig.get_username()} did not land on the teacher dashboard"
         )
 
@@ -53,9 +59,12 @@ class TestSmokeM5TeacherContribution:
         page.close_popup_if_open()
         page.wait_for_application_to_load()
         page.open_item_creation_module()
+        checkpoint("Item creation module opened from the teacher dashboard")
         return page
 
-    def test_smoke_m5_01_teacher_reaches_contribution_workspace(self, record_property):
+    def test_smoke_m5_01_teacher_reaches_contribution_workspace(
+        self, record_property, page_evidence
+    ):
         """Teacher signs in, lands on the dashboard and opens item creation."""
         page = self.open_contribution_workspace()
 
@@ -67,6 +76,10 @@ class TestSmokeM5TeacherContribution:
 
         manual_tab_visible = page.is_element_visible_quick(self.MANUAL_TAB, timeout=20)
         upload_tab_visible = page.is_element_visible_quick(self.UPLOAD_TAB, timeout=20)
+        page_evidence.checkpoint(
+            f"Both contribution routes offered to the teacher — Manual tab: "
+            f"{manual_tab_visible}, Upload Item File tab: {upload_tab_visible}"
+        )
         record_property(
             "result_description",
             f"Teacher {ReadConfig.get_username()} reached the contribution workspace — "
@@ -77,11 +90,14 @@ class TestSmokeM5TeacherContribution:
         assert manual_tab_visible, "Manual item authoring tab is not available to the teacher"
         assert upload_tab_visible, "Upload Item File (bulk) tab is not available to the teacher"
 
-    def test_smoke_m5_02_teacher_upload_history_renders(self, record_property):
+    def test_smoke_m5_02_teacher_upload_history_renders(
+        self, record_property, page_evidence
+    ):
         """The teacher's Previously Uploaded Files history table renders."""
         page = self.open_contribution_workspace()
         page.open_upload_item_file_tab()
         page.open_upload_step()
+        page_evidence.checkpoint("Teacher reached the bulk Upload Documents step")
 
         checks = ElementChecks(
             page, record_property, page_name="Teacher Contribution — Upload History"
@@ -94,6 +110,10 @@ class TestSmokeM5TeacherContribution:
         # A never-used account legitimately has no rows, so the statuses are
         # evidence in the report rather than an assertion.
         statuses = page.get_upload_history_statuses(timeout=10)
+        page_evidence.checkpoint(
+            f"Previously Uploaded Files table rendered: {history_visible}; recent "
+            f"statuses: {', '.join(statuses) if statuses else 'no rows on this account'}"
+        )
         record_property(
             "result_description",
             "Teacher upload history rendered; recent statuses: "

@@ -13,6 +13,7 @@ from pages.admin.admin_portal_page import AdminPortalPage
 from pages.admin.qar_config_page import QARConfigPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -28,24 +29,33 @@ class TestM2QARConfiguration:
         self.driver.find_element("tag name", "body").send_keys("")
         page = AdminPortalPage(self.driver)
         page.wait_for_application_ready()
+        checkpoint(f"Signed in as {username}")
         return page
 
     def open_qar_config(self):
         self.login_as(ReadConfig.get_admin_username())
         try:
-            return QARConfigPage(self.driver).open()
+            opened = QARConfigPage(self.driver).open()
+            checkpoint("QAR Configuration opened as Admin")
+            return opened
         except (TimeoutException, WebDriverException) as error:
             pytest.xfail(
                 f"KI-M2-QARCFG-001 [M2 QAR Config] QAR Configuration screen is not "
                 f"reachable for Admin: {error}"
             )
 
-    def test_m2_qar_config_01_all_seven_checks_are_listed_at_their_layer(self, record_property):
+    def test_m2_qar_config_01_all_seven_checks_are_listed_at_their_layer(
+        self, record_property, page_evidence
+    ):
         """Every check is recorded individually, so a partial screen names which
         check is missing or misclassified rather than only the first."""
         page = self.open_qar_config()
         checks = ElementChecks(page, record_property, page_name="QAR Configuration — Checks")
 
+        page_evidence.checkpoint(
+            f"Reading all {len(page.EXPECTED_CHECKS)} QAR checks and the layer "
+            "each is classified at"
+        )
         for check_name, expected_layer in page.EXPECTED_CHECKS.items():
             container_text = page.get_check_container_text(check_name)
             if not checks.check_condition(
@@ -70,7 +80,9 @@ class TestM2QARConfiguration:
 
         record_property("result_description", checks.publish())
 
-    def test_m2_qar_config_02_every_tab_opens_and_renders_controls(self, record_property):
+    def test_m2_qar_config_02_every_tab_opens_and_renders_controls(
+        self, record_property, page_evidence
+    ):
         """Tab presence and its rendered controls, both recorded softly."""
         page = self.open_qar_config()
         checks = ElementChecks(page, record_property, page_name="QAR Configuration — Tabs")
@@ -86,9 +98,15 @@ class TestM2QARConfiguration:
                 detail=f"{control_count} controls",
             )
 
+        page_evidence.checkpoint(
+            f"Opened every tab ({len(page.EXPECTED_CHECKS) + 1} of them) and "
+            "counted the controls each one rendered"
+        )
         record_property("result_description", checks.publish())
 
-    def test_m2_qar_config_03_status_bar_reports_every_check_state(self, record_property):
+    def test_m2_qar_config_03_status_bar_reports_every_check_state(
+        self, record_property, page_evidence
+    ):
         """Pill presence is soft; a blocker check switched OFF stays a hard gate."""
         page = self.open_qar_config()
         checks = ElementChecks(page, record_property, page_name="QAR Configuration — Status Bar")
@@ -110,11 +128,17 @@ class TestM2QARConfiguration:
             for check_name, layer in page.EXPECTED_CHECKS.items()
             if "blocker" in layer.casefold() and snapshot[check_name] == "OFF"
         ]
+        page_evidence.checkpoint(
+            f"Status bar reads {snapshot}; blocker-layer checks switched OFF: "
+            f"{disabled_blockers or 'none'}"
+        )
         assert not disabled_blockers, (
             f"Blocker-layer QAR checks are switched OFF: {disabled_blockers}"
         )
 
-    def test_m2_qar_config_04_status_bar_pass_pill_matches_global_threshold(self, record_property):
+    def test_m2_qar_config_04_status_bar_pass_pill_matches_global_threshold(
+        self, record_property, page_evidence
+    ):
         """Pill presence is soft; the threshold agreeing with Global Settings is hard."""
         page = self.open_qar_config()
         checks = ElementChecks(page, record_property, page_name="QAR Configuration — Pass Threshold")
@@ -135,6 +159,10 @@ class TestM2QARConfiguration:
         )
         checks.publish()
 
+        page_evidence.checkpoint(
+            f"Global Settings is configured at {configured!r}%; the status bar "
+            f"Pass pill reads {footer_value!r}% — the two must agree"
+        )
         if configured is None or footer_value is None:
             pytest.xfail(
                 "KI-M2-QARCFG-002 [M2 QAR Config] Pass threshold is not exposed on both "
@@ -146,7 +174,9 @@ class TestM2QARConfiguration:
         )
 
     @pytest.mark.serial
-    def test_m2_qar_config_05_global_settings_edits_persist_after_reload(self):
+    def test_m2_qar_config_05_global_settings_edits_persist_after_reload(
+        self, page_evidence
+    ):
         page = self.open_qar_config()
 
         originals = page.read_global_settings()
@@ -168,6 +198,9 @@ class TestM2QARConfiguration:
                 "alternate value that automation can safely set."
             )
 
+        page_evidence.checkpoint(
+            f"Global Settings currently {editable}; editing to {targets}"
+        )
         try:
             page.update_global_settings(**targets)
             assert page.is_save_enabled(), (
@@ -182,6 +215,10 @@ class TestM2QARConfiguration:
                 if str(persisted[key]).strip().casefold()
                 != str(targets[key]).strip().casefold()
             }
+            page_evidence.checkpoint(
+                f"After save and reload the settings read {persisted}; values "
+                f"that did not persist: {not_persisted or 'none'}"
+            )
             assert not not_persisted, (
                 f"Global settings did not persist (setting: expected vs stored): "
                 f"{not_persisted}"
@@ -195,7 +232,9 @@ class TestM2QARConfiguration:
             self.restore_global_settings(page, originals, targets)
 
     @pytest.mark.serial
-    def test_m2_qar_config_06_out_of_range_pass_threshold_is_rejected(self):
+    def test_m2_qar_config_06_out_of_range_pass_threshold_is_rejected(
+        self, page_evidence
+    ):
         page = self.open_qar_config()
 
         originals = page.read_global_settings()
@@ -211,6 +250,10 @@ class TestM2QARConfiguration:
                 page.save_configuration()
 
             stored = page.reload().get_global_pass_threshold()
+            page_evidence.checkpoint(
+                f"Tried to save a pass threshold of 150%; after reload the "
+                f"stored value is {stored!r} (must stay within 0-100)"
+            )
             assert stored is not None, "Pass threshold disappeared after an invalid edit."
             assert 0 < stored <= 100, (
                 f"Out-of-range pass threshold was accepted and stored as {stored}."
@@ -218,9 +261,15 @@ class TestM2QARConfiguration:
         finally:
             self.restore_global_settings(page, originals, {"pass_threshold": "150"})
 
-    def test_m2_qar_config_07_non_admin_cannot_reach_qar_configuration(self):
+    def test_m2_qar_config_07_non_admin_cannot_reach_qar_configuration(
+        self, page_evidence
+    ):
         page = self.login_as(ReadConfig.get_role_usernames("teacher")[0])
 
+        page_evidence.checkpoint(
+            "Teacher navigation exposes QAR Configuration: "
+            f"{'qar configuration' in page.normalized_body_text()} (must be False)"
+        )
         assert "qar configuration" not in page.normalized_body_text(), (
             "Teacher navigation exposes the Admin QAR Configuration section."
         )
@@ -232,6 +281,10 @@ class TestM2QARConfiguration:
             for check_name in QARConfigPage.EXPECTED_CHECKS
             if check_name.casefold() in text
         ]
+        page_evidence.checkpoint(
+            "Teacher requested /admin/qar-configuration directly; QAR checks "
+            f"visible to them: {leaked or 'none'}"
+        )
         assert not leaked, (
             f"Teacher reached the QAR rule configuration by direct URL; visible checks: "
             f"{leaked}"

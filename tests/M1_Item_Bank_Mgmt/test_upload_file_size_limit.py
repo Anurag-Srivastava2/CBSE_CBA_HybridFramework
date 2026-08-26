@@ -3,7 +3,6 @@ from pathlib import Path
 from shutil import copy2
 from time import monotonic
 from uuid import uuid4
-import json
 import re
 import logging
 from openpyxl import load_workbook
@@ -17,7 +16,6 @@ from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
 from utilities.element_checks import ElementChecks
 from utilities.item_bank_workbook_builder import build_item_workbook
 from utilities.read_config import ReadConfig
-from utilities.screenshot_utils import ScreenshotUtils
 
 
 @pytest.mark.rtm
@@ -34,18 +32,6 @@ class TestUploadFileSizeLimit:
     def step(self, n, message):
         print(f"\n[STEP {n}] {message}", flush=True)
         self.logger.info(f"[STEP {n}] {message}")
-
-    @staticmethod
-    def add_evidence_screenshot(request, evidence_screenshots, name, screenshot_path):
-        evidence_screenshots.append({"name": name, "path": str(screenshot_path)})
-        request.node.user_properties[:] = [
-            property_entry
-            for property_entry in request.node.user_properties
-            if property_entry[0] != "evidence_screenshots"
-        ]
-        request.node.user_properties.append(
-            ("evidence_screenshots", json.dumps(evidence_screenshots))
-        )
 
     @staticmethod
     def build_large_workbook(tmp_path, target_size_mb=12):
@@ -104,7 +90,7 @@ class TestUploadFileSizeLimit:
         return session, headers
 
     def test_tc_neg_m1_10_upload_file_size_limit_exceeded(
-        self, tmp_path, request, record_property
+        self, tmp_path, request, record_property, page_evidence
     ):
         """TC-NEG-M1-10: Verify 12 MB file upload is rejected via Selenium and API, and smaller files still upload.
         
@@ -117,8 +103,6 @@ class TestUploadFileSizeLimit:
         6. POST /upload with 12 MB file via requests -> assert 413 Payload Too Large.
         7. Verify smaller valid file is accepted immediately after (no stuck state).
         """
-        evidence_screenshots = []
-
         # Step 1: Login as SME2
         self.step(1, "Logging in as SME2")
         self.driver.get(ReadConfig.get_base_url())
@@ -165,15 +149,12 @@ class TestUploadFileSizeLimit:
         rejection_text = page.wait_for_upload_rejection(timeout=30)
         self.logger.info(f"Upload rejection text: {rejection_text}")
         normalized_rejection = rejection_text.casefold()
-        failure_screenshot = ScreenshotUtils.capture(
-            self.driver,
-            f"{request.node.name}_file_validation_failed_message",
+        page_evidence.checkpoint(
+            f"Oversized {large_workbook.name} FAILED validation: {rejection_text}"
         )
-        self.add_evidence_screenshot(
-            request,
-            evidence_screenshots,
-            "Oversized file FAILED validation message",
-            failure_screenshot,
+        page_evidence.checkpoint(
+            "Upload ID generated for the oversized file: "
+            f"{'upload id:' in normalized_rejection} (must be False)"
         )
         
         expected_error_text = "exceeds 10 mb"
@@ -221,6 +202,10 @@ class TestUploadFileSizeLimit:
         assert post_response.status_code in (413, 400), (
             f"Expected status 413 Payload Too Large or 400 Bad Request, but got {post_response.status_code}. Response: {post_response.text}"
         )
+        page_evidence.checkpoint(
+            f"POST {upload_url} with the same 12 MB file returned "
+            f"{post_response.status_code} (413 or 400 expected)"
+        )
         print(f"[PASS] API returned status {post_response.status_code} as expected.", flush=True)
 
         # Step 6: Verify smaller valid file is accepted immediately after
@@ -245,15 +230,10 @@ class TestUploadFileSizeLimit:
         page.upload_file(small_workbook)
         validation_message = page.wait_for_upload_validation_success()
         self.logger.info(f"Validation success message: {validation_message}")
-        success_screenshot = ScreenshotUtils.capture(
-            self.driver,
-            f"{request.node.name}_file_validation_passed_message",
-        )
-        self.add_evidence_screenshot(
-            request,
-            evidence_screenshots,
-            "Valid file PASSED validation message",
-            success_screenshot,
+        page_evidence.checkpoint(
+            f"An under-limit {small_workbook.name} PASSED validation straight "
+            f"after the rejection, so the upload step is not stuck: "
+            f"{validation_message}"
         )
 
         print("[CHECK] Validation success message contains PASSED", flush=True)

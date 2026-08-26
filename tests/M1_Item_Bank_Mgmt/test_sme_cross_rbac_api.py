@@ -89,7 +89,9 @@ class TestSMECrossRBACAPI:
         items = (detail.json().get("data") or {}).get("items") or []
         return item_set_id, (items[0].get("item_id") if items else None)
 
-    def test_tc_neg_m1_08_cross_sme_rbac_returns_403_forbidden(self, record_property):
+    def test_tc_neg_m1_08_cross_sme_rbac_returns_403_forbidden(
+        self, record_property, page_evidence
+    ):
         """TC-NEG-M1-08: Verify that cross-SME item set access returns 403 Forbidden at API level.
         
         Steps:
@@ -112,6 +114,10 @@ class TestSMECrossRBACAPI:
         # Step 1: Login as SME1
         self.step(1, f"Logging in as SME1 ({sme1_user}) and extracting auth session")
         sme1_session, sme1_headers = self.get_auth_session(sme1_user, ReadConfig.get_password_for_username(sme1_user))
+        page_evidence.checkpoint(
+            f"SME1 {sme1_user} signed in; bearer token extracted: "
+            f"{'Authorization' in sme1_headers}"
+        )
 
         # This test reaches its API assertions through a real browser login,
         # so the landing page it authenticates on is worth recording. The 403
@@ -126,6 +132,10 @@ class TestSMECrossRBACAPI:
         # Step 2: Resolve a real item set (and item) owned by SME1
         self.step(2, "Resolving an item set owned by SME1 via the REST API")
         item_set_id, item_id = self.get_owned_item_set_and_item(sme1_session, sme1_headers)
+        page_evidence.checkpoint(
+            f"Resolved an SME1-owned resource from the API — item set "
+            f"{item_set_id or 'none'}, item {item_id or 'none'}"
+        )
 
         # Cross-owner RBAC is meaningful only with a real resource owned by SME1.
         if not item_set_id or not item_id:
@@ -141,6 +151,10 @@ class TestSMECrossRBACAPI:
         # Clear cookies/session first
         UploadItemFilePage(self.driver).reset_browser_session_to_login()
         sme2_session, sme2_headers = self.get_auth_session(sme2_user, ReadConfig.get_password_for_username(sme2_user))
+        page_evidence.checkpoint(
+            f"Session switched to SME2 {sme2_user}; bearer token extracted: "
+            f"{'Authorization' in sme2_headers}"
+        )
 
         # SME2 must not be able to read SME1's set. This targets
         # /item-sets/{id}/items because that endpoint exists. The routes this
@@ -152,6 +166,10 @@ class TestSMECrossRBACAPI:
         print(f"[CHECK] GET {cross_url} as SME2 returns 403 Forbidden", flush=True)
         cross_response = sme2_session.get(cross_url, headers=sme2_headers, timeout=15)
         self.logger.info(f"Cross-SME GET status: {cross_response.status_code}")
+        page_evidence.checkpoint(
+            f"SME2 GET /item-sets/{item_set_id}/items returned "
+            f"{cross_response.status_code} (403 expected)"
+        )
         assert cross_response.status_code == 403, (
             f"Expected 403 Forbidden when SME2 reads SME1's item set {item_set_id}, "
             f"got {cross_response.status_code}: {cross_response.text[:300]}"
@@ -163,6 +181,11 @@ class TestSMECrossRBACAPI:
         self.step(5, "Confirming SME1 still reads its own set (control)")
         owner_response = sme1_session.get(cross_url, headers=sme1_headers, timeout=15)
         self.logger.info(f"Owner GET status: {owner_response.status_code}")
+        page_evidence.checkpoint(
+            f"Control — owner SME1 GET on the same URL returned "
+            f"{owner_response.status_code} (200 expected), so the 403 above is "
+            "ownership rather than a bad URL or dead token"
+        )
         assert owner_response.status_code == 200, (
             f"Owner SME1 should still read its own item set {item_set_id}, got "
             f"{owner_response.status_code}: {owner_response.text[:300]}"

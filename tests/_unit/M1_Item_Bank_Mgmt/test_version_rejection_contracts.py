@@ -9,6 +9,7 @@ from pages.rwg.review_queue_page import RWGReviewQueuePage
 from pages.sme.upload_item_file_page import UploadItemFilePage
 from pages.sr_rwg.review_queue_page import SRRWGReviewQueuePage
 from utilities.logger import LogGenerator
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -45,17 +46,18 @@ class TestVersionRejectionContracts:
         self.step(2, f"Logging in as: {username}")
         LoginPage(self.driver).login_to_application(
             username,
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(username),
         )
         self.driver.find_element("tag name", "body").send_keys("\ue00c")
         UploadItemFilePage(self.driver).wait_for_application_to_load()
+        checkpoint(f"Signed in as {username}")
         self.logger.info("Login complete: %s", username)
 
     # ------------------------------------------------------------------
     # Tests
     # ------------------------------------------------------------------
 
-    def test_tc_ibmm_16_p01_full_revision_history_is_visible(self):
+    def test_tc_ibmm_16_p01_full_revision_history_is_visible(self, page_evidence):
         """IBMM-16-P01: The SME Sets module must surface iteration/version history
         with feedback for any item-set that has undergone at least one revision cycle.
         Asserts that history markers, feedback text, and a version number are all
@@ -83,6 +85,10 @@ class TestVersionRejectionContracts:
         )
 
         self.check("Page shows history/iteration/version + feedback + version number")
+        page_evidence.checkpoint(
+            f"SME Sets revision-history markers — history: {has_history}, "
+            f"feedback: {has_feedback}, version number: {has_version_number}"
+        )
         if not (has_history and has_feedback and has_version_number):
             pytest.skip(
                 "Controlled revised item-set fixture is unavailable: "
@@ -93,7 +99,7 @@ class TestVersionRejectionContracts:
         self.passed("Revision history, feedback, and version number all visible on Sets page")
         self.logger.info("IBMM-16-P01 passed")
 
-    def test_tc_ibmm_16_p02_reviewer_history_is_read_only(self):
+    def test_tc_ibmm_16_p02_reviewer_history_is_read_only(self, page_evidence):
         """IBMM-16-P02: RWG, SR-RWG, and PIT reviewers must be able to *view*
         item history (history/iteration/timeline/version visible) but must NOT see
         edit-history or delete-version controls (read-only enforcement).
@@ -143,11 +149,17 @@ class TestVersionRejectionContracts:
                 "found in page text."
             )
             self.passed(f"[{role.upper()}] 'delete version' correctly absent")
+            page_evidence.checkpoint(
+                f"{role.upper()} sees item history but no edit/delete controls — "
+                f"history marker: {has_history}, 'edit history' present: "
+                f"{'edit history' in normalized}, 'delete version' present: "
+                f"{'delete version' in normalized}"
+            )
             self.logger.info("IBMM-16-P02 read-only checks passed for role=%s", role)
 
         self.logger.info("IBMM-16-P02 passed for all reviewer roles: %s", roles)
 
-    def test_tc_ibmm_16_n01_item_id_is_preserved_across_versions(self):
+    def test_tc_ibmm_16_n01_item_id_is_preserved_across_versions(self, page_evidence):
         """IBMM-16-N01: Item IDs (IS\\d+-i\\d+) must remain stable across revision
         versions — no new IDs should be minted when an item is revised.
         A duplicate in the found IDs means a revision created a second ID.
@@ -163,6 +175,10 @@ class TestVersionRejectionContracts:
         print(f"         Found item IDs on page: {item_ids}", flush=True)
         self.logger.info("Item IDs found on Sets page: %s", item_ids)
 
+        page_evidence.checkpoint(
+            f"SME Sets shows {len(item_ids)} item ID(s), {len(set(item_ids))} of "
+            "them unique — a duplicate would mean a revision minted a new ID"
+        )
         if not item_ids:
             pytest.skip(
                 "No revised item IDs are visible; ID preservation cannot be verified "
@@ -178,7 +194,7 @@ class TestVersionRejectionContracts:
         self.passed(f"All {len(set(item_ids))} item IDs are unique — IDs stable across versions")
         self.logger.info("IBMM-16-N01 passed — %d unique IDs", len(set(item_ids)))
 
-    def test_tc_ibmm_17_p01_admin_receives_three_strike_notification(self):
+    def test_tc_ibmm_17_p01_admin_receives_three_strike_notification(self, page_evidence):
         """IBMM-17-P01: When an item-set has been rejected 3 times, the Admin
         dashboard must show a three-strike notification alongside a 'disabled' status
         and an item reference.
@@ -203,6 +219,10 @@ class TestVersionRejectionContracts:
         )
 
         self.check("Page shows (3|three)-strike + 'disabled' + 'item'")
+        page_evidence.checkpoint(
+            f"Admin dashboard three-strike markers — three-strike: "
+            f"{has_three_strike}, disabled: {has_disabled}, item reference: {has_item}"
+        )
         if not (has_three_strike and has_disabled and has_item):
             pytest.skip(
                 f"Controlled three-strike scenario is not present: "
@@ -212,7 +232,7 @@ class TestVersionRejectionContracts:
         self.passed("Three-strike notification with disabled item found on Admin dashboard")
         self.logger.info("IBMM-17-P01 passed")
 
-    def test_tc_ibmm_17_p02_admin_can_view_rejection_history(self):
+    def test_tc_ibmm_17_p02_admin_can_view_rejection_history(self, page_evidence):
         """IBMM-17-P02: The Admin must be able to view a rejection history panel
         that includes the reason for each rejection and the associated item-set ID.
         """
@@ -236,6 +256,10 @@ class TestVersionRejectionContracts:
         )
 
         self.check("Page shows 'rejection history' + 'reason' + IS\\d+ item-set ID")
+        page_evidence.checkpoint(
+            f"Admin rejection-history markers — panel: {has_rejection_history}, "
+            f"reason: {has_reason}, item-set ID: {has_item_set_id}"
+        )
         if not (has_rejection_history and has_reason and has_item_set_id):
             pytest.skip(
                 f"Controlled rejection-history fixture is not present: "
@@ -246,7 +270,7 @@ class TestVersionRejectionContracts:
         self.passed("Rejection history panel with reason and item-set ID visible to Admin")
         self.logger.info("IBMM-17-P02 passed")
 
-    def test_tc_ibmm_17_n01_second_rejection_has_no_three_strike_alert(self):
+    def test_tc_ibmm_17_n01_second_rejection_has_no_three_strike_alert(self, page_evidence):
         """IBMM-17-N01: A second rejection must NOT trigger a three-strike alert.
         The three-strike rule fires only on the third (final) rejection.
         Any line on the page that says 'second rejection … three-strike' is a bug.
@@ -272,6 +296,10 @@ class TestVersionRejectionContracts:
         )
 
         self.check("No 'second rejection … three-strike' text present")
+        page_evidence.checkpoint(
+            f"Lines pairing a second rejection with a three-strike alert: "
+            f"{second_rejection_alerts or 'none — the rule correctly waits for the third'}"
+        )
         assert not second_rejection_alerts, (
             f"A second rejection incorrectly triggered a three-strike alert. "
             f"Matches found: {second_rejection_alerts}"

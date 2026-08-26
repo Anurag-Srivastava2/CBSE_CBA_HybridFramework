@@ -8,6 +8,7 @@ from tests.M5_Teacher_Contribution.m5_surveys import (
     survey_teacher_dashboard,
 )
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 from utilities.logger import LogGenerator
 
@@ -26,13 +27,16 @@ from utilities.logger import LogGenerator
 class TestTeacherLogin:
     logger = LogGenerator.loggen()
 
-    def test_teacher_valid_login(self, record_property):
+    def test_teacher_valid_login(self, record_property, page_evidence):
         self.logger.info("Starting teacher valid login test")
 
         self.driver.get(ReadConfig.get_base_url())
         self.logger.info("Opened application URL")
 
         login_page = LoginPage(self.driver)
+        page_evidence.checkpoint(
+            f"Signing in as teacher {ReadConfig.get_username()}"
+        )
         login_page.login_to_application(
             ReadConfig.get_username(),
             ReadConfig.get_password()
@@ -50,7 +54,11 @@ class TestTeacherLogin:
         survey_teacher_dashboard(checks, dashboard_page)
         record_property("result_description", checks.publish())
 
-        assert dashboard_page.is_dashboard_loaded() is True
+        dashboard_loaded = dashboard_page.is_dashboard_loaded()
+        page_evidence.checkpoint(
+            f"Teacher dashboard painted after login: {dashboard_loaded}"
+        )
+        assert dashboard_loaded is True
 
         self.logger.info("Teacher login test passed")
 
@@ -125,12 +133,14 @@ class TestTeacherLoginPageBranding:
         self.driver.get(ReadConfig.get_base_url())
         login_page = LoginPage(self.driver)
         login_page.wait_for_login_form_or_authenticated_page()
-        assert login_page.is_login_form_displayed() is True, (
+        form_displayed = login_page.is_login_form_displayed()
+        checkpoint(f"Sign-in screen rendered: {form_displayed}")
+        assert form_displayed is True, (
             "The sign-in form did not render, so there is no login screen to survey."
         )
         return login_page
 
-    def test_login_page_visual_branding_survey(self, record_property):
+    def test_login_page_visual_branding_survey(self, record_property, page_evidence):
         """Logo, colours, background artwork, fonts and chrome on the login screen."""
         login_page = self.open_login_page()
         checks = ElementChecks(login_page, record_property, page_name="Teacher Login — Branding")
@@ -211,6 +221,15 @@ class TestTeacherLoginPageBranding:
             detail=f"data-theme: {active_theme!r}",
         )
         palette = login_page.get_theme_palette()
+        off_baseline = [
+            variable
+            for variable, expected in EXPECTED_PALETTE.items()
+            if to_rgb(palette.get(variable, "")) != to_rgb(expected)
+        ]
+        page_evidence.checkpoint(
+            f"Theme {active_theme!r}; palette variables off the captured "
+            f"baseline: {off_baseline or 'none'}"
+        )
         for variable, expected in EXPECTED_PALETTE.items():
             declared = palette.get(variable, "")
             checks.check_condition(
@@ -272,6 +291,10 @@ class TestTeacherLoginPageBranding:
             detail=f"font-family: {body_font or 'unreadable'}",
         )
         loaded_fonts = login_page.get_loaded_font_families()
+        page_evidence.checkpoint(
+            f"Typography — page set in {body_font or 'unreadable'}; loaded "
+            f"families: {loaded_fonts}"
+        )
         checks.check_condition(
             f"Brand font — {EXPECTED_BRAND_FONT} is loaded",
             login_page.is_font_loaded(f"16px {EXPECTED_BRAND_FONT}"),
@@ -347,6 +370,11 @@ class TestTeacherLoginPageBranding:
         checks.check("Link — Privacy Policy", login_page.PRIVACY_POLICY_LINK, timeout=CHECK_TIMEOUT)
         checks.check("Link — Terms of Use", login_page.TERMS_OF_USE_LINK, timeout=CHECK_TIMEOUT)
 
+        page_evidence.checkpoint(
+            f"Branding survey complete — {icon_count} icon glyph(s), "
+            f"{social_links} social link(s), background art "
+            f"{hero_background_url or 'none'}"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. Theme {active_theme!r}, "
@@ -354,7 +382,7 @@ class TestTeacherLoginPageBranding:
             f"background art {hero_background_url or 'none'}.",
         )
 
-    def test_login_page_theme_switcher(self, record_property):
+    def test_login_page_theme_switcher(self, record_property, page_evidence):
         """The palette menu offers each theme and repaints the page when used."""
         login_page = self.open_login_page()
         checks = ElementChecks(login_page, record_property, page_name="Teacher Login — Theme Switcher")
@@ -372,6 +400,10 @@ class TestTeacherLoginPageBranding:
 
         starting_theme = login_page.get_active_theme()
         starting_primary = login_page.get_theme_palette(["--primary"]).get("--primary", "")
+        page_evidence.checkpoint(
+            f"Theme menu offers {theme_options}; starting on {starting_theme!r} "
+            f"with --primary {starting_primary or 'unset'}"
+        )
 
         # Switching themes rewrites the palette the whole page draws from, so a
         # picker that opens but leaves --primary alone is a dead control even
@@ -393,6 +425,12 @@ class TestTeacherLoginPageBranding:
         grey_button = login_page.get_settled_computed_style(
             login_page.SIGN_IN_BUTTON, ("background-color",), CHECK_TIMEOUT
         )
+        page_evidence.checkpoint(
+            f"Grey selected — data-theme {starting_theme!r} -> "
+            f"{grey_theme or 'unchanged'}, --primary "
+            f"{starting_primary or 'unset'} -> {grey_primary or 'unset'}; a "
+            "picker that opens but leaves --primary alone is a dead control"
+        )
         checks.check_condition(
             "Sign In button follows the active theme",
             to_rgb(grey_button.get("background-color")) == to_rgb(grey_primary),
@@ -413,6 +451,11 @@ class TestTeacherLoginPageBranding:
             ),
         )
 
+        page_evidence.checkpoint(
+            f"Switched back to Default — data-theme "
+            f"{restored_theme or 'unchanged'}, --primary "
+            f"{restored_primary or 'unset'}"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. Themes offered: {theme_options}; "

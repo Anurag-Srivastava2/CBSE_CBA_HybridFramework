@@ -1,5 +1,4 @@
 from shutil import copy2
-import json
 from uuid import uuid4
 
 from openpyxl import load_workbook
@@ -10,8 +9,8 @@ from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
 from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
-from utilities.screenshot_utils import ScreenshotUtils
 
 
 @pytest.mark.rtm
@@ -84,36 +83,19 @@ class TestNegativeNonXlsxUploadRejected:
         ]
         assert not visible_enabled, "Continue button should remain disabled after invalid upload."
 
-    def add_evidence_screenshot(self, request, name):
-        screenshot_path = ScreenshotUtils.capture(self.driver, name)
-        evidence = []
-        for property_name, property_value in request.node.user_properties:
-            if property_name == "evidence_screenshots":
-                try:
-                    evidence = json.loads(property_value)
-                except Exception:
-                    evidence = []
-                break
-        evidence.append({"name": name, "path": screenshot_path})
-        request.node.user_properties[:] = [
-            item for item in request.node.user_properties if item[0] != "evidence_screenshots"
-        ]
-        request.node.user_properties.append(("evidence_screenshots", json.dumps(evidence)))
-        return screenshot_path
-
     def upload_assert_capture_and_reset(
         self,
         request,
         upload_page,
         file_path,
-        screenshot_name,
+        checkpoint_detail,
         assertion,
         timeout=30,
         reset_after=True,
     ):
         upload_page.upload_file(file_path)
         message = assertion(upload_page, timeout)
-        self.add_evidence_screenshot(request, screenshot_name)
+        checkpoint(f"{checkpoint_detail} — {message}")
         if reset_after:
             upload_page.reset_upload_step()
         return message
@@ -140,6 +122,7 @@ class TestNegativeNonXlsxUploadRejected:
         )
 
         upload_page = self.login_and_open_upload_step()
+        checkpoint("SME signed in and reached the Upload Documents step")
 
         # Surveyed on arrival, before any invalid file is pushed at the page, so
         # the element table describes the upload step as it should look rather

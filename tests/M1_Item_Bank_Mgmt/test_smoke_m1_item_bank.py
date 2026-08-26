@@ -86,9 +86,15 @@ class TestSmokeM1ItemBank:
         return page
 
     @pytest.mark.xdist_group("smoke-m1-workspace")
-    def test_smoke_m1_01_sme_reaches_item_creation_workspace(self, record_property):
+    def test_smoke_m1_01_sme_reaches_item_creation_workspace(
+        self, record_property, page_evidence
+    ):
         """SME signs in and the item-creation workspace offers both authoring routes."""
         page = self.open_item_creation_workspace(slot=0)
+        page_evidence.checkpoint(
+            f"SME {self.sme_username(0)} signed in and the item-creation "
+            "workspace painted"
+        )
 
         # Additive only: every assertion below stays exactly as hard as it
         # was, so the smoke gate still fails loudly and fast.
@@ -100,6 +106,10 @@ class TestSmokeM1ItemBank:
 
         manual_tab_visible = page.is_element_visible_quick(self.MANUAL_TAB, timeout=20)
         upload_tab_visible = page.is_element_visible_quick(self.UPLOAD_TAB, timeout=20)
+        page_evidence.checkpoint(
+            f"Both authoring routes offered — Manual tab: {manual_tab_visible}, "
+            f"Upload Item File tab: {upload_tab_visible}"
+        )
 
         record_property(
             "result_description",
@@ -112,7 +122,9 @@ class TestSmokeM1ItemBank:
         assert upload_tab_visible, "Upload Item File (bulk) tab is not available to the SME"
 
     @pytest.mark.xdist_group("smoke-m1-manual")
-    def test_smoke_m1_02_manual_item_creation_stages_one_item(self, record_property):
+    def test_smoke_m1_02_manual_item_creation_stages_one_item(
+        self, record_property, page_evidence
+    ):
         """An SME authors one complete True/False item and it stages.
 
         Exercises the whole manual path — metadata dropdowns (grade, subject,
@@ -140,11 +152,22 @@ class TestSmokeM1ItemBank:
         survey_manual_form(checks, page)
         page.wait_for_saved_draft_to_hydrate()
         page.clear_added_items()
+        page_evidence.checkpoint(
+            "Saved draft hydrated and Added Items cleared, so the count below "
+            "is this run's own work rather than a leftover"
+        )
 
         page.add_true_false_manual_item(question_text, answer, explanation)
 
         staged_count = page.get_settled_added_items_count()
         card_text = page.wait_for_added_item_card_text(question_text, self.TRUE_FALSE_TYPOLOGY)
+        page_evidence.checkpoint(
+            f"Authored one {self.TRUE_FALSE_TYPOLOGY} item (answer: {answer}); "
+            f"Added Items count: {staged_count}"
+        )
+        page_evidence.checkpoint(
+            f"Staged card text: {card_text[:120] or 'no card found'}"
+        )
         record_property(
             "result_description",
             f"Authored one {self.TRUE_FALSE_TYPOLOGY} item (answer: {answer}); "
@@ -169,11 +192,16 @@ class TestSmokeM1ItemBank:
             page.clear_added_items()
 
     @pytest.mark.xdist_group("smoke-m1-upload")
-    def test_smoke_m1_03_bulk_upload_screen_accepts_a_file(self, record_property):
+    def test_smoke_m1_03_bulk_upload_screen_accepts_a_file(
+        self, record_property, page_evidence
+    ):
         """The bulk Excel upload screen reaches its Upload Documents step."""
         upload_page = self.open_item_creation_workspace(slot=2, page_class=UploadItemFilePage)
         upload_page.open_upload_item_file_tab()
         upload_page.open_upload_step()
+        page_evidence.checkpoint(
+            f"SME {self.sme_username(2)} reached the bulk Upload Documents step"
+        )
 
         checks = ElementChecks(
             upload_page, record_property, page_name="SME Bulk Upload — Upload Step"
@@ -182,6 +210,9 @@ class TestSmokeM1ItemBank:
         survey_upload_step(checks, upload_page)
 
         file_input_present = bool(self.driver.find_elements(*upload_page.FILE_INPUT))
+        page_evidence.checkpoint(
+            f"Upload Documents step exposes a file input: {file_input_present}"
+        )
         record_property(
             "result_description",
             "Bulk upload screen reached the Upload Documents step; "
@@ -192,7 +223,9 @@ class TestSmokeM1ItemBank:
         )
 
     @pytest.mark.xdist_group("smoke-m1-excel")
-    def test_smoke_m1_04_excel_upload_creates_item_set(self, record_property, tmp_path):
+    def test_smoke_m1_04_excel_upload_creates_item_set(
+        self, record_property, tmp_path, page_evidence
+    ):
         """An Excel workbook uploads, validates and mints an item set.
 
         Stops at the review step, where the app has already assigned item IDs
@@ -224,12 +257,20 @@ class TestSmokeM1ItemBank:
         survey_chrome(checks, upload_page)
         try:
             _, upload_message = upload_page.upload_item_file_and_validate(str(workbook_path))
+            page_evidence.checkpoint(
+                f"{workbook_path.name} ({self.EXCEL_ITEM_COUNT} row(s)) passed "
+                f"upload validation: {upload_message}"
+            )
 
             # Advance to the review step, where the app lists the items it
             # ingested along with their assigned IDs.
             upload_page.click_continue()
             item_ids = upload_page.get_review_item_ids()
             item_set_id = upload_page.get_item_set_id_from_item_ids(item_ids)
+            page_evidence.checkpoint(
+                f"Review step listed {len(item_ids)} ingested item(s) {item_ids} "
+                f"under item set {item_set_id or 'UNKNOWN'}"
+            )
 
             record_property(
                 "result_description",
@@ -261,7 +302,9 @@ class TestSmokeM1ItemBank:
     # the portal allows one active session per account, so giving this its own
     # group would have two workers fighting over the same login.
     @pytest.mark.xdist_group("smoke-m1-workspace")
-    def test_smoke_m1_06_my_item_set_lists_uploaded_source_files(self, record_property):
+    def test_smoke_m1_06_my_item_set_lists_uploaded_source_files(
+        self, record_property, page_evidence
+    ):
         """The My Item Set list renders and names each set's source workbook.
 
         The Uploaded File column is a property of the build, so its presence is
@@ -276,6 +319,9 @@ class TestSmokeM1ItemBank:
         page.close_popup_if_open()
         page.wait_for_application_to_load()
         page.open_item_sets_list()
+        page_evidence.checkpoint(
+            f"SME {self.sme_username(0)} opened the My Item Set listing"
+        )
 
         checks = ElementChecks(
             page, record_property, page_name="SME My Item Set — Listing"
@@ -286,6 +332,10 @@ class TestSmokeM1ItemBank:
         column_index = page.get_uploaded_file_column_index()
         listed_sets = page.get_item_set_list_rows()
         uploads = page.get_item_set_uploaded_files()
+        page_evidence.checkpoint(
+            f"Listing rendered {len(listed_sets)} set(s); {len(uploads)} name a "
+            f"source workbook; Uploaded File column index: {column_index}"
+        )
 
         # Read from the title attribute, which holds the untruncated name, so a
         # suffix check is meaningful here — the visible text is elided.

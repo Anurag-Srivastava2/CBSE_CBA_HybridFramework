@@ -26,6 +26,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from utilities.environment_health import (
+    INFRA_ERROR_MARKERS,
     is_infrastructure_failure,
     wait_for_environment,
 )
@@ -898,9 +899,19 @@ def build_extent_report():
     return report_path
 
 
+# pytest colourises assertion diffs, so captured failure text carries ANSI
+# escapes. openpyxl rejects ASCII control characters outright
+# (IllegalCharacterError: "... cannot be used in worksheets"), and that is
+# raised while writing the sheet at session end - taking the whole Excel report
+# with it after every test has already run. Strip them rather than truncating
+# alone, which is all this used to do.
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+ILLEGAL_EXCEL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
 def excel_safe_text(value):
-    text = str(value or "")
-    return text[:32767]
+    text = ANSI_ESCAPE_RE.sub("", str(value or ""))
+    return ILLEGAL_EXCEL_CHARS_RE.sub("", text)[:32767]
 
 
 def style_excel_sheet_header(row):
@@ -1742,3 +1753,66 @@ def pytest_sessionfinish(session, exitstatus):
     build_excel_report()
     build_allure_results()
     open_extent_report_if_enabled(extent_report_path)
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    """Split the failure count into product defects and environment outages.
+
+    pytest's headline ("11 failed") counts both alike, so a run that lost the
+    QA environment mid-way reads as a wall of defects. That is misleading in
+    both directions: it triggers false alarm, and once a team learns to
+    discount the number, it hides the real regressions inside it.
+
+    The classification is recomputed here from the failure text rather than
+    read off report.infra_failure, because custom report attributes do not
+    survive pytest-xdist's serialisation between worker and controller -
+    longreprtext does.
+
+    Only transport-level signatures count as infrastructure (see
+    INFRA_ERROR_MARKERS): DNS, refused/reset connections, a dead driver. A
+    slow-but-answering environment stays a product failure on purpose, so a
+    genuine performance regression is never filed away as an outage.
+    """
+    failed = terminalreporter.stats.get("failed", [])
+    if not failed:
+        return
+
+    infra, product = [], []
+    for report in failed:
+        text = getattr(report, "longreprtext", "") or str(getattr(report, "longrepr", ""))
+        (infra if is_infrastructure_failure(text) else product).append(report)
+
+    if not infra:
+        return
+
+    terminalreporter.write_sep("=", "failures by cause", bold=True)
+    terminalreporter.write_line(
+        f"product defects          : {len(product)}"
+    )
+    terminalreporter.write_line(
+        f"infrastructure failures  : {len(infra)}   "
+        "(environment unreachable - not product defects)"
+    )
+    terminalreporter.write_line("")
+
+    for report in infra:
+        text = (
+            getattr(report, "longreprtext", "")
+            or str(getattr(report, "longrepr", ""))
+        ).casefold()
+        marker = next(
+            (m for m in INFRA_ERROR_MARKERS if m in text), "infrastructure signature"
+        )
+        terminalreporter.write_line(f"  [infra]   {report.nodeid}")
+        terminalreporter.write_line(f"            -> {marker}")
+
+    if product:
+        terminalreporter.write_line("")
+        for report in product:
+            terminalreporter.write_line(f"  [defect]  {report.nodeid}")
+
+    terminalreporter.write_line("")
+    terminalreporter.write_line(
+        f"pytest's headline counts all {len(failed)} as failures; "
+        f"{len(product)} of them are product defects."
+    )

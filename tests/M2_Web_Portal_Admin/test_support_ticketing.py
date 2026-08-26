@@ -7,6 +7,7 @@ from pages.admin.helpdesk_page import HelpdeskPage
 from pages.common.login_page import LoginPage
 from pages.common.support_page import SupportPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 # A real 1x1 PNG. The dropzone accepts PNG/JPG/WEBP/PDF up to 5 MB, so the
@@ -51,10 +52,11 @@ class TestM2SupportAndHelpdesk:
             f"Sign-in did not establish a session for {username!r}; "
             "the application is still showing the login form."
         )
+        checkpoint(f"Admin {username} signed in")
         return username
 
     def test_tc_wpad_support_01_create_ticket_with_upload_and_verify(
-        self, sample_upload_file, record_property
+        self, sample_upload_file, record_property, page_evidence
     ):
         """Raise a ticket with an attachment, verify its detail sheet, then
         verify the same ticket in the admin Helpdesk queue."""
@@ -90,7 +92,17 @@ class TestM2SupportAndHelpdesk:
         )
         assert support.get_registration_date(), "Registration Date was not auto-set on the form."
 
+        page_evidence.checkpoint(
+            f"Ticket form filled — subject {subject!r}, category "
+            f"{support.get_selected_category()!r}, registration date "
+            f"{support.get_registration_date()!r} (auto-set)"
+        )
+
         support.attach_file(sample_upload_file)
+        page_evidence.checkpoint(
+            f"Attachment pill reads {support.get_attached_file_name()!r} "
+            f"(expected {sample_upload_file.name!r})"
+        )
         assert support.get_attached_file_name() == sample_upload_file.name, (
             f"Attachment pill shows {support.get_attached_file_name()!r}, "
             f"expected {sample_upload_file.name!r}."
@@ -98,6 +110,7 @@ class TestM2SupportAndHelpdesk:
 
         support.submit_ticket()
         ticket_id = support.wait_for_ticket(subject)
+        page_evidence.checkpoint(f"Ticket submitted and issued number {ticket_id}")
 
         record_property(
             "result_description",
@@ -109,6 +122,10 @@ class TestM2SupportAndHelpdesk:
         )
 
         open_after = support.get_tab_count("Open")
+        page_evidence.checkpoint(
+            f"Open tab count moved {open_before} -> {open_after} "
+            f"(expected {open_before + 1})"
+        )
         assert open_after == open_before + 1, (
             f"The Open tab count should have risen from {open_before} to {open_before + 1}, "
             f"but reads {open_after}."
@@ -130,6 +147,13 @@ class TestM2SupportAndHelpdesk:
         assert support.has_attachments_section(), (
             f"Ticket {ticket_id} detail sheet has no ATTACHMENTS section."
         )
+        page_evidence.checkpoint(
+            f"Detail sheet for {ticket_id} — subject "
+            f"{support.get_details_field('Subject')!r}, category "
+            f"{support.get_details_field('Category')!r}, attachments section "
+            f"present: {support.has_attachments_section()}, files listed: "
+            f"{support.get_attachment_names()}"
+        )
         assert support.is_file_in_details(sample_upload_file.name), (
             f"Attached file {sample_upload_file.name!r} is missing from the ticket preview. "
             f"Attachments listed: {support.get_attachment_names()}"
@@ -140,6 +164,7 @@ class TestM2SupportAndHelpdesk:
         helpdesk = HelpdeskPage(self.driver)
         helpdesk.open(ReadConfig.get_base_url())
 
+        page_evidence.checkpoint("Switched to the admin Helpdesk queue")
         assert helpdesk.is_on_page(), "Helpdesk header or subtext is missing."
         missing_columns = helpdesk.missing_columns()
         assert not missing_columns, (
@@ -149,12 +174,20 @@ class TestM2SupportAndHelpdesk:
 
         helpdesk.search_ticket(ticket_id)
         matched_ids = helpdesk.get_ticket_ids_in_view()
+        page_evidence.checkpoint(
+            f"Searching the Helpdesk for {ticket_id} returned {matched_ids} "
+            "— it should isolate that one ticket"
+        )
         assert matched_ids == [ticket_id], (
             f"Searching the helpdesk for {ticket_id} should isolate that one ticket, "
             f"but returned {matched_ids}."
         )
 
         queued = helpdesk.find_ticket(ticket_id)
+        page_evidence.checkpoint(
+            f"{ticket_id} reached the Helpdesk queue as {queued} — a newly "
+            "raised ticket may read Open or In Progress once auto-triage runs"
+        )
         record_property(
             "result_description",
             f"{ticket_id} reached the Helpdesk queue as {queued}.",

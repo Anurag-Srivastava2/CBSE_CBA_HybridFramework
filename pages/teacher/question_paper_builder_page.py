@@ -1,3 +1,4 @@
+import re
 from time import monotonic, sleep
 
 from selenium.common.exceptions import (
@@ -209,6 +210,37 @@ class QuestionPaperBuilderPage(BasePage):
         By.XPATH,
         "//*[not(*)][contains(normalize-space(),'End of Question Paper')]",
     )
+
+    # --- Question selection rules (Item Level) ---
+    #
+    # The item-typology row carries a QUESTION SELECTION cell whose dropdown
+    # decides how the generated questions are offered to the student. Two of
+    # the three rules reveal a second number input in the same cell, and each
+    # spells its purpose in the placeholder rather than in a label — which is
+    # what fill_question_selection_count() verifies it has hold of.
+    QUESTION_SELECTION_COLUMN = "QUESTION SELECTION"
+    QUESTION_SELECTION_RULES = ("All Mandatory", "Attempt Any", "OR Based")
+    QUESTION_SELECTION_COUNT_PLACEHOLDER = {
+        "Attempt Any": "Attempt Any",
+        "OR Based": "Mandatory",
+    }
+
+    # The rule chip above each section's table, e.g. "Attempt 10/12Q = 10M"
+    # or "OR Based 6Q = 12M". It states the marks the section contributes,
+    # which is the only place the builder shows how a rule is costed.
+    SECTION_RULE_CHIP_PATTERN = r"Q = \d+M$"
+
+    # --- Preview: question selection rules as the paper renders them ---
+    PREVIEW_ATTEMPT_ANY_INSTRUCTION = (
+        By.XPATH,
+        "//*[not(*)][contains(normalize-space(),'Attempt any')"
+        " and contains(normalize-space(),'out of')]",
+    )
+    PREVIEW_OR_CHOICE_INSTRUCTION = (
+        By.XPATH,
+        "//*[not(*)][contains(normalize-space(),'offer a choice between two')]",
+    )
+    PREVIEW_OR_SEPARATOR = (By.XPATH, "//*[not(*)][normalize-space()='OR']")
 
     # ------------------------------------------------------------------
     # Survey readers
@@ -724,7 +756,24 @@ class QuestionPaperBuilderPage(BasePage):
         selections["Number of Sets*"] = self.select_option_with_exact_text(
             "Number of Sets*", str(number_of_sets)
         )
+        # select_option_with_exact_text() returns what it was asked for, not
+        # what the control ended up showing, and this form resets itself on a
+        # mode switch. Read the trigger back so a reverted or swallowed
+        # selection fails here, rather than surfacing much later as a paper
+        # that generated the wrong number of sets.
+        shown = self.get_selected_option_text("Number of Sets*")
+        assert shown == str(number_of_sets), (
+            f"Number of Sets was set to {number_of_sets} but the form shows "
+            f"{shown!r}."
+        )
         return selections
+
+    def get_selected_option_text(self, label, occurrence=1):
+        """What a dropdown near `label` currently displays."""
+        control = self.find_control_near_label(
+            label, occurrence=occurrence, selector="button, [role='combobox']"
+        )
+        return (control.text or "").strip()
 
     def select_first_auto_chapter(self):
         return self.select_first_checkbox_option("Chapters*")
@@ -766,31 +815,52 @@ class QuestionPaperBuilderPage(BasePage):
                 self.pause_before_action()
         raise last_error
 
-    def select_option_with_exact_text(self, label, text, occurrence=1):
-        self.close_open_popovers()
-        control = self.find_control_near_label(
-            label, occurrence=occurrence, selector="button, [role='combobox']"
-        )
-        self.safe_click(control)
-        option = self.wait_utils.until_condition(
-            lambda driver: next(
-                (
-                    candidate
-                    for candidate in driver.find_elements(
-                        By.XPATH,
-                        "//*[@role='option' or @cmdk-item]",
-                    )
-                    if candidate.is_displayed()
-                    and candidate.is_enabled()
-                    and (candidate.text or "").strip() == text
+    def select_option_with_exact_text(self, label, text, occurrence=1, attempts=3):
+        """Pick the option reading exactly `text`, and confirm it took.
+
+        The option list settles after it is scrolled into view, so a native
+        click aimed at the option's centre can land on its neighbour - which
+        is how a paper configured for 4 sets quietly generated 3. The click
+        goes through JS so it cannot miss, and the trigger is read back
+        afterwards because a swallowed click is otherwise indistinguishable
+        from a successful one.
+        """
+        shown = None
+        for _ in range(attempts):
+            self.close_open_popovers()
+            control = self.find_control_near_label(
+                label, occurrence=occurrence, selector="button, [role='combobox']"
+            )
+            self.safe_click(control)
+            option = self.wait_utils.until_condition(
+                lambda driver: next(
+                    (
+                        candidate
+                        for candidate in driver.find_elements(
+                            By.XPATH,
+                            "//*[@role='option' or @cmdk-item]",
+                        )
+                        if candidate.is_displayed()
+                        and candidate.is_enabled()
+                        and (candidate.text or "").strip() == text
+                    ),
+                    False,
                 ),
-                False,
-            ),
-            timeout=15,
+                timeout=15,
+            )
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", option
+            )
+            self.driver.execute_script("arguments[0].click();", option)
+            self.close_open_popovers()
+            shown = self.get_selected_option_text(label, occurrence=occurrence)
+            if shown == text:
+                return text
+            self.pause_before_action()
+        raise AssertionError(
+            f"{label} would not take the value {text!r} in {attempts} attempts - "
+            f"the control still shows {shown!r}."
         )
-        self.safe_click(option)
-        self.close_open_popovers()
-        return text
 
     def select_first_checkbox_option(self, label, occurrence=1):
         self.close_open_popovers()
@@ -1099,8 +1169,114 @@ class QuestionPaperBuilderPage(BasePage):
             self.fill_table_cell_input(
                 section_index, "MARKS PER ITEM*", str(config["marks_per_item"])
             )
+            # Optional: the section's QUESTION SELECTION rule. Left out, the
+            # row keeps the builder's "All Mandatory" default, which is what
+            # every existing caller relies on.
+            rule = config.get("question_selection")
+            if rule:
+                row["QUESTION SELECTION"] = self.select_question_selection_rule(
+                    section_index, rule
+                )
+                count = config.get("question_selection_count")
+                if count is not None:
+                    row["QUESTION SELECTION COUNT"] = self.fill_question_selection_count(
+                        section_index, rule, count
+                    )
             all_rows.append(row)
         return all_rows
+
+    def select_question_selection_rule(self, section_occurrence, rule):
+        """Pick a QUESTION SELECTION rule for a section's typology row.
+
+        Falls back through the same retry/close-popover cycle the other cell
+        dropdowns use: the popover from a previously opened cell will
+        otherwise swallow the click.
+        """
+        assert rule in self.QUESTION_SELECTION_RULES, rule
+        last_error = None
+        for _ in range(3):
+            try:
+                self.close_open_popovers()
+                self._open_table_cell_dropdown(
+                    section_occurrence, self.QUESTION_SELECTION_COLUMN
+                )
+                option = self.wait_utils.until_condition(
+                    lambda driver: driver.execute_script(
+                        """
+                        return Array.from(
+                            document.querySelectorAll('[role=option],[cmdk-item]')
+                        ).filter(node => node.getClientRects().length > 0)
+                         .find(node =>
+                            (node.innerText || node.textContent || '').trim()
+                            === arguments[0]
+                         ) || false;
+                        """,
+                        rule,
+                    ),
+                    timeout=15,
+                )
+                self.driver.execute_script("arguments[0].click();", option)
+                self.pause_before_action()
+                self.close_open_popovers()
+                return rule
+            except TimeoutException as error:
+                last_error = error
+                self.close_open_popovers()
+                self.pause_before_action()
+        raise last_error
+
+    def fill_question_selection_count(self, section_occurrence, rule, value):
+        """Set the count input that 'Attempt Any' / 'OR Based' reveal.
+
+        The input sits in the QUESTION SELECTION cell and is the only thing
+        distinguishing "attempt 10 of the 12 generated" from "12 mandatory".
+        Its placeholder names the rule that revealed it, so it is asserted
+        here — that is what proves the cell-anchored lookup did not drift
+        onto the NUMBER OF ITEMS or MARKS PER ITEM input beside it.
+        """
+        placeholder = self.QUESTION_SELECTION_COUNT_PLACEHOLDER[rule]
+        field = self.find_table_cell_control(
+            section_occurrence, self.QUESTION_SELECTION_COLUMN, "input[type='number']"
+        )
+        actual = field.get_attribute("placeholder")
+        assert actual == placeholder, (
+            f"Expected the {rule!r} count input (placeholder {placeholder!r}) "
+            f"in section {section_occurrence}, but found placeholder {actual!r}."
+        )
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", field
+        )
+        self.driver.execute_script(
+            """
+            const field = arguments[0];
+            const setter = Object.getOwnPropertyDescriptor(
+                HTMLInputElement.prototype, 'value'
+            ).set;
+            setter.call(field, arguments[1]);
+            field.dispatchEvent(new Event('input', {bubbles: true}));
+            field.dispatchEvent(new Event('change', {bubbles: true}));
+            field.dispatchEvent(new Event('blur', {bubbles: true}));
+            """,
+            field,
+            str(value),
+        )
+        return value
+
+    def get_section_rule_chips(self):
+        """The per-section chips that state how each rule is costed."""
+        return self.driver.execute_script(
+            """
+            const pattern = new RegExp(arguments[0]);
+            const seen = new Set();
+            Array.from(document.querySelectorAll('*'))
+                .filter(el => el.getClientRects().length > 0)
+                .map(el => (el.innerText || '').trim())
+                .filter(text => pattern.test(text))
+                .forEach(text => seen.add(text));
+            return Array.from(seen);
+            """,
+            self.SECTION_RULE_CHIP_PATTERN,
+        )
 
     def generate_auto_paper(self):
         generate = self.wait_utils.until_clickable(
@@ -1491,6 +1667,20 @@ class QuestionPaperBuilderPage(BasePage):
             in driver.find_element(By.TAG_NAME, "body").text.casefold(),
             timeout=30,
         )
+        # Read the paper's number off the success message before the dialog is
+        # dismissed. It is the only identifier the workflow ever hands back,
+        # and without it a test can only find its paper by position in the My
+        # QP listing - which is ordered by publication date and so puts any
+        # concurrently published paper on top. Returned rather than asserted:
+        # callers that do not need it are unaffected.
+        published = self.body_text()
+        # The auto generator words it "(Question Paper No: QP-352)"; fall back
+        # to any QP number on the page so a differently phrased confirmation
+        # still identifies the paper.
+        match = re.search(
+            r"Question Paper No:\s*(QP-\d+)", published, re.IGNORECASE
+        ) or re.search(r"\b(QP-\d+)\b", published)
+        paper_number = match.group(1) if match else None
         for locator in (
             (By.XPATH, "//*[@role='dialog']//button[contains(normalize-space(),'Close')]"),
             (By.XPATH, "//button[contains(normalize-space(),'Close')]"),
@@ -1501,6 +1691,7 @@ class QuestionPaperBuilderPage(BasePage):
                 break
             except Exception:
                 continue
+        return paper_number
 
     def open_my_qp(self):
         nav = self.wait_utils.until_clickable(
@@ -1581,6 +1772,50 @@ class QuestionPaperBuilderPage(BasePage):
             timeout=20,
         )
 
+    def open_published_qp_preview(self, paper_number):
+        """Open one specific paper's preview, found by its QP number.
+
+        open_first_qp_preview() takes the top row, which the listing orders by
+        publication date - so a paper published by another suite (or an older
+        paper re-published) between generating and previewing takes that slot
+        and the test then asserts against someone else's paper. Searching for
+        the number returned by finalise_or_publish() removes the ambiguity.
+        """
+        assert paper_number, (
+            "No paper number was captured at publication, so the published "
+            "paper cannot be identified in the My QP listing."
+        )
+        identifier = str(paper_number).split("-")[-1]
+        self.search_my_qp(identifier)
+        row = self.wait_utils.until_condition(
+            lambda driver: driver.execute_script(
+                """
+                const wanted = arguments[0];
+                return Array.from(document.querySelectorAll('tr'))
+                    .filter(row => row.querySelector('td') && row.getClientRects().length > 0)
+                    .find(row => {
+                        const cell = row.querySelector('td');
+                        return (cell.innerText || '').trim() === wanted;
+                    }) || null;
+                """,
+                identifier,
+            ),
+            timeout=20,
+        )
+        self.safe_click(row)
+        self.wait_utils.until_condition(
+            lambda driver: "total marks:"
+            in driver.find_element(By.TAG_NAME, "body").text.casefold(),
+            timeout=30,
+        )
+        self.pause_before_action()
+        self.wait_utils.until_condition(
+            lambda driver: "loading"
+            not in driver.find_element(By.TAG_NAME, "body").text.casefold(),
+            timeout=20,
+        )
+        return identifier
+
     def get_paper_summary_metadata(self):
         """Parse the preview page's 'Label: Value' fields (Subject, Class,
         Total Marks, Assessment Type, Time Allowed, ...) into a dict."""
@@ -1616,18 +1851,44 @@ class QuestionPaperBuilderPage(BasePage):
         )
         return headings
 
-    def get_set_tab_labels(self):
+    SET_TAB_LOCATOR = (
+        By.XPATH,
+        "//*[self::button or @role='tab']"
+        "[contains(translate(normalize-space(), "
+        "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),"
+        "'set ')]",
+    )
+
+    def _read_set_tab_labels(self):
         return [
             element.text.strip()
-            for element in self.driver.find_elements(
-                By.XPATH,
-                "//*[self::button or @role='tab']"
-                "[contains(translate(normalize-space(), "
-                "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),"
-                "'set ')]",
-            )
+            for element in self.driver.find_elements(*self.SET_TAB_LOCATOR)
             if element.is_displayed() and element.text.strip()
         ]
+
+    def get_set_tab_labels(self, timeout=15, settle_polls=2):
+        """The preview's set tabs, once the tab bar has stopped growing.
+
+        The tabs paint progressively, so reading them the moment the page
+        stops saying "loading" can return three of four - which then reads as
+        a paper that was generated with the wrong number of sets rather than
+        as a page that had not finished rendering. Hold until the list repeats
+        itself before believing it.
+        """
+        previous = None
+        stable = 0
+        deadline = monotonic() + timeout
+        while monotonic() < deadline:
+            current = self._read_set_tab_labels()
+            if current and current == previous:
+                stable += 1
+                if stable >= settle_polls:
+                    return current
+            else:
+                stable = 0
+            previous = current
+            sleep(0.3)
+        return previous or []
 
     def switch_to_set(self, label):
         tab = self.wait_utils.until_clickable(
@@ -1663,6 +1924,197 @@ class QuestionPaperBuilderPage(BasePage):
                 By.XPATH, "//button[contains(normalize-space(),'Download')]"
             )
         )
+
+    # --- Question distribution across sets ---
+    DISTRIBUTION_OPTIONS = {
+        "same": "All sets contain the same questions",
+        "different": "Each set contains different questions",
+    }
+
+    # One rendered question, as the preview marks it up.
+    PREVIEW_QUESTION_BLOCK = (By.CSS_SELECTOR, "[class*='_questionBlock_']")
+
+    def select_question_distribution(self, option):
+        """Choose how questions are shared across sets.
+
+        The radio itself is an empty button - the wording sits in a sibling
+        node - so the label is located first and the radio found from there.
+        """
+        wording = self.DISTRIBUTION_OPTIONS[option]
+        radio = self.wait_utils.until_condition(
+            lambda driver: driver.execute_script(
+                """
+                const wording = arguments[0];
+                const vis = el => el.getClientRects().length > 0;
+                const label = Array.from(document.querySelectorAll('*'))
+                    .filter(vis)
+                    .find(el => el.children.length === 0 &&
+                                (el.innerText || '').trim() === wording);
+                if (!label) return null;
+                // Climb until the wrapper also holds this option's radio.
+                let node = label;
+                for (let depth = 0; depth < 6 && node.parentElement; depth++) {
+                    node = node.parentElement;
+                    const radios = node.querySelectorAll('[role=radio]');
+                    if (radios.length === 1) return radios[0];
+                    if (radios.length > 1) return null;
+                }
+                return null;
+                """,
+                wording,
+            ),
+            timeout=15,
+        )
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", radio
+        )
+        self.safe_click(radio)
+        self.wait_utils.until_condition(
+            lambda driver: radio.get_attribute("aria-checked") == "true"
+            or radio.get_attribute("data-state") == "checked",
+            timeout=10,
+        )
+        return wording
+
+    def get_set_questions(self):
+        """The currently displayed set's questions, in the order they read.
+
+        Each entry carries a `fingerprint` that identifies the question
+        independently of where it landed: the question number is exactly what
+        jumbling changes, and the options are sorted so that shuffling them
+        within a question does not read as a different question.
+        """
+        blocks = self.driver.execute_script(
+            r"""
+            return Array.from(
+                document.querySelectorAll("[class*='_questionBlock_']")
+            ).filter(el => el.getClientRects().length > 0).map(block => {
+                const pick = selector => Array.from(
+                    block.querySelectorAll(selector)
+                ).map(el => (el.innerText || '').replace(/\s+/g, ' ').trim())
+                 .filter(Boolean);
+                const label = pick("[class*='_qLabel_']")[0] || '';
+                const text = pick("[class*='_questionText_']").join(' ');
+                const options = pick("[class*='_optionText_']");
+                const marks = ((block.innerText || '').match(/(\d+)\s*M\b/) || [])[1] || '';
+                return {label: label, text: text, options: options, marks: marks};
+            });
+            """
+        )
+        questions = []
+        for block in blocks:
+            options = sorted(block["options"])
+            questions.append(
+                {
+                    "label": block["label"],
+                    "marks": block["marks"],
+                    "fingerprint": " | ".join([block["text"], *options]),
+                }
+            )
+        return questions
+
+    def collect_questions_by_set(self):
+        """Walk every set tab and read that set's questions.
+
+        Returns {set label: [question, ...]}. A single-set paper has no tabs,
+        and is reported under the one key "Set 01".
+        """
+        labels = self.get_set_tab_labels()
+        if not labels:
+            return {"Set 01": self.get_set_questions()}
+        by_set = {}
+        for label in labels:
+            self.switch_to_set(label)
+            self.pause_before_action()
+            by_set[label] = self.get_set_questions()
+        return by_set
+
+    def get_preview_lines(self):
+        """The rendered paper as non-blank lines, in reading order.
+
+        The a/OR/b structure is a statement about the order the paper reads
+        in, and innerText is the only view that reflects it: the number, the
+        separator and the alternative are not siblings in the DOM, so an
+        XPath following:: chain has to guess at the nesting to walk them.
+        """
+        return [line.strip() for line in self.body_text().splitlines() if line.strip()]
+
+    def get_attempt_any_instruction(self):
+        """The 'Attempt any X out of Y questions.' rubric, or '' if absent."""
+        matches = [
+            element.text.strip()
+            for element in self.driver.find_elements(*self.PREVIEW_ATTEMPT_ANY_INSTRUCTION)
+            if element.is_displayed() and element.text.strip()
+        ]
+        return matches[0] if matches else ""
+
+    def get_or_choice_instruction(self):
+        """The 'questions marked "OR" offer a choice...' rubric, or ''."""
+        matches = [
+            element.text.strip()
+            for element in self.driver.find_elements(*self.PREVIEW_OR_CHOICE_INSTRUCTION)
+            if element.is_displayed() and element.text.strip()
+        ]
+        return matches[0] if matches else ""
+
+    def get_attempt_any_counts(self):
+        """(attempt, total) parsed out of the 'Attempt any X out of Y' rubric."""
+        numbers = re.findall(r"\d+", self.get_attempt_any_instruction())
+        if len(numbers) < 2:
+            return None
+        return int(numbers[0]), int(numbers[1])
+
+    def count_or_separators(self):
+        return self.count_visible(self.PREVIEW_OR_SEPARATOR)
+
+    def get_or_pair_numbers(self):
+        """Question numbers rendered as an OR pair, e.g. ['16', '17', '18'].
+
+        A number counts only when both alternatives are present, so a paper
+        that rendered Q16a and then lost its Q16b is not reported as a pair.
+        """
+        lines = self.get_preview_lines()
+        a_sides = {
+            match.group(1)
+            for match in (re.fullmatch(r"Q(\d+)a\.", line) for line in lines)
+            if match
+        }
+        b_sides = {
+            match.group(1)
+            for match in (re.fullmatch(r"Q(\d+)b\.", line) for line in lines)
+            if match
+        }
+        return sorted(a_sides & b_sides, key=int)
+
+    def verify_or_choice_structure(self, question_number):
+        """Assert Q<n>a, an OR separator and Q<n>b read in that order.
+
+        Returns the three lines' positions so a caller can record what the
+        paper actually rendered.
+        """
+        lines = self.get_preview_lines()
+        positions = {}
+        for key, pattern in (
+            ("a", rf"Q{question_number}a\."),
+            ("b", rf"Q{question_number}b\."),
+        ):
+            found = [index for index, line in enumerate(lines) if re.fullmatch(pattern, line)]
+            assert found, (
+                f"Question {question_number}{key} is not displayed in the paper."
+            )
+            positions[key] = found[0]
+
+        separators = [
+            index
+            for index, line in enumerate(lines)
+            if line == "OR" and positions["a"] < index < positions["b"]
+        ]
+        assert separators, (
+            f"No 'OR' separator between Q{question_number}a (line "
+            f"{positions['a']}) and Q{question_number}b (line {positions['b']})."
+        )
+        positions["or"] = separators[0]
+        return positions
 
     def click_back_from_preview(self):
         back_button = self.wait_utils.until_clickable(

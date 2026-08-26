@@ -89,18 +89,28 @@ class TestM3ItemTestingProbe:
             if any(re.search(pattern, candidate, re.IGNORECASE) for pattern in cls.SECTION_NAME_PATTERNS)
         ]
 
-    def test_smoke_m3_01_item_testing_workspace_is_reachable(self, record_property):
+    def test_smoke_m3_01_item_testing_workspace_is_reachable(
+        self, record_property, page_evidence
+    ):
         """The portal exposes an Item Testing / psychometrics workspace."""
         username = ReadConfig.get_role_usernames("admin")[0]
         sign_in(self.driver, username)
 
         portal = AdminPortalPage(self.driver)
         portal.wait_for_application_ready()
+        page_evidence.checkpoint(f"Admin {username} signed in to probe for M3")
 
         navigation_labels = self.get_navigation_labels()
         matches = self.find_item_testing_matches(navigation_labels)
         # Evidence only: the terms can appear in page copy without a way in.
         mentioned_in_page_text = bool(self.find_item_testing_matches([portal.body_text()]))
+        # Recorded before the xfail below, so the run this stops reading "none"
+        # is visibly the run KI-M3-ITM-001 can be retired.
+        page_evidence.checkpoint(
+            f"Portal navigation exposes {len(navigation_labels)} entry/entries; "
+            f"Item Testing / psychometrics matches: {matches or 'none'}; the "
+            f"terms appear in page copy: {mentioned_in_page_text}"
+        )
         record_property(
             "result_description",
             f"Probed the portal as {username} for an Item Testing workspace. "
@@ -123,6 +133,10 @@ class TestM3ItemTestingProbe:
             )
 
         portal.open_named_section(matches[0])
+        page_evidence.checkpoint(
+            f"Opened {matches[0]!r}; it rendered Item Testing content: "
+            f"{bool(self.find_item_testing_matches([portal.body_text()]))}"
+        )
         assert self.find_item_testing_matches([portal.body_text()]), (
             f"Opening {matches[0]!r} did not render any Item Testing content. "
             f"Page text: {portal.body_text()[:1000]}"

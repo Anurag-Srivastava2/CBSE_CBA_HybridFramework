@@ -50,7 +50,7 @@ class TestSMEQARRules:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_sme2_username(),
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_sme2_username()),
         )
         page = UploadItemFilePage(self.driver)
         page.close_popup_if_open()
@@ -82,7 +82,7 @@ class TestSMEQARRules:
         UploadItemFilePage(self.driver).reset_browser_session_to_login()
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_role_usernames("rwg")[0],
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_role_usernames("rwg")[0]),
         )
         queue_text = RWGReviewQueuePage(self.driver).get_queue_body_text()
         assert item_set_id not in queue_text, (

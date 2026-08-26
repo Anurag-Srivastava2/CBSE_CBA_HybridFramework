@@ -1,4 +1,3 @@
-import json
 
 from openpyxl import load_workbook
 import pytest
@@ -6,6 +5,7 @@ import pytest
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import attach, checkpoint
 from utilities.read_config import ReadConfig
 
 # The upload-step survey runs ~30 checks against elements that paint together;
@@ -80,13 +80,14 @@ class TestUploadHistoryExcelDownload:
 
         LoginPage(self.driver).login_to_application(
             username,
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(username),
         )
         upload_page.close_popup_if_open()
         upload_page.wait_for_application_to_load()
         upload_page.open_item_creation_module()
         upload_page.open_upload_item_file_tab()
         upload_page.open_upload_step()
+        checkpoint(f"Signed in as {username} and opened the upload history")
         return upload_page
 
     def survey(self, upload_page, record_property, scope):
@@ -221,6 +222,7 @@ class TestUploadHistoryExcelDownload:
         tmp_path,
         request,
         record_property,
+        page_evidence,
     ):
         """A PASSED and a FAILED upload-history row each download as Excel.
 
@@ -252,10 +254,28 @@ class TestUploadHistoryExcelDownload:
                 continue
             upload_page = candidate_page
             statuses = upload_page.get_upload_history_statuses()
-            checked_accounts.append(f"{role}:{username}={','.join(statuses) or 'none'}")
-            if {"PASSED", "FAILED"}.issubset(set(statuses)):
+            # Showing both statuses is not enough: the row also has to carry a
+            # download control for the rest of this test to have anything to
+            # click, and a status can appear on a row that offers none.
+            downloadable = {
+                status
+                for status in ("PASSED", "FAILED")
+                if status in statuses
+                and upload_page.has_downloadable_upload_history_row(status)
+            }
+            checked_accounts.append(
+                f"{role}:{username}={','.join(statuses) or 'none'}"
+                f" (downloadable: {','.join(sorted(downloadable)) or 'none'})"
+            )
+            if {"PASSED", "FAILED"}.issubset(downloadable):
                 selected_account = (role, username)
                 break
+
+        page_evidence.checkpoint(
+            "Searched the configured secondary contributors for one holding both "
+            "a PASSED and a FAILED row with a download action — "
+            + "; ".join(checked_accounts)
+        )
 
         # Surveyed on whichever account the search settled on, so the element
         # table describes the page the downloads were actually taken from.
@@ -284,39 +304,45 @@ class TestUploadHistoryExcelDownload:
 
         assert selected_account is not None, (
             "A secondary SME/Teacher account must have both PASSED and FAILED "
-            "upload-history rows. Checked: " + "; ".join(checked_accounts)
+            "upload-history rows that offer a download action. Checked: "
+            + "; ".join(checked_accounts)
         )
 
         role, username = selected_account
+        page_evidence.checkpoint(
+            f"Downloads will be taken from {role} {username}"
+        )
         request.node.user_properties.append(("download_account", f"{role}:{username}"))
         request.node.user_properties.append(("upload_history", "; ".join(checked_accounts)))
+
+        # Which download control a row offers follows its rejected-item count,
+        # not its status - a partially-rejected upload passes and still offers
+        # the annotated workbook, while a wholly-failed one can offer the plain
+        # file. So the label is read off the row and reported as evidence,
+        # rather than assumed per status.
+        passed_action = upload_page.get_upload_history_download_label("PASSED")
+        failed_action = upload_page.get_upload_history_download_label("FAILED")
+        request.node.user_properties.append(
+            ("download_actions", f"PASSED: {passed_action}; FAILED: {failed_action}")
+        )
 
         passed_status_screenshot = upload_page.capture_upload_history_status_screenshot(
             "PASSED",
             f"{request.node.name}_passed_file_status",
-            action_text="Download File",
+            action_text=passed_action,
         )
         failed_status_screenshot = upload_page.capture_upload_history_status_screenshot(
             "FAILED",
             f"{request.node.name}_failed_file_status",
-            action_text="Download Annotated File",
+            action_text=failed_action,
         )
-        request.node.user_properties.append(
-            (
-                "evidence_screenshots",
-                json.dumps(
-                    [
-                        {
-                            "name": "PASSED file status and Download File action",
-                            "path": passed_status_screenshot,
-                        },
-                        {
-                            "name": "FAILED file status and Download Annotated File action",
-                            "path": failed_status_screenshot,
-                        },
-                    ]
-                ),
-            )
+        attach(
+            f"PASSED row offers the {passed_action} action",
+            passed_status_screenshot,
+        )
+        attach(
+            f"FAILED row offers the {failed_action} action",
+            failed_status_screenshot,
         )
 
         passed_file = upload_page.download_upload_history_file(
@@ -324,13 +350,25 @@ class TestUploadHistoryExcelDownload:
             tmp_path / "passed",
         )
         self.verify_excel_workbook(passed_file)
+        page_evidence.checkpoint(
+            f"PASSED row downloaded as {passed_file.name} "
+            f"({passed_file.stat().st_size} bytes) and opened as a workbook"
+        )
 
         failed_file = upload_page.download_upload_history_file(
             "FAILED",
             tmp_path / "failed",
         )
         self.verify_excel_workbook(failed_file)
+        page_evidence.checkpoint(
+            f"FAILED row downloaded as {failed_file.name} "
+            f"({failed_file.stat().st_size} bytes) and opened as a workbook"
+        )
 
+        page_evidence.checkpoint(
+            "The two downloads are distinct files: "
+            f"{passed_file.resolve() != failed_file.resolve()}"
+        )
         assert passed_file.resolve() != failed_file.resolve()
         request.node.user_properties.append(("passed_download", str(passed_file)))
         request.node.user_properties.append(("failed_download", str(failed_file)))

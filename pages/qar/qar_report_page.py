@@ -95,11 +95,19 @@ class QARReportPage(BasePage):
         compact_item_id = re.sub(r"[^a-z0-9]", "", item_id.casefold())
         item_number_match = re.search(r"-i(\d+)$", item_id, re.IGNORECASE)
         item_number = item_number_match.group(1) if item_number_match else ""
+        # The chapter segment is not stable between screens: the caller may hold
+        # "IS1070-...-Ch29-i1" while this page renders "IS1070-...-CH-1-i1" for
+        # the same item, so a compacted whole-ID match finds nothing and the
+        # item silently never opens. The set number and the -i<n> suffix do not
+        # move, so they are passed as a fallback identity.
+        set_number_match = re.match(r"\s*IS(\d+)", item_id, re.IGNORECASE)
+        set_number = set_number_match.group(1) if set_number_match else ""
         starting_url = self.driver.current_url
         clicked = self.driver.execute_script(
             r"""
             const expected = arguments[0];
             const itemNumber = arguments[1];
+            const setNumber = arguments[2];
             const compact = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
             const visible = element => {
                 const rect = element.getBoundingClientRect();
@@ -107,10 +115,22 @@ class QARReportPage(BasePage):
                 return rect.width > 0 && rect.height > 0
                     && style.display !== 'none' && style.visibility !== 'hidden';
             };
-            const candidates = Array.from(document.querySelectorAll(
+            const candidatesAll = Array.from(document.querySelectorAll(
                 'a, button, [role="button"], table tbody tr, [data-testid*="item"], article'
-            )).filter(element => visible(element)
-                && compact(element.innerText || element.textContent).includes(expected));
+            ));
+            // Same item, two chapter spellings: fall back to the stable
+            // "IS<set>...i<n>" identity when the whole ID does not match.
+            const identityMatch = value => {
+                if (!setNumber || !itemNumber) return false;
+                const c = compact(value);
+                return c.startsWith('is' + setNumber) && c.endsWith('i' + itemNumber);
+            };
+            const candidateList = candidatesAll.filter(element => {
+                if (!visible(element)) return false;
+                const text = element.innerText || element.textContent;
+                return compact(text).includes(expected) || identityMatch(text);
+            });
+            const candidates = candidateList;
             candidates.sort((left, right) => {
                 const leftClickable = left.matches('a, button, [role="button"]') ? 0 : 1;
                 const rightClickable = right.matches('a, button, [role="button"]') ? 0 : 1;
@@ -177,6 +197,7 @@ class QARReportPage(BasePage):
             """,
             compact_item_id,
             item_number,
+            set_number,
         )
         if not clicked:
             raise AssertionError(f"Could not open QAR result item {item_id}.")
@@ -193,6 +214,73 @@ class QARReportPage(BasePage):
         )
         self.open_report_if_available()
         return True
+
+    def expand_result_row(self, item_id=""):
+        """Open a QAR result row's report via its View control.
+
+        The per-check cards (Plagiarism Check, Bias Detection, ...) are not in
+        the DOM until a row's "View" chevron - the last cell of the row - is
+        clicked; it discloses the QAR Report panel inline. Nothing else reaches
+        them: the cards are absent from the item-set and item-detail pages, and
+        opening the item navigates away from the panel rather than to it.
+
+        The row's own metadata dropdowns (Typology, Marks, Difficulty, ...) also
+        carry aria-expanded, so targeting that attribute clicks a dropdown and
+        reports success while disclosing nothing. The View control is found by
+        position instead - the trailing cell of the matching row.
+
+        Matches on the stable "IS<set>...i<n>" identity, since the chapter
+        segment differs between screens ("...-Ch29-i1" vs "...-CH-1-i1").
+        """
+        set_number_match = re.match(r"\s*IS(\d+)", item_id or "", re.IGNORECASE)
+        item_number_match = re.search(r"-i(\d+)$", item_id or "", re.IGNORECASE)
+        set_number = set_number_match.group(1) if set_number_match else ""
+        item_number = item_number_match.group(1) if item_number_match else ""
+
+        return bool(
+            self.driver.execute_script(
+                r"""
+                const setNumber = arguments[0];
+                const itemNumber = arguments[1];
+                const compact = v => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const visible = element => {
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0 && rect.height > 0
+                        && style.display !== 'none' && style.visibility !== 'hidden';
+                };
+                const rows = Array.from(document.querySelectorAll('table tbody tr'))
+                    .filter(row => {
+                        if (!visible(row)) return false;
+                        const c = compact(row.innerText || row.textContent);
+                        if (!/is\d+/.test(c)) return false;
+                        if (!setNumber || !itemNumber) return true;
+                        return c.includes('is' + setNumber);
+                    });
+                if (!rows.length) return false;
+
+                // Prefer the row for this item; fall back to the first row,
+                // since the panel it opens describes the whole set anyway.
+                let row = rows[0];
+                if (itemNumber) {
+                    const exact = rows.find(r =>
+                        compact(r.innerText || r.textContent).includes('i' + itemNumber));
+                    if (exact) row = exact;
+                }
+
+                const cells = Array.from(row.querySelectorAll('td'));
+                if (!cells.length) return false;
+                const lastCell = cells[cells.length - 1];
+                const control = lastCell.querySelector(
+                    'button, [role="button"], a, svg') || lastCell;
+                control.scrollIntoView({block: 'center'});
+                control.click();
+                return true;
+                """,
+                set_number,
+                item_number,
+            )
+        )
 
     def expand_open_check_card(self, check_name):
         """Expand a criterion card when the current UI provides an Expand button."""

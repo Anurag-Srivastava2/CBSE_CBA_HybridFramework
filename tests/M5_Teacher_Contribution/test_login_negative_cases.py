@@ -2,6 +2,7 @@ import pytest
 from pages.common.login_page import LoginPage
 from pages.teacher.dashboard_page import DashboardPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 from utilities.logger import LogGenerator
 
@@ -124,7 +125,8 @@ class TestLoginNegativeCases:
         ],
     )
     def test_negative_login_password_compliance(
-        self, username, password, expected_error_fragment, record_property
+        self, username, password, expected_error_fragment, record_property,
+        page_evidence,
     ):
         """Password-policy rejection. The rejection itself is a security
         contract, so the error-text assertions stay hard; only the form
@@ -146,13 +148,25 @@ class TestLoginNegativeCases:
 
         login_page.enter_username(username)
         login_page.enter_password(password)
+        # The password is safe to name: every one of these is a deliberately
+        # non-compliant literal from the parametrize table, never a real
+        # credential.
+        page_evidence.checkpoint(
+            f"Submitting {username!r} with the non-compliant password "
+            f"{password!r}, expecting {expected_error_fragment!r}"
+        )
         login_page.click_sign_in()
 
-        assert login_page.is_login_form_displayed(), (
+        form_still_shown = login_page.is_login_form_displayed()
+        error_text = login_page.get_login_error_text()
+        page_evidence.checkpoint(
+            f"Rejected — login form still shown: {form_still_shown}; error text: "
+            f"{error_text[:160] or 'none'}"
+        )
+        assert form_still_shown, (
             "Login form should remain visible after a failed login attempt"
         )
 
-        error_text = login_page.get_login_error_text()
         assert expected_error_fragment in error_text, (
             f"Expected page to contain '{expected_error_fragment}' but got:\n{error_text}"
         )
@@ -161,7 +175,9 @@ class TestLoginNegativeCases:
             "Negative login password compliance case passed: pwd=%s", password
         )
 
-    def test_negative_login_with_valid_username_invalid_password(self, record_property):
+    def test_negative_login_with_valid_username_invalid_password(
+        self, record_property, page_evidence
+    ):
         """Submitting a syntactically-valid but incorrect password should leave
         the user on the login page with an error message.
 
@@ -193,18 +209,32 @@ class TestLoginNegativeCases:
             == "password",
         )
         record_property("result_description", checks.publish())
+        page_evidence.checkpoint(
+            "Password visibility toggle round-tripped the field between text and "
+            "password, so the control is live rather than merely rendered"
+        )
 
         assert login_page.is_login_form_displayed(), "Login form was not available"
 
         # Submit with a plausible-looking but incorrect password.
         login_page.enter_username(ReadConfig.get_teacher_username())
         login_page.enter_password("InvalidPass123!")
+        page_evidence.checkpoint(
+            f"Submitting a real account ({ReadConfig.get_teacher_username()}) with "
+            "a policy-compliant but wrong password — only the password is wrong here"
+        )
         login_page.click_sign_in()
 
-        assert login_page.is_login_form_displayed(), (
+        form_still_shown = login_page.is_login_form_displayed()
+        error_shown = login_page.is_login_error_displayed()
+        page_evidence.checkpoint(
+            f"Rejected — login form still shown: {form_still_shown}; error "
+            f"displayed: {error_shown}"
+        )
+        assert form_still_shown, (
             "Login form should still be displayed after a bad-password attempt"
         )
-        assert login_page.is_login_error_displayed(), (
+        assert error_shown, (
             "Expected an error message after submitting an incorrect password"
         )
 
@@ -213,7 +243,9 @@ class TestLoginNegativeCases:
     # The only case here that actually signs in, so it is the only one that
     # can be signed out again by another worker using the same account.
     @pytest.mark.serial
-    def test_positive_login_with_valid_username_and_password(self, record_property):
+    def test_positive_login_with_valid_username_and_password(
+        self, record_property, page_evidence
+    ):
         """Valid credentials should land the user on the teacher dashboard."""
         self.logger.info("Starting positive login test")
 
@@ -227,13 +259,21 @@ class TestLoginNegativeCases:
         assert login_page.is_login_form_displayed(), "Login form was not available"
 
         username = ReadConfig.get_teacher_username()
+        page_evidence.checkpoint(
+            f"Signing in as {username} with its configured password — the control "
+            "for every rejection case above"
+        )
         login_page.login_to_application(
             username,
             ReadConfig.get_password_for_username(username),
         )
 
         dashboard_page = DashboardPage(self.driver)
-        assert dashboard_page.is_dashboard_loaded() is True, (
+        dashboard_loaded = dashboard_page.is_dashboard_loaded()
+        page_evidence.checkpoint(
+            f"Teacher dashboard loaded after a valid login: {dashboard_loaded}"
+        )
+        assert dashboard_loaded is True, (
             "Dashboard did not load after a valid login"
         )
 

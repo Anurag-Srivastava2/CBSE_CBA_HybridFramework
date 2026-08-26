@@ -50,6 +50,21 @@ class HelpdeskPage(BasePage):
     # statuses and 'Overdue' is an SLA bucket, so neither maps to one status.
     STATUS_TABS = ("Open", "In Progress", "Resolved")
 
+    # Statuses a given status tab may legitimately display. 'Overdue' is an SLA
+    # bucket rather than a workflow status, and the grid renders it in the
+    # Status column in place of the underlying one - so a ticket past its SLA
+    # shows as 'Overdue' while still belonging in the tab for its real status.
+    # That substitution is not specific to Open: an In Progress ticket that
+    # ages past its SLA renders the same way, which is what broke this check on
+    # 2026-08-21. Every status tab therefore tolerates 'Overdue' alongside its
+    # own status, and nothing else - a Resolved row in the Open tab is still a
+    # genuine filtering bug.
+    TAB_ALLOWED_STATUSES = {
+        "Open": ("Open", "Overdue"),
+        "In Progress": ("In Progress", "Overdue"),
+        "Resolved": ("Resolved", "Overdue"),
+    }
+
     KPI_LABELS = ("Open Tickets", "Resolved Today", "Avg Resolution Time", "Overdue Tickets")
     # Avg Resolution Time renders as a duration ('0.1 h'), not a plain count.
     COUNT_KPI_LABELS = ("Open Tickets", "Resolved Today", "Overdue Tickets")

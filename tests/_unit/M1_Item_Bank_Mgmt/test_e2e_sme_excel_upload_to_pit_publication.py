@@ -46,7 +46,7 @@ class TestE2ESMEExcelUploadToPITPublication:
         question_count = question_counts.pop()
         return unique_file, question_count
 
-    def test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish(self, request):
+    def test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish(self, request, page_evidence):
         request.node.user_properties.append(
             ("result_checkpoint", "fresh SME Excel upload and QAR validation")
         )
@@ -60,15 +60,21 @@ class TestE2ESMEExcelUploadToPITPublication:
         sme2_username = self.get_sme2_username()
         login_page.login_to_application(
             sme2_username,
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(sme2_username),
         )
 
         upload_item_file_page.close_popup_if_open()
+        page_evidence.checkpoint(f"SME {sme2_username} signed in")
         upload_file_path, question_count = self.create_unique_upload_file(
             ReadConfig.get_upload_item_file_path()
         )
         uploaded_file_path, upload_success_message, item_ids, ocr_success_message = (
             upload_item_file_page.upload_item_file_and_submit_for_qar(upload_file_path)
+        )
+        page_evidence.checkpoint(
+            f"{upload_file_path.name} ({question_count} question(s)) uploaded and "
+            f"submitted for QAR — upload: {upload_success_message}; QAR: "
+            f"{ocr_success_message}"
         )
         assert len(item_ids) == question_count, (
             f"Fresh SME upload expected {question_count} item IDs but QAR returned "
@@ -85,6 +91,10 @@ class TestE2ESMEExcelUploadToPITPublication:
         )
         request.node.user_properties.append(
             ("initial_qar_retries", str(qar_recovery.retry_count))
+        )
+        page_evidence.checkpoint(
+            f"QAR settled on set {item_set_id} with {len(item_ids)} item(s) after "
+            f"{qar_recovery.retry_count} Need Improvement correction(s)"
         )
         item_set_url = self.driver.current_url
         item_set_reviewer = upload_item_file_page.require_item_set_assignee("rwg")
@@ -109,6 +119,11 @@ class TestE2ESMEExcelUploadToPITPublication:
         rwg_item_ids = upload_item_file_page.get_item_ids_by_status("Pending") or item_ids
         remaining_revision_count = int(item_set_status_summary.get("Revise", "0"))
 
+        page_evidence.checkpoint(
+            f"{item_set_id} allotted to RWG {item_set_reviewer}; statuses "
+            f"{item_set_status_text} — {pending_items_count} pending, "
+            f"{remaining_revision_count} still needing revision"
+        )
         assert remaining_revision_count == 0, (
             "Item set still has item(s) needing revision after QAR re-run. "
             f"Status: {item_set_status_text}"
@@ -123,13 +138,17 @@ class TestE2ESMEExcelUploadToPITPublication:
             upload_item_file_page.reset_browser_session_to_login()
             login_page.login_to_application(
                 reviewer_username,
-                ReadConfig.get_all_users_password(),
+                ReadConfig.get_password_for_username(reviewer_username),
             )
             upload_item_file_page.close_popup_if_open()
             rwg_approved_item_ids = rwg_review_queue_page.approve_item_set_as_rwg(
                 item_set_id,
                 rwg_item_ids,
                 item_set_url,
+            )
+            page_evidence.checkpoint(
+                f"RWG {reviewer_username} approved "
+                f"{len(rwg_approved_item_ids)}/{len(rwg_item_ids)} item(s)"
             )
             assert len(rwg_approved_item_ids) == len(rwg_item_ids), (
                 "RWG must approve every item in this E2E flow; "
@@ -149,7 +168,7 @@ class TestE2ESMEExcelUploadToPITPublication:
             upload_item_file_page.reset_browser_session_to_login()
             login_page.login_to_application(
                 sme2_username,
-                ReadConfig.get_all_users_password(),
+                ReadConfig.get_password_for_username(sme2_username),
             )
             upload_item_file_page.close_popup_if_open()
             upload_item_file_page.open_item_set_url_and_wait(item_set_url, item_set_id)
@@ -170,7 +189,7 @@ class TestE2ESMEExcelUploadToPITPublication:
             )
             login_page.login_to_application(
                 sr_rwg_username,
-                ReadConfig.get_all_users_password(),
+                ReadConfig.get_password_for_username(sr_rwg_username),
             )
             upload_item_file_page.close_popup_if_open()
             sr_rwg_approved_item_ids = sr_rwg_review_queue_page.approve_item_set_as_sr_rwg(
@@ -186,6 +205,10 @@ class TestE2ESMEExcelUploadToPITPublication:
             reviewer_approval_screenshot = sr_rwg_review_queue_page.capture_review_screenshot(
                 request.node.name,
                 "sr_rwg_review_submitted",
+            )
+            page_evidence.checkpoint(
+                f"Senior RWG {sr_rwg_username} approved "
+                f"{len(sr_rwg_approved_item_ids)} item(s)"
             )
 
             # Item sets are allotted to specific PIT users out of the full PIT
@@ -205,7 +228,7 @@ class TestE2ESMEExcelUploadToPITPublication:
                 upload_item_file_page.reset_browser_session_to_login()
                 login_page.login_to_application(
                     pit_username,
-                    ReadConfig.get_all_users_password(),
+                    ReadConfig.get_password_for_username(pit_username),
                 )
                 upload_item_file_page.close_popup_if_open()
                 try:
@@ -218,7 +241,14 @@ class TestE2ESMEExcelUploadToPITPublication:
                     request.node.name,
                     f"pit_approval_{len(completed_pit_approvals)}",
                 )
+                page_evidence.checkpoint(
+                    f"PIT approval {len(completed_pit_approvals)}/3 by {pit_username}"
+                )
 
+            page_evidence.checkpoint(
+                f"PIT quorum reached {len(completed_pit_approvals)}/3; skipped as "
+                f"not allotted: {', '.join(skipped_pit_users) or 'none'}"
+            )
             assert len(completed_pit_approvals) == 3, (
                 f"Only {len(completed_pit_approvals)}/3 PIT users could approve this item set. "
                 f"Tried and skipped (not allotted): {', '.join(skipped_pit_users) or 'none'}."
@@ -238,7 +268,7 @@ class TestE2ESMEExcelUploadToPITPublication:
             )
             login_page.login_to_application(
                 sme2_username,
-                ReadConfig.get_all_users_password(),
+                ReadConfig.get_password_for_username(sme2_username),
             )
             upload_item_file_page.close_popup_if_open()
             upload_item_file_page.open_item_set_url_and_wait(item_set_url, item_set_id)
@@ -247,6 +277,10 @@ class TestE2ESMEExcelUploadToPITPublication:
             )
             post_approval_status_text = upload_item_file_page.format_status_summary(
                 post_approval_status_summary
+            )
+            page_evidence.checkpoint(
+                f"SME re-opened {item_set_id} after PIT 3/3 — final status: "
+                f"{post_approval_status_text}"
             )
         else:
             reviewer_approval_message = (

@@ -12,6 +12,7 @@ from tests.M4_QP_Creation.qp_surveys import (
     survey_preview,
 )
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -32,10 +33,11 @@ class TestQPAutoGenerateSectionPreview:
         )
         self.driver.find_element("tag name", "body").send_keys(Keys.ESCAPE)
         assert DashboardPage(self.driver).is_dashboard_loaded()
+        checkpoint(f"QP teacher {username} signed in and reached the dashboard")
         return username
 
     def test_e2e_teacher_auto_generates_section_level_qp_and_previews_sets(
-        self, request, record_property
+        self, request, record_property, page_evidence
     ):
         """Section-level auto generation, publication and multi-set preview.
 
@@ -74,6 +76,9 @@ class TestQPAutoGenerateSectionPreview:
         page.open_auto_generator()
         enter_screen(checks, "QP Builder — Auto Generator")
         survey_builder(checks, page, mode="Auto Generator")
+        page_evidence.checkpoint(
+            "Both mode tabs responded and the Auto Generator form is open"
+        )
 
         selections = page.configure_auto_generator(
             total_marks=10,
@@ -84,17 +89,30 @@ class TestQPAutoGenerateSectionPreview:
         rules = page.configure_auto_section_rules_for_sections(
             section_count=2, total_marks=10
         )
+        page_evidence.checkpoint(
+            "Section-level generator configured for 10 marks over 2 section(s) "
+            f"and 4 set(s); section rules: {rules}"
+        )
         try:
             generation_seconds = page.generate_auto_paper()
         except AssertionError as error:
             request.node.user_properties.append(("auto_generation_message", str(error)))
             record_property("result_description", checks.publish())
+            page_evidence.checkpoint(
+                f"Generation did not produce a paper, so the run stops at the "
+                f"configuration it proved: {error}"
+            )
             assert selections
             assert rules
             return
+        page_evidence.checkpoint(
+            f"Paper generated in {generation_seconds:.1f}s against a 10s budget"
+        )
         # Performance budget — stays hard.
         assert generation_seconds <= 10
-        page.finalise_or_publish()
+        paper_number = page.finalise_or_publish()
+        request.node.user_properties.append(("paper_number", str(paper_number)))
+        page_evidence.checkpoint(f"Paper published as {paper_number}")
 
         # -------------------------------------------------------------
         # STEP 2: The published paper appears in My QP
@@ -111,18 +129,29 @@ class TestQPAutoGenerateSectionPreview:
         # -------------------------------------------------------------
         # STEP 3: Open the generated question paper's preview
         # -------------------------------------------------------------
-        page.open_first_qp_preview()
+        # By number, not by listing position: the M4 suites share an account
+        # and the listing is ordered by publication date, so the top row is
+        # not reliably the paper this test just published.
+        page.open_published_qp_preview(paper_number)
         enter_screen(checks, "QP Builder — Paper Preview")
         survey_preview(checks, page)
         record_property("result_description", checks.publish())
 
         preview_text = page.body_text().casefold()
+        page_evidence.checkpoint(
+            f"Preview opened by number for paper {paper_number}; the multi-set "
+            f"'Select Set' tab bar is rendered: {'select set' in preview_text}"
+        )
         assert "select set" in preview_text
 
         # Verify the configured selections actually landed on the
         # generated/published paper (not silently dropped by the UI).
         summary = page.get_paper_summary_metadata()
         request.node.user_properties.append(("paper_summary", str(summary)))
+        page_evidence.checkpoint(
+            f"Configured selections survived generation and publication — "
+            f"published summary: {summary}"
+        )
         assert summary.get("Total Marks", "").strip() == "10", summary
         assert selections["Subject*"].casefold() in summary.get("Subject", "").casefold(), summary
         assert selections["Grade*"].casefold() in summary.get("Class", "").casefold(), summary
@@ -132,6 +161,10 @@ class TestQPAutoGenerateSectionPreview:
 
         section_headings = page.get_section_headings()
         request.node.user_properties.append(("section_headings", str(section_headings)))
+        page_evidence.checkpoint(
+            f"Configured 2 section(s); the published paper renders "
+            f"{len(section_headings)}: {section_headings}"
+        )
         assert len(section_headings) == 2, section_headings
 
         # -------------------------------------------------------------
@@ -139,15 +172,27 @@ class TestQPAutoGenerateSectionPreview:
         # -------------------------------------------------------------
         set_labels = page.get_set_tab_labels()
         request.node.user_properties.append(("set_labels", str(set_labels)))
+        page_evidence.checkpoint(
+            f"Configured 4 set(s); the published paper offers "
+            f"{len(set_labels)}: {set_labels}"
+        )
         assert len(set_labels) == 4, set_labels
         if len(set_labels) > 1:
             page.switch_to_set(set_labels[-1])
             page.switch_to_set(set_labels[0])
+            page_evidence.checkpoint(
+                f"Switched to set {set_labels[-1]!r} and back to {set_labels[0]!r}"
+            )
 
         # -------------------------------------------------------------
         # STEP 5: Verify header metadata (Marks / Questions) and Download action
         # -------------------------------------------------------------
         header_text = page.get_header_metadata_text().casefold()
+        page_evidence.checkpoint(
+            f"Preview header names marks: {'marks' in header_text} and "
+            f"questions: {'questions' in header_text}; Download offered: "
+            f"{page.is_download_button_visible()}"
+        )
         assert "marks" in header_text
         assert "questions" in header_text
         assert page.is_download_button_visible()
@@ -156,4 +201,8 @@ class TestQPAutoGenerateSectionPreview:
         # STEP 6: Navigate back to the My QP listing
         # -------------------------------------------------------------
         page.click_back_from_preview()
+        page_evidence.checkpoint(
+            f"Back from the preview returns to My QP: "
+            f"{'my qp' in page.body_text().casefold()}"
+        )
         assert "my qp" in page.body_text().casefold()

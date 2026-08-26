@@ -12,7 +12,7 @@ from utilities.read_config import ReadConfig
 @pytest.mark.usefixtures("setup")
 class TestSMEBulkUploadRBAC:
     def test_tc_ibmm_01a_p03_sme_sees_only_assigned_grade_subject_items(
-        self, record_property
+        self, record_property, page_evidence
     ):
         """An SME's item-set listing shows only their assigned grade and subject.
 
@@ -40,6 +40,10 @@ class TestSMEBulkUploadRBAC:
         sets_page = UploadItemFilePage(self.driver)
         sets_page.close_popup_if_open()
         sets_page.open_item_sets_list()
+        page_evidence.checkpoint(
+            f"SME {sme_username} opened My Item Set; scope under test is "
+            f"{expected_grade} / {expected_subject}"
+        )
 
         checks = ElementChecks(
             sets_page, record_property, page_name="My Item Set — RBAC Scope"
@@ -57,11 +61,24 @@ class TestSMEBulkUploadRBAC:
             )
         checks.safe_call(lambda: sets_page.switch_item_set_tab("All"))
         record_property("result_description", checks.publish())
+        page_evidence.checkpoint(
+            "QAR / RWG / Published tabs each re-scoped the grid; listing left on All"
+        )
 
         sets_page.open_sets_module()
         scopes = sets_page.verify_visible_item_sets_within_scope(
             expected_grade,
             expected_subject,
+        )
+        out_of_scope = [
+            scope
+            for scope in scopes
+            if scope["grade"] == "Grade 10"
+            or scope["subject"].casefold() == "english"
+        ]
+        page_evidence.checkpoint(
+            f"{len(scopes)} visible set(s) read for grade/subject; "
+            f"out-of-scope rows: {out_of_scope or 'none'}"
         )
 
         assert all(scope["grade"] != "Grade 10" for scope in scopes)

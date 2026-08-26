@@ -6,6 +6,7 @@ import pytest
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -16,28 +17,33 @@ class TestSMEBulkUploadValidation:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_sme2_username(),
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_sme2_username()),
         )
         upload_page = UploadItemFilePage(self.driver)
         upload_page.close_popup_if_open()
         upload_page.open_item_creation_module()
         upload_page.open_upload_item_file_tab()
         upload_page.open_upload_step()
+        checkpoint("SME signed in and reached the Upload Documents step")
         return upload_page
 
-    def test_tc_ibmm_01a_n01_non_xlsx_file_is_rejected(self, tmp_path):
+    def test_tc_ibmm_01a_n01_non_xlsx_file_is_rejected(self, tmp_path, page_evidence):
         invalid_file = tmp_path / "sample_items.pdf"
         invalid_file.write_bytes(b"%PDF-1.4\n% invalid item-upload test file\n")
 
         upload_page = self.login_and_open_upload()
         upload_page.upload_file(invalid_file)
         rejection_message = upload_page.wait_for_upload_rejection()
+        page_evidence.checkpoint(
+            f"{invalid_file.name} (a PDF, not a workbook) was rejected: "
+            f"{rejection_message}"
+        )
 
         normalized_message = rejection_message.casefold()
         assert "xlsx" in normalized_message
         assert "invalid" in normalized_message or "only" in normalized_message
 
-    def test_tc_ibmm_01a_n02_modified_header_upload_fails(self, tmp_path):
+    def test_tc_ibmm_01a_n02_modified_header_upload_fails(self, tmp_path, page_evidence):
         modified_file = tmp_path / "modified_header_items.xlsx"
         copy2(ReadConfig.get_upload_item_file_path(), modified_file)
         workbook = load_workbook(modified_file)
@@ -54,12 +60,19 @@ class TestSMEBulkUploadValidation:
         upload_page = self.login_and_open_upload()
         upload_page.upload_file(modified_file)
         rejection_message = upload_page.wait_for_upload_rejection(timeout=60)
+        page_evidence.checkpoint(
+            f"{modified_file.name} (column 1 header renamed to "
+            "'Modified Grade Header') was rejected: "
+            f"{rejection_message}"
+        )
 
         normalized_message = rejection_message.casefold()
         assert "failed" in normalized_message or "error" in normalized_message
         assert "header" in normalized_message or "validation" in normalized_message
 
-    def test_tc_ibmm_03_n01_duplicate_item_content_is_rejected(self, tmp_path):
+    def test_tc_ibmm_03_n01_duplicate_item_content_is_rejected(
+        self, tmp_path, page_evidence
+    ):
         duplicate_file = tmp_path / "duplicate_item_content.xlsx"
         copy2(ReadConfig.get_upload_item_file_path(), duplicate_file)
         workbook = load_workbook(duplicate_file)
@@ -81,6 +94,10 @@ class TestSMEBulkUploadValidation:
         upload_page.upload_file(duplicate_file)
         rejection_message = upload_page.wait_for_upload_rejection(timeout=60)
         normalized_message = rejection_message.casefold()
+        page_evidence.checkpoint(
+            f"{duplicate_file.name} (row 2 appended verbatim as an extra row) "
+            f"was rejected: {rejection_message}"
+        )
 
         assert "duplicate" in normalized_message
         assert "row" in normalized_message or "item" in normalized_message

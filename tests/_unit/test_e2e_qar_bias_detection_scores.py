@@ -53,7 +53,7 @@ class TestE2EQARBiasDetectionScores:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_sme2_username(),
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_sme2_username()),
         )
         upload_page = BulkUploadPage(self.driver)
         upload_page.close_popup_if_open()
@@ -128,7 +128,7 @@ class TestE2EQARBiasDetectionScores:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_sme2_username(),
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_sme2_username()),
         )
         upload_page = BulkUploadPage(self.driver)
         upload_page.close_popup_if_open()

@@ -34,6 +34,7 @@ from tests.M1_Item_Bank_Mgmt.m1_surveys import (
 )
 from utilities.element_checks import ElementChecks
 from utilities.logger import LogGenerator
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 from tests.M1_Item_Bank_Mgmt.test_sme_manual_item_creation import TEST_IMAGES
@@ -55,7 +56,7 @@ FORMATTING_MARKERS = {
 # allow one active session each.
 @pytest.mark.serial
 @pytest.mark.usefixtures("setup")
-class TestManualItemRichContentToPITPublication:
+class TestE2ESMEManualItemRichContentToPITPublication:
     logger = LogGenerator.loggen()
 
     def login_as(self, username, helper_page):
@@ -93,6 +94,9 @@ class TestManualItemRichContentToPITPublication:
                     # accumulated list, so a failure later in this long chain
                     # still leaves the rows gathered up to that point on the card.
                     checks.publish()
+                checkpoint(
+                    f"{role.upper()} reviewer {candidate} opened item set {item_set_id}"
+                )
                 return candidate
             except TimeoutException as error:
                 last_error = error
@@ -136,7 +140,7 @@ class TestManualItemRichContentToPITPublication:
         return {name: marker in pane_html for name, marker in FORMATTING_MARKERS.items()}
 
     def test_manual_item_rich_content_survives_to_pit_publication(
-        self, request, record_property
+        self, request, record_property, page_evidence
     ):
         run_token = uuid4().hex[:10]
         question_text = f"What comes immediately after 24? Rich content PIT run {run_token}"
@@ -146,6 +150,7 @@ class TestManualItemRichContentToPITPublication:
 
         sme_username = ReadConfig.get_sme_username()
         self.login_as(sme_username, self.helper_page)
+        page_evidence.checkpoint(f"SME {sme_username} signed in for run {run_token}")
 
         # 1. SME creates one MCQ item, applying bold/italic/text-color/
         # highlight-color/image to the Explanation field (the field that's
@@ -198,9 +203,16 @@ class TestManualItemRichContentToPITPublication:
         request.node.user_properties.append(
             ("sme_applied_formatting", str(sme_applied))
         )
+        page_evidence.checkpoint(
+            f"SME applied rich content to the Explanation editor: {sme_applied}"
+        )
 
         manual_item_page.click_add_item_and_wait_for_count_increase()
-        assert int(manual_item_page.get_added_items_count()) == 1, (
+        staged_count = int(manual_item_page.get_added_items_count())
+        page_evidence.checkpoint(
+            f"MCQ item staged; Added Items count: {staged_count}"
+        )
+        assert staged_count == 1, (
             "Expected exactly 1 added item before QAR submit."
         )
 
@@ -226,6 +238,10 @@ class TestManualItemRichContentToPITPublication:
                 ("qar_success_message", qar_message or ""),
             ]
         )
+        page_evidence.checkpoint(
+            f"QAR passed for item {item_id} in set {item_set_id} — "
+            f"{qar_message or 'no toast captured'}"
+        )
 
         # 3. RWG verifies formatting/image, then approves.
         request.node.user_properties.append(
@@ -235,8 +251,12 @@ class TestManualItemRichContentToPITPublication:
         self.resolve_reviewer_username(rwg_page, "rwg", item_set_id, item_set_url)
         rwg_visible = self.verify_formatting_visible_to_reviewer(rwg_page, item_set_id, item_id)
         request.node.user_properties.append(("rwg_visible_formatting", str(rwg_visible)))
+        page_evidence.checkpoint(
+            f"Rich content as the RWG reviewer sees it: {rwg_visible}"
+        )
         rwg_page.approve_item_set_as_rwg(item_set_id, [item_id], item_set_url)
         rwg_page.capture_review_screenshot(request.node.name, "rwg_approved")
+        page_evidence.checkpoint(f"RWG approved item set {item_set_id}")
 
         # 4. SRRWG verifies formatting/image, then approves.
         request.node.user_properties.append(
@@ -248,8 +268,12 @@ class TestManualItemRichContentToPITPublication:
             sr_rwg_page, item_set_id, item_id
         )
         request.node.user_properties.append(("sr_rwg_visible_formatting", str(sr_rwg_visible)))
+        page_evidence.checkpoint(
+            f"Rich content as the Senior RWG reviewer sees it: {sr_rwg_visible}"
+        )
         sr_rwg_page.approve_item_set_as_sr_rwg(item_set_id, [item_id], item_set_url)
         sr_rwg_page.capture_review_screenshot(request.node.name, "sr_rwg_approved")
+        page_evidence.checkpoint(f"Senior RWG approved item set {item_set_id}")
 
         # 5. PIT 3/3 quorum publishes the item.
         request.node.user_properties.append(
@@ -263,6 +287,9 @@ class TestManualItemRichContentToPITPublication:
             completed_pit_approvals.append(pit_username)
             pit_page.capture_review_screenshot(
                 request.node.name, f"pit_approval_{len(completed_pit_approvals)}"
+            )
+            page_evidence.checkpoint(
+                f"PIT approval {len(completed_pit_approvals)}/3 by {pit_username}"
             )
         assert len(completed_pit_approvals) == 3, (
             f"Expected PIT 3/3, completed {completed_pit_approvals}."
@@ -298,6 +325,9 @@ class TestManualItemRichContentToPITPublication:
         )
         final_screenshot = self.helper_page.capture_sets_verification_screenshot(
             f"{request.node.name}_final_published_status"
+        )
+        page_evidence.checkpoint(
+            f"Item set {item_set_id} published — {final_status_text}"
         )
 
         request.node.user_properties.extend(

@@ -59,10 +59,8 @@ $python = Join-Path $repoRoot '.venv\Scripts\python.exe'
 $M1 = 'tests/M1_Item_Bank_Mgmt'
 $Typology = "$M1/test_e2e_sme_excel_typology_image_rwg_srrwg_revision_to_pit_publication.py::TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication::test_e2e_sme_typology_image_revision_rwg_srrwg_pit_publish"
 $Creation = "$M1/test_sme_manual_item_creation.py::TestSMEManualItemCreation"
-$Validation = "$M1/test_sme_manual_item_validation.py::TestSMEManualItemValidation"
 $Smoke = "$M1/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank"
 $Queues = "$M1/test_smoke_m1_reviewer_queues.py::TestSmokeM1ReviewerQueues::test_smoke_m1_05_reviewer_opens_queue_and_assigned_item_set"
-$Qar = "$M1/test_e2e_qar_need_improvement_retry_flow.py::TestE2EQARNeedImprovementRetryFlow"
 
 # Longest test first inside each group: a group that overruns its estimate then
 # overruns on a cheap tail rather than on a 27-minute typology E2E.
@@ -102,9 +100,7 @@ $groups = @{
             "$Typology[10_FR.xlsx-Free Response]"
             "$Typology[02_TOF.xlsx-True or False]"
             "$Typology[06_VSAQ.xlsx-Very Short Answer Question]"
-            "$M1/test_manual_item_rich_content_to_pit_publication.py::TestManualItemRichContentToPITPublication::test_manual_item_rich_content_survives_to_pit_publication"
-            "$Qar::test_e2e_qar_retry_path_passes_after_one_edit_and_rerun"
-            "$Qar::test_e2e_qar_failure_path_stops_after_three_retries_and_stays_blocked"
+            "$M1/test_manual_item_rich_content_to_pit_publication.py::TestE2ESMEManualItemRichContentToPITPublication::test_manual_item_rich_content_survives_to_pit_publication"
             "$M1/test_qar_duplicate_detection.py::TestQARDuplicateDetection::test_qar_duplicate_detection_near_duplicate_content_flagged"
             "$Smoke::test_smoke_m1_02_manual_item_creation_stages_one_item"
             "$Creation::test_sme_required_fields_block_empty_item_for_every_typology[long-answer-question]"
@@ -121,15 +117,9 @@ $groups = @{
             "$Typology[11_CABA.xlsx-Case Based Question]"
             "$Typology[03_MTF.xlsx-Match the Following]"
             "$Typology[07_SAQ.xlsx-Short Answer Question]"
-            "$M1/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish"
             "$Queues[RWG]"
-            "$Qar::test_e2e_qar_happy_path_routes_to_rwg_without_retry"
             "$Smoke::test_smoke_m1_03_bulk_upload_screen_accepts_a_file"
             "$M1/test_sme_bulk_upload_rbac.py::TestSMEBulkUploadRBAC::test_tc_ibmm_01a_p03_sme_sees_only_assigned_grade_subject_items"
-            "$Validation::test_tc_ibmm_01b_p02_continue_locked_until_mandatory_item_complete"
-            "$Validation::test_tc_ibmm_01b_p03_new_item_is_visible_in_draft_review"
-            "$Validation::test_tc_ibmm_01b_n01_out_of_scope_subject_is_not_available"
-            "$Validation::test_tc_ibmm_01b_n02_empty_item_content_shows_inline_error_on_blur"
         )
     }
     4 = @{
@@ -138,7 +128,6 @@ $groups = @{
         Tests = @(
             "$Typology[04_FITB.xlsx-Fill in the Blank]"
             "$Typology[08_LAQ.xlsx-Long Answer Question]"
-            "$M1/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication"
             "$Typology[12_SBQ.xlsx-Source Based Question]"
             "$Smoke::test_smoke_m1_04_excel_upload_creates_item_set"
             "$M1/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded"

@@ -3,6 +3,7 @@ import pytest
 from pages.admin.admin_dashboard_page import AdminDashboardPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -21,9 +22,12 @@ class TestM2AdminDashboard:
         )
         dashboard = AdminDashboardPage(self.driver)
         dashboard.wait_for_dashboard_ready()
+        checkpoint(f"Admin {username} landed on the dashboard")
         return dashboard
 
-    def test_tc_wpad_dash_01_verify_header_and_kpi_cards(self, record_property):
+    def test_tc_wpad_dash_01_verify_header_and_kpi_cards(
+        self, record_property, page_evidence
+    ):
         """Header and KPI cards, each recorded as a soft check.
 
         Both the card and the value it holds are checked, so the report
@@ -58,13 +62,20 @@ class TestM2AdminDashboard:
                 detail=f"read {value!r}",
             )
 
+        page_evidence.checkpoint(
+            f"Greeting {welcome_message[:60]!r}; KPI values "
+            + ", ".join(f"{label}={value}" for label, value in values.items())
+            + " (a Total Users of 0 would mean the card failed to load)"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. KPI values: "
             + ", ".join(f"{label}={value}" for label, value in values.items()),
         )
 
-    def test_tc_wpad_dash_03_verify_dynamic_activity_feed_format(self, record_property):
+    def test_tc_wpad_dash_03_verify_dynamic_activity_feed_format(
+        self, record_property, page_evidence
+    ):
         """User Activity feed: section, audit link, entries and relative timestamps."""
         dashboard = self.login_as_admin()
         checks = ElementChecks(dashboard, record_property, page_name="Admin Dashboard — Activity Feed")
@@ -90,13 +101,19 @@ class TestM2AdminDashboard:
             ),
         )
 
+        page_evidence.checkpoint(
+            f"User Activity feed rendered {len(activity_logs)} entry/entries, "
+            f"{len(timestamped)} of them carrying a relative timestamp"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. Feed rendered {len(activity_logs)} entries, "
             f"{len(timestamped)} with relative timestamps.",
         )
 
-    def test_tc_wpad_dash_04_verify_published_items_grid_structure(self, record_property):
+    def test_tc_wpad_dash_04_verify_published_items_grid_structure(
+        self, record_property, page_evidence
+    ):
         """Published Items matrix: section, table, and its expected column headers."""
         dashboard = self.login_as_admin()
         checks = ElementChecks(dashboard, record_property, page_name="Admin Dashboard — Published Items Grid")
@@ -123,12 +140,18 @@ class TestM2AdminDashboard:
             detail=f"matched {found_subjects} from {list(expected_subjects)}",
         )
 
+        page_evidence.checkpoint(
+            f"Published Items grid headers: {header_texts}; subject columns "
+            f"matched: {found_subjects or 'none'}"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. Grid headers: {header_texts}.",
         )
 
-    def test_tc_wpad_dash_02_verify_filter_controls_and_sections(self, record_property):
+    def test_tc_wpad_dash_02_verify_filter_controls_and_sections(
+        self, record_property, page_evidence
+    ):
         """Survey every element on the admin dashboard.
 
         Each element is a soft check: a missing one is reported as a FAILED row
@@ -226,6 +249,12 @@ class TestM2AdminDashboard:
             activity_logs,
             detail=f"{len(activity_logs)} entries",
         )
+        page_evidence.checkpoint(
+            f"Dashboard content — {charts} chart surface(s), notification badge "
+            f"{badge!r}, {len(headers)} published-grid header(s), "
+            f"{len(qp_headers)} QP-grid header(s), {len(activity_logs)} activity "
+            "entry/entries"
+        )
 
         # Do the controls respond, or are they rendered but dead? Each is driven
         # and the page re-read; nothing here mutates server-side state.
@@ -259,5 +288,10 @@ class TestM2AdminDashboard:
                 dashboard.wait_for_dashboard_ready,
             )
 
+        page_evidence.checkpoint(
+            "Every filter, button and tab on the dashboard was driven and the "
+            "page re-read, so a rendered-but-dead control shows as a FAILED row "
+            "rather than passing a presence check"
+        )
         record_property("result_description", checks.publish())
 

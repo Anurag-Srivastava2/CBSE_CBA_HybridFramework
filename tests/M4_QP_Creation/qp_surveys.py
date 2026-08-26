@@ -241,3 +241,37 @@ def survey_chrome(checks, page):
     for label in page.NAV_ITEMS:
         checks.check_condition(f"Nav — {label}", label not in missing_nav)
     return checks
+
+
+def survey_choice_rules(checks, page):
+    """Preview: the two question-selection rubrics and the OR separators.
+
+    Surveyed rather than asserted — these rows say what the paper rendered.
+    The test hard-asserts the numbers, because those are the configuration
+    surviving generation rather than page furniture.
+    """
+    attempt = checks.safe_call(page.get_attempt_any_instruction, "")
+    checks.check_condition(
+        "Rubric — Attempt any X out of Y",
+        bool(attempt),
+        detail=attempt or "no 'Attempt any' rubric rendered",
+    )
+    or_rule = checks.safe_call(page.get_or_choice_instruction, "")
+    checks.check_condition(
+        "Rubric — OR offers a choice",
+        bool(or_rule),
+        detail=or_rule or "no OR-choice rubric rendered",
+    )
+    separators = checks.safe_call(page.count_or_separators, 0)
+    checks.check_condition(
+        "OR separators rendered between paired alternatives",
+        separators,
+        detail=f"{separators} 'OR' separators",
+    )
+    pairs = checks.safe_call(page.get_or_pair_numbers, [])
+    checks.check_condition(
+        "Paired questions expose both alternatives",
+        bool(pairs),
+        detail=f"pairs: {pairs}" if pairs else "no Q<n>a / Q<n>b pair found",
+    )
+    return {"attempt": attempt, "or_rule": or_rule, "separators": separators, "pairs": pairs}

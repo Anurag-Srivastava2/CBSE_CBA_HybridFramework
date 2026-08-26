@@ -7,6 +7,7 @@ from selenium.common.exceptions import TimeoutException
 from pages.admin.admin_portal_page import AdminPortalPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -26,6 +27,7 @@ class TestM2PortalAdminFeatures:
         self.driver.find_element("tag name", "body").send_keys("\ue00c")
         page = AdminPortalPage(self.driver)
         page.wait_for_application_ready()
+        checkpoint(f"Signed in as {username}")
         return page
 
     def login_as_admin(self):
@@ -41,6 +43,11 @@ class TestM2PortalAdminFeatures:
         text = page.normalized_body_text()
         for marker in markers:
             checks.check_condition(f"Marker — {marker}", marker in text)
+        checkpoint(
+            f"{scope} — markers found: "
+            f"{[m for m in markers if m in text] or 'none'}; missing: "
+            f"{[m for m in markers if m not in text] or 'none'}"
+        )
         record_property("result_description", checks.publish())
         return checks
 
@@ -66,7 +73,7 @@ class TestM2PortalAdminFeatures:
             )
         self.survey_markers(page, record_property, "Theme Preview", ("teacher", "preview"))
 
-    def test_tc_wpad_07_p01_sme_dashboard_shows_item_stats_only(self):
+    def test_tc_wpad_07_p01_sme_dashboard_shows_item_stats_only(self, page_evidence):
         page = self.login_as(ReadConfig.get_sme2_username())
         text = page.normalized_body_text()
         for marker in ("total items", "needs revision", "approved", "rejected"):
@@ -74,16 +81,28 @@ class TestM2PortalAdminFeatures:
                 pytest.xfail(
                     f"KI-M2-DASHBOARD-001 [M2 Dashboard] SME dashboard is missing expected widget: {marker}"
                 )
+        page_evidence.checkpoint(
+            "SME dashboard scope — QP Builder visible: "
+            f"{'qp builder' in text}, quorum widget visible: "
+            f"{'quorum' in text} (both must be False)"
+        )
         assert "qp builder" not in text
         assert "quorum" not in text
 
-    def test_tc_wpad_07_p02_pit_dashboard_has_quorum_without_sme_edit_widgets(self):
+    def test_tc_wpad_07_p02_pit_dashboard_has_quorum_without_sme_edit_widgets(
+        self, page_evidence
+    ):
         page = self.login_as(ReadConfig.get_pit_usernames()[0])
         text = page.normalized_body_text()
         if not all(marker in text for marker in ("quorum", "pending")):
             pytest.xfail(
                 "KI-M2-DASHBOARD-002 [M2 Dashboard] PIT dashboard does not expose quorum/pending-set widgets."
             )
+        page_evidence.checkpoint(
+            "PIT dashboard scope — quorum/pending widgets present; SME-only "
+            f"controls leaked: edit item {'edit item' in text}, upload "
+            f"{'upload' in text} (both must be False)"
+        )
         assert "edit item" not in text
         assert "upload" not in text
 
@@ -100,7 +119,7 @@ class TestM2PortalAdminFeatures:
             page, record_property, "Audit Log Filters", ("user", "role", "timestamp")
         )
 
-    def test_tc_wpad_08_n01_audit_logs_are_immutable(self):
+    def test_tc_wpad_08_n01_audit_logs_are_immutable(self, page_evidence):
         page = self.login_as_admin()
         try:
             page.open_named_section("Audit Logs", "Audit")
@@ -108,9 +127,16 @@ class TestM2PortalAdminFeatures:
             pytest.xfail(
                 f"KI-M2-AUDIT-002 [M2 Audit Logs] Audit logs page is not currently reachable: {error}"
             )
+        page_evidence.checkpoint(
+            "Audit Logs expose a delete/edit-log affordance: "
+            f"{page.has_forbidden_text('delete log', 'edit log')} (must be False "
+            "— logs are immutable)"
+        )
         assert not page.has_forbidden_text("delete log", "edit log")
 
-    def test_tc_wpad_09_p01_admin_report_generates_within_5_seconds(self, record_property):
+    def test_tc_wpad_09_p01_admin_report_generates_within_5_seconds(
+        self, record_property, page_evidence
+    ):
         page = self.login_as_admin()
         try:
             duration = page.generate_report(role="Teacher", date_range="Last 30 days")
@@ -120,6 +146,10 @@ class TestM2PortalAdminFeatures:
             )
         self.survey_markers(
             page, record_property, "Report Content", ("teacher", "activity", "items")
+        )
+        page_evidence.checkpoint(
+            f"Teacher report over the last 30 days generated in {duration:.2f}s "
+            "against a 5.0s budget"
         )
         # Performance budget stays a hard gate.
         assert duration <= 5.0
@@ -135,7 +165,7 @@ class TestM2PortalAdminFeatures:
             )
         self.survey_markers(page, record_property, "Report Export", ("download", "export"))
 
-    def test_tc_wpad_10_p01_teacher_can_submit_support_ticket(self):
+    def test_tc_wpad_10_p01_teacher_can_submit_support_ticket(self, page_evidence):
         page = self.login_as(ReadConfig.get_role_usernames("teacher")[0])
         try:
             page.open_named_section("Support")
@@ -149,6 +179,11 @@ class TestM2PortalAdminFeatures:
             pytest.xfail(
                 f"KI-M2-SUPPORT-001 [M2 Support] Support ticket UI is not currently reachable/actionable: {error}"
             )
+        ticket_reference = re.search(r"TKT[-\d]+", page.body_text(), re.IGNORECASE)
+        page_evidence.checkpoint(
+            "Teacher submitted a support ticket; reference returned: "
+            f"{ticket_reference.group(0) if ticket_reference else 'none'}"
+        )
         assert re.search(r"TKT[-\d]+", page.body_text(), re.IGNORECASE)
 
     def test_tc_wpad_10_p02_support_ticket_email_acknowledgement_within_48_hours(self):
@@ -156,7 +191,7 @@ class TestM2PortalAdminFeatures:
             "KI-M2-SUPPORT-002 [M2 Support] 48-hour support email acknowledgement requires mailbox access and delayed verification."
         )
 
-    def test_tc_wpad_11_p01_new_subject_master_reflects_in_m1_and_m4(self):
+    def test_tc_wpad_11_p01_new_subject_master_reflects_in_m1_and_m4(self, page_evidence):
         page = self.login_as_admin()
         try:
             page.open_named_section("Masters Management", "Masters")
@@ -167,9 +202,13 @@ class TestM2PortalAdminFeatures:
             pytest.xfail(
                 f"KI-M2-MASTERS-001 [M2 Masters] Subject master create UI is not currently reachable/actionable: {error}"
             )
+        page_evidence.checkpoint(
+            "New Environmental Science subject saved and visible on the masters "
+            f"page: {'environmental science' in page.normalized_body_text()}"
+        )
         assert "environmental science" in page.normalized_body_text()
 
-    def test_tc_wpad_11_n01_delete_linked_subject_is_blocked(self):
+    def test_tc_wpad_11_n01_delete_linked_subject_is_blocked(self, page_evidence):
         page = self.login_as_admin()
         try:
             page.open_named_section("Masters Management", "Masters")
@@ -180,4 +219,9 @@ class TestM2PortalAdminFeatures:
                 f"KI-M2-MASTERS-002 [M2 Masters] Subject delete/archive control is not currently reachable: {error}"
             )
         text = page.normalized_body_text()
+        page_evidence.checkpoint(
+            "Deleting the linked subject Mathematics was refused — markers on "
+            "the page: "
+            f"{[m for m in ('cannot delete', 'linked', 'active items') if m in text] or 'none'}"
+        )
         assert "cannot delete" in text or "linked" in text or "active items" in text

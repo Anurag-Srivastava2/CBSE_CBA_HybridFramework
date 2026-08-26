@@ -8,6 +8,7 @@ from pages.common.login_page import LoginPage
 from pages.sme.manual_item_page import ManualItemPage
 from pages.teacher.dashboard_page import DashboardPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 # The dashboard survey runs ~60 checks against elements that all paint
@@ -34,6 +35,7 @@ class TestTeacherManualItemCreation:
         page = ManualItemPage(self.driver)
         page.close_popup_if_open()
         page.wait_for_application_to_load()
+        checkpoint(f"Teacher {username} signed in")
         return page
 
     def wait_for_dashboard_text(self, patterns, timeout=30):
@@ -227,7 +229,9 @@ class TestTeacherManualItemCreation:
             checks.check_condition(f"Wizard step — {label}", label not in missing_steps)
         return checks
 
-    def test_tc_tcib_01_p01_contribution_dashboard_and_create_cta(self, record_property):
+    def test_tc_tcib_01_p01_contribution_dashboard_and_create_cta(
+        self, record_property, page_evidence
+    ):
         """Inventory the teacher contribution dashboard and drive its controls.
 
         This test's job is genuinely "does this page render", so its structure
@@ -263,6 +267,20 @@ class TestTeacherManualItemCreation:
         # The one hard gate, asserted before any control is driven: the survey
         # above is only meaningful if this really is the authenticated
         # dashboard, and the stat cards below navigate away from it.
+        page_evidence.checkpoint(
+            "Contribution dashboard markers present: "
+            + (
+                ", ".join(
+                    marker
+                    for marker in (
+                        "hello, teacher", "all items", "under review",
+                        "rejected", "published",
+                    )
+                    if marker in text
+                )
+                or "none"
+            )
+        )
         assert "hello, teacher" in text, (
             "The teacher dashboard did not render its greeting, so the page "
             "surveyed above is not an authenticated contribution dashboard."
@@ -277,6 +295,10 @@ class TestTeacherManualItemCreation:
                 lambda tab=label: dashboard.is_tab_active(tab),
             )
         dashboard.switch_tab("All")
+        page_evidence.checkpoint(
+            f"All {len(dashboard.TAB_LABELS)} dashboard tab(s) driven and the "
+            "grid left back on All"
+        )
 
         # A stat card is a link, not an in-place filter: it opens the item-set
         # listing scoped to that status. Verified against the destination URL —
@@ -294,9 +316,15 @@ class TestTeacherManualItemCreation:
             checks.safe_call(self.driver.back)
             checks.safe_call(dashboard.wait_for_dashboard_ready, False)
 
+        page_evidence.checkpoint(
+            "Each stat card opened the item-set listing scoped to its status "
+            "and was walked back to the dashboard"
+        )
         record_property("result_description", checks.publish())
 
-    def test_tc_tcib_01_p02_dashboard_stat_counters_are_numeric(self, record_property):
+    def test_tc_tcib_01_p02_dashboard_stat_counters_are_numeric(
+        self, record_property, page_evidence
+    ):
         """Every stat card exposes a numeric counter.
 
         Card presence is soft; the counters being readable numbers is the
@@ -332,6 +360,10 @@ class TestTeacherManualItemCreation:
             detail=f"All Items {values.get('All Items')!r} vs sum {bucket_total}",
         )
 
+        page_evidence.checkpoint(
+            f"Stat counters read: {values}; All Items vs the sum of the status "
+            f"buckets: {values.get('All Items')!r} vs {bucket_total}"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. Stat counters: {values}.",
@@ -352,13 +384,17 @@ class TestTeacherManualItemCreation:
             for label in buckets
             if values.get(label) is not None and values[label] > all_items
         }
+        page_evidence.checkpoint(
+            f"Data integrity — buckets holding more than the All Items total "
+            f"({all_items}): {oversized or 'none'}"
+        )
         assert not oversized, (
             f"Stat buckets report more items than the All Items total ({all_items}): "
             f"{oversized}"
         )
 
     def test_tc_tcib_02_p01_submit_locked_until_mandatory_item_complete(
-        self, record_property
+        self, record_property, page_evidence
     ):
         """Continue stays locked until one complete item has been added.
 
@@ -391,7 +427,12 @@ class TestTeacherManualItemCreation:
         # precondition is established rather than assumed — the same isolation
         # step the M1 manual-item suites take before their own draft assertions.
         page.clear_added_items()
-        assert page.is_continue_enabled() is False
+        continue_locked_when_empty = page.is_continue_enabled()
+        page_evidence.checkpoint(
+            "Added Items cleared to establish an empty draft; Continue enabled "
+            f"with nothing added: {continue_locked_when_empty} (must be False)"
+        )
+        assert continue_locked_when_empty is False
 
         # Still asserted as an increment rather than an absolute count: the
         # draft can rehydrate asynchronously after being cleared.
@@ -402,10 +443,18 @@ class TestTeacherManualItemCreation:
             answer="True",
             explanation="91 is greater than 19.",
         )
-        assert int(page.get_settled_added_items_count()) == items_before + 1
-        assert page.is_continue_enabled() is True
+        items_after = int(page.get_settled_added_items_count())
+        continue_unlocked = page.is_continue_enabled()
+        page_evidence.checkpoint(
+            f"One complete True/False item added — Added Items {items_before} -> "
+            f"{items_after}; Continue now enabled: {continue_unlocked}"
+        )
+        assert items_after == items_before + 1
+        assert continue_unlocked is True
 
-    def test_tc_tcib_02_n01_teacher_grade_subject_rbac_is_enforced(self, record_property):
+    def test_tc_tcib_02_n01_teacher_grade_subject_rbac_is_enforced(
+        self, record_property, page_evidence
+    ):
         """A teacher may only author within their own grade and subject scope.
 
         This is a security contract, so every assertion below the survey stays
@@ -418,6 +467,14 @@ class TestTeacherManualItemCreation:
             self.survey_manual_form(page, record_property, "RBAC Scope").publish(),
         )
 
-        assert page.is_dropdown_option_available("Grade *", "Grade 1") is True
-        assert page.is_dropdown_option_available("Grade *", "Grade 10") is False
-        assert page.is_dropdown_option_available("Subject *", "Mathematics") is True
+        in_scope_grade = page.is_dropdown_option_available("Grade *", "Grade 1")
+        out_of_scope_grade = page.is_dropdown_option_available("Grade *", "Grade 10")
+        in_scope_subject = page.is_dropdown_option_available("Subject *", "Mathematics")
+        page_evidence.checkpoint(
+            f"Authoring scope offered to this teacher — Grade 1: {in_scope_grade}, "
+            f"Grade 10: {out_of_scope_grade} (must be False), Mathematics: "
+            f"{in_scope_subject}"
+        )
+        assert in_scope_grade is True
+        assert out_of_scope_grade is False
+        assert in_scope_subject is True

@@ -2,6 +2,7 @@ import pytest
 
 from pages.admin.helpdesk_page import HelpdeskPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from pages.common.login_page import LoginPage
 from utilities.read_config import ReadConfig
 
@@ -40,6 +41,7 @@ class TestM2HelpdeskManagement:
         )
         page = HelpdeskPage(self.driver)
         page.open(ReadConfig.get_base_url())
+        checkpoint(f"Admin {username} opened the Helpdesk queue")
         return page
 
     def survey(self, helpdesk, record_property, scope):
@@ -61,7 +63,9 @@ class TestM2HelpdeskManagement:
             checks.check_condition(f"Filter — {label}", label not in missing_filters)
         return checks
 
-    def test_tc_wpad_helpdesk_01_verify_page_load_and_kpis(self, record_property):
+    def test_tc_wpad_helpdesk_01_verify_page_load_and_kpis(
+        self, record_property, page_evidence
+    ):
         """Phase 1: furniture, KPI cards and ticket data, all recorded softly."""
         helpdesk = self.open_helpdesk()
         checks = self.survey(helpdesk, record_property, "Page Load")
@@ -85,12 +89,17 @@ class TestM2HelpdeskManagement:
         checks.check_condition(
             "Queue loaded tickets", row_count > 0, detail=f"{row_count} tickets"
         )
+        page_evidence.checkpoint(
+            f"Helpdesk KPIs {kpis}; queue loaded {row_count} ticket(s)"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. KPIs {kpis}, {row_count} tickets.",
         )
 
-    def test_tc_wpad_helpdesk_02_verify_tab_filters(self, record_property):
+    def test_tc_wpad_helpdesk_02_verify_tab_filters(
+        self, record_property, page_evidence
+    ):
         """Phase 2: each quick tab scopes the queue to exactly its badge count,
         and status tabs return only tickets carrying that status."""
         helpdesk = self.open_helpdesk()
@@ -121,10 +130,26 @@ class TestM2HelpdeskManagement:
                     f"Tab {label!r} holds no tickets but shows no empty-state placeholder."
                 )
             if label in helpdesk.STATUS_TABS and rows:
-                assert statuses == [label], (
-                    f"Tab {label!r} should only list {label!r} tickets but showed {statuses}."
+                allowed = set(helpdesk.TAB_ALLOWED_STATUSES[label])
+                # Subset rather than equality: the tab need not contain every
+                # allowed status, but must contain nothing outside them. The
+                # emptiness guard keeps a failed status scrape from passing as
+                # a vacuous subset.
+                assert statuses, (
+                    f"Tab {label!r} rendered {rows} row(s) but no status could be read from them."
+                )
+                assert set(statuses) <= allowed, (
+                    f"Tab {label!r} should only list {sorted(allowed)} tickets but showed {statuses}."
                 )
 
+        page_evidence.checkpoint(
+            "Each quick tab scoped the queue to its own badge count — "
+            + "; ".join(
+                f"{label}: badge {data['count']}, rows {data['rows']}, "
+                f"statuses {data['statuses'] or 'none'}"
+                for label, data in observed.items()
+            )
+        )
         record_property("result_description", f"Helpdesk tab filtering: {observed}")
 
         # 'All' is the whole queue, so no single status tab may exceed it.
@@ -138,7 +163,9 @@ class TestM2HelpdeskManagement:
 
         helpdesk.switch_tab("All")
 
-    def test_tc_wpad_helpdesk_03_search_functionality(self, record_property):
+    def test_tc_wpad_helpdesk_03_search_functionality(
+        self, record_property, page_evidence
+    ):
         """Phase 3: search narrows the queue by ticket ID, subject and category,
         and yields the empty state for a term that matches nothing."""
         helpdesk = self.open_helpdesk()
@@ -161,8 +188,16 @@ class TestM2HelpdeskManagement:
         seed = helpdesk.get_newest_ticket()
         assert seed, "No well-formed ticket in the queue to drive the search checks."
 
+        page_evidence.checkpoint(
+            f"Search terms seeded from a ticket actually in the queue: "
+            f"{seed['ticket_id']} / {seed['subject']!r} / {seed['category']!r}"
+        )
+
         helpdesk.search_ticket(seed["ticket_id"])
         by_id = helpdesk.get_ticket_ids_in_view()
+        page_evidence.checkpoint(
+            f"Search by ticket ID returned {by_id} — it should isolate the one row"
+        )
         assert by_id == [seed["ticket_id"]], (
             f"Searching for ticket ID {seed['ticket_id']} should isolate that one row, "
             f"but returned {by_id}."
@@ -181,6 +216,11 @@ class TestM2HelpdeskManagement:
 
         helpdesk.search_ticket("INVALID-TKT-999")
         no_match = helpdesk.get_row_count()
+        page_evidence.checkpoint(
+            f"Subject search matched {len(by_subject)} row(s), category "
+            f"{seed['category']!r} matched {by_category}, a term matching nothing "
+            f"left {no_match} (must be 0)"
+        )
         record_property(
             "result_description",
             f"Search on {seed['ticket_id']} matched {len(by_id)} row(s), subject matched "
@@ -197,7 +237,9 @@ class TestM2HelpdeskManagement:
         helpdesk.search_ticket("")
         assert helpdesk.get_row_count() > 0, "Clearing the search did not restore the queue."
 
-    def test_tc_wpad_helpdesk_04_verify_new_ticket_ingestion(self, record_property):
+    def test_tc_wpad_helpdesk_04_verify_new_ticket_ingestion(
+        self, record_property, page_evidence
+    ):
         """Phase 4: the most recently raised ticket carries a complete, valid
         metadata record in the queue.
 
@@ -218,6 +260,10 @@ class TestM2HelpdeskManagement:
         helpdesk.search_ticket(newest["ticket_id"])
         found = helpdesk.find_ticket(newest["ticket_id"])
 
+        page_evidence.checkpoint(
+            f"Newest ticket {newest['ticket_id']} pulled up by its own number, "
+            f"the way an agent would: {found}"
+        )
         record_property(
             "result_description",
             f"Newest helpdesk ticket {newest['ticket_id']} ingested as {found}.",
@@ -245,6 +291,11 @@ class TestM2HelpdeskManagement:
             f"Ticket {found['ticket_id']} has an unrecognised SLA Breach value "
             f"{found['sla_breach']!r}; expected 'Yes' or 'No'."
         )
+        page_evidence.checkpoint(
+            f"{found['ticket_id']} metadata — status {found['status']!r}, "
+            f"priority {found['priority']!r}, SLA breach {found['sla_breach']!r} "
+            "(a ticket this new cannot legitimately have breached yet)"
+        )
         # A ticket this new cannot legitimately have breached its SLA yet.
         assert found["sla_breach"] == "No", (
             f"The newest ticket {found['ticket_id']} is already flagged as an SLA breach."
@@ -254,7 +305,9 @@ class TestM2HelpdeskManagement:
 
     @pytest.mark.e2e
     @pytest.mark.serial
-    def test_tc_wpad_helpdesk_05_reassign_first_line_ticket(self, record_property):
+    def test_tc_wpad_helpdesk_05_reassign_first_line_ticket(
+        self, record_property, page_evidence
+    ):
         """Phase 5: a ticket sitting with the first-line queue can be reassigned
         to an L2 agent, and the queue reflects the new owner.
 
@@ -275,6 +328,10 @@ class TestM2HelpdeskManagement:
                 "nothing to reassign without disturbing an L2 agent's workload."
             )
         ticket_id = candidates[0]
+        page_evidence.checkpoint(
+            f"{len(candidates)} ticket(s) sit with {self.SOURCE_ASSIGNEE!r}; "
+            f"moving {ticket_id}"
+        )
 
         actions = helpdesk.get_row_action_items(ticket_id)
         assert "Assign" in actions, (
@@ -292,6 +349,12 @@ class TestM2HelpdeskManagement:
             "'Assign Ticket' is enabled before any agent has been selected."
         )
 
+        page_evidence.checkpoint(
+            f"Assign panel opened, titled {title!r}; Assign Ticket enabled "
+            "before an agent is chosen: "
+            f"{helpdesk.is_assign_confirm_enabled()} (must be False)"
+        )
+
         agents = helpdesk.get_agent_options()
         assert agents, "The assign panel offers no L2 agents to reassign to."
         target_agent = next(
@@ -306,7 +369,15 @@ class TestM2HelpdeskManagement:
             f"'Assign Ticket' stayed disabled after selecting agent {target_agent!r}."
         )
 
+        page_evidence.checkpoint(
+            f"Agent {target_agent!r} selected from {agents}; Assign Ticket now "
+            f"enabled: {helpdesk.is_assign_confirm_enabled()}"
+        )
+
         assigned_to = helpdesk.reassign_ticket(ticket_id, target_agent)
+        page_evidence.checkpoint(
+            f"{ticket_id} reassigned; the queue now shows {assigned_to!r}"
+        )
 
         record_property(
             "result_description",
@@ -322,6 +393,11 @@ class TestM2HelpdeskManagement:
         helpdesk.open(ReadConfig.get_base_url())
         helpdesk.search_ticket(ticket_id)
         persisted = helpdesk.find_ticket(ticket_id)
+        page_evidence.checkpoint(
+            f"After a full reload {ticket_id} is assigned to "
+            f"{persisted['assigned_to'] if persisted else 'nothing — it vanished'!r} "
+            "— the move had to persist, not just re-render optimistically"
+        )
         assert persisted is not None, f"Ticket {ticket_id} vanished from the queue after reassignment."
         assert persisted["assigned_to"] == target_agent, (
             f"After reload, ticket {ticket_id} is assigned to {persisted['assigned_to']!r} "

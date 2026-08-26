@@ -6,6 +6,7 @@ import pytest
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -16,7 +17,7 @@ class TestSMEExcelTemplate:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_sme2_username(),
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_sme2_username()),
         )
         page = UploadItemFilePage(self.driver)
         page.close_popup_if_open()
@@ -26,23 +27,40 @@ class TestSMEExcelTemplate:
         return page
 
     def download_template(self, tmp_path):
-        return self.login_and_open_upload_tab().download_latest_template(tmp_path)
+        page = self.login_and_open_upload_tab()
+        checkpoint("SME signed in and opened the Upload Item File tab")
+        template = page.download_latest_template(tmp_path)
+        checkpoint(f"Latest template downloaded as {template.name}")
+        return template
 
-    def test_tc_ibmm_04_p01_template_downloads_with_headers_and_version(self, tmp_path):
+    def test_tc_ibmm_04_p01_template_downloads_with_headers_and_version(
+        self, tmp_path, page_evidence
+    ):
         template = self.download_template(tmp_path)
         workbook = load_workbook(template, read_only=True, data_only=False)
         worksheet = workbook.active
         headers = [cell.value for cell in worksheet[1] if cell.value]
         workbook.close()
+        page_evidence.checkpoint(
+            f"{template.name} carries {len(headers)} header(s) (>= 15 required): "
+            f"{headers[:12]}"
+        )
 
         assert template.suffix.casefold() == ".xlsx"
         assert len(headers) >= 15, f"Expected at least 15 required headers, received: {headers}"
         version_text = " ".join([template.name] + [str(header) for header in headers])
+        version_marker = re.search(r"v(?:ersion)?[_ -]?\d+", version_text, re.IGNORECASE)
+        page_evidence.checkpoint(
+            f"Version marker on the template: "
+            f"{version_marker.group(0) if version_marker else 'none found'}"
+        )
         assert re.search(r"v(?:ersion)?[_ -]?\d+", version_text, re.IGNORECASE), (
             f"Downloaded template has no version marker: {version_text}"
         )
 
-    def test_tc_ibmm_04_p02_template_has_controlled_field_validations(self, tmp_path):
+    def test_tc_ibmm_04_p02_template_has_controlled_field_validations(
+        self, tmp_path, page_evidence
+    ):
         template = self.download_template(tmp_path)
         workbook = load_workbook(template, read_only=False, data_only=False)
         worksheet = workbook.active
@@ -71,21 +89,33 @@ class TestSMEExcelTemplate:
             ):
                 missing_validations.append(name)
 
+        page_evidence.checkpoint(
+            f"Controlled fields on the template — missing headers: "
+            f"{missing_headers or 'none'}; headers without a list validation: "
+            f"{missing_validations or 'none'}"
+        )
         assert not missing_headers, f"Controlled-field headers missing: {missing_headers}"
         assert not missing_validations, (
             f"List validation missing from controlled fields: {missing_validations}"
         )
 
-    def test_tc_ibmm_04_n02_old_template_version_shows_upgrade_notice(self, tmp_path):
+    def test_tc_ibmm_04_n02_old_template_version_shows_upgrade_notice(
+        self, tmp_path, page_evidence
+    ):
         page = self.login_and_open_upload_tab()
         current_template = page.download_latest_template(tmp_path / "current")
         old_template = tmp_path / "Item_Upload_Template_v0.xlsx"
         copy2(current_template, old_template)
+        page_evidence.checkpoint(
+            f"{current_template.name} re-filed as {old_template.name} so the "
+            "upload sees a stale template version"
+        )
 
         page.open_upload_step()
         page.upload_file(old_template)
         message = page.wait_for_upload_rejection(timeout=60)
         normalized = message.casefold()
+        page_evidence.checkpoint(f"Stale template rejected with: {message}")
 
         assert "version" in normalized
         assert "latest" in normalized or "upgrade" in normalized or "mismatch" in normalized

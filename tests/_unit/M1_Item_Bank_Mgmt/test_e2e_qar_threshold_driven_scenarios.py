@@ -57,7 +57,7 @@ class TestE2EQARThresholdDrivenScenarios:
             UploadItemFilePage(self.driver).reset_browser_session_to_login()
         LoginPage(self.driver).login_to_application(
             username,
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(username),
         )
         page = UploadItemFilePage(self.driver)
         page.close_popup_if_open()
@@ -282,22 +282,38 @@ class TestE2EQARThresholdDrivenScenarios:
             max_retries=max_retries,
         )
 
-    def test_e2e_admin_thresholds_drive_qar_scenarios(self, request, tmp_path):
+    def test_e2e_admin_thresholds_drive_qar_scenarios(
+        self, request, tmp_path, page_evidence
+    ):
         # Phase 1: fail fast on missing/disabled/malformed Admin configuration.
         thresholds = self.read_and_validate_admin_thresholds()
         request.node.user_properties.append(
             ("qar_threshold_snapshot", json.dumps(thresholds, sort_keys=True))
         )
+        page_evidence.checkpoint(
+            "Live Admin QAR thresholds this run is driven by: "
+            + json.dumps(thresholds, sort_keys=True)
+        )
 
         # Phase 2a: all-pass and mixed pass/fail outcomes.
         happy = self.submit_artifact_scenario(tmp_path, "positive")
         happy_evidence = self.assert_result_matches_admin_thresholds(happy, thresholds)
+        page_evidence.checkpoint(
+            f"Phase 2a happy path — set {happy['item_set_id']} statuses: "
+            f"{ {item: row['status'] for item, row in happy_evidence.items()} }; "
+            "all must pass and route to RWG"
+        )
         assert all(row["status"].casefold() in PASS_STATUSES for row in happy_evidence.values())
         self.assert_rwg_routing(happy["item_set_id"], True)
 
         mixed = self.submit_artifact_scenario(tmp_path, "duplicate")
         mixed_evidence = self.assert_result_matches_admin_thresholds(mixed, thresholds)
         mixed_statuses = {row["status"].casefold() for row in mixed_evidence.values()}
+        page_evidence.checkpoint(
+            f"Phase 2a mixed set {mixed['item_set_id']} statuses: "
+            f"{ {item: row['status'] for item, row in mixed_evidence.items()} }; "
+            "must hold both a pass and a fail, and stay out of RWG"
+        )
         assert mixed_statuses.intersection(PASS_STATUSES), "Mixed fixture produced no passing item."
         assert mixed_statuses.intersection(FAIL_STATUSES), "Mixed fixture produced no failing item."
         self.assert_rwg_routing(mixed["item_set_id"], False)
@@ -307,6 +323,11 @@ class TestE2EQARThresholdDrivenScenarios:
             mixed,
             self.valid_correction(mixed["prefix"]),
             thresholds["max_retry_limit"],
+        )
+        page_evidence.checkpoint(
+            f"Phase 2b — a correctable set cleared in {retry_result.retry_count} "
+            f"retry/retries against the live ceiling of "
+            f"{thresholds['max_retry_limit']}"
         )
         assert 1 <= retry_result.retry_count <= thresholds["max_retry_limit"]
 
@@ -320,6 +341,10 @@ class TestE2EQARThresholdDrivenScenarios:
                 self.persistent_failure(persistent["prefix"]),
                 thresholds["max_retry_limit"],
             )
+        page_evidence.checkpoint(
+            f"Phase 2b — a set that never corrects is stopped at the "
+            f"{thresholds['max_retry_limit']}-retry ceiling and stays out of RWG"
+        )
         self.assert_rwg_routing(persistent["item_set_id"], False)
 
         # Phase 2c: exact set-lock boundary and one-item-below boundary.
@@ -337,6 +362,11 @@ class TestE2EQARThresholdDrivenScenarios:
             "the required 3–5 questions per sheet."
         )
         total_count, boundary_failures = boundary_shape
+        page_evidence.checkpoint(
+            f"Phase 2c — the {lock_threshold}% set-lock threshold lands exactly on "
+            f"{boundary_failures}/{total_count} failures, so that shape and the "
+            "one below it are what get uploaded"
+        )
         assert boundary_failures >= 1
         for label, intended_failures, should_lock in (
             ("boundary", boundary_failures, True),
@@ -363,6 +393,11 @@ class TestE2EQARThresholdDrivenScenarios:
             )
             normalized_report = result["report_text"].casefold()
             lock_visible = "locked" in normalized_report or "set rejected" in normalized_report
+            page_evidence.checkpoint(
+                f"Phase 2c {label} — {actual_failures}/{total_count} items failed; "
+                f"set locked: {lock_visible} (expected {should_lock} at a "
+                f"{lock_threshold}% threshold)"
+            )
             assert lock_visible is should_lock, (
                 f"Set-lock boundary mismatch at {actual_failures}/{total_count}; "
                 f"Admin threshold={lock_threshold}%, report={result['report_text'][:600]}"
@@ -381,6 +416,11 @@ class TestE2EQARThresholdDrivenScenarios:
         typology_evidence = self.assert_result_matches_admin_thresholds(
             typology_result,
             thresholds,
+        )
+        page_evidence.checkpoint(
+            f"Phase 2d — each typology scored against its own override or the "
+            f"global score: "
+            f"{ {item: row['status'] for item, row in typology_evidence.items()} }"
         )
         self.assert_rwg_routing(
             typology_result["item_set_id"],

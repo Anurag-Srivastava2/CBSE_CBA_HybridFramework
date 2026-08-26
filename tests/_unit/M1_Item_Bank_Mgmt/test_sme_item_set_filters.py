@@ -1,46 +1,18 @@
-import json
-
 import pytest
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
 from utilities.read_config import ReadConfig
-from utilities.screenshot_utils import ScreenshotUtils
 
 
 @pytest.mark.rtm
 @pytest.mark.usefixtures("setup")
 class TestSMEItemSetFilters:
-    @staticmethod
-    def sync_evidence(request, evidence_screenshots):
-        request.node.user_properties[:] = [
-            entry
-            for entry in request.node.user_properties
-            if entry[0] != "evidence_screenshots"
-        ]
-        request.node.user_properties.append(
-            ("evidence_screenshots", json.dumps(evidence_screenshots))
-        )
-
-    def capture_checkpoint(self, request, evidence_screenshots, detail, suffix):
-        screenshot_path = ScreenshotUtils.capture(
-            self.driver,
-            f"{request.node.name}_{suffix}",
-        )
-        evidence_screenshots.append(
-            {
-                "name": f"Checkpoint {len(evidence_screenshots) + 1:02d} - {detail}",
-                "path": screenshot_path,
-            }
-        )
-        self.sync_evidence(request, evidence_screenshots)
-        return screenshot_path
-
     def login_and_open_item_sets(self):
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_sme2_username(),
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_sme2_username()),
         )
         page = UploadItemFilePage(self.driver)
         page.close_popup_if_open()
@@ -55,13 +27,17 @@ class TestSMEItemSetFilters:
     def test_grade_subject_chapter_and_status_filters_apply_validate_and_clear(
         self,
         request,
+        page_evidence,
     ):
         page = self.login_and_open_item_sets()
         baseline_rows = page.get_item_set_list_rows()
+        page_evidence.checkpoint(
+            f"SME2 opened My Item Set; baseline listing holds "
+            f"{len(baseline_rows)} row(s), which every Clear below must restore"
+        )
         assert baseline_rows, "At least one SME item set is required to test filters."
 
         baseline_ids = {row["item_set_id"] for row in baseline_rows}
-        evidence_screenshots = []
         filter_specs = [
             ("Grade", "grade"),
             ("Subject", "subject"),
@@ -94,12 +70,9 @@ class TestSMEItemSetFilters:
                 timeout=30,
             )
             assert filtered_rows
-            self.capture_checkpoint(
-                request,
-                evidence_screenshots,
+            page_evidence.checkpoint(
                 f"{filter_name} filter applied with {selected_value!r}; all "
-                f"{len(filtered_rows)} visible row(s) match the selected value.",
-                f"{filter_name.casefold()}_filter_applied",
+                f"{len(filtered_rows)} visible row(s) match the selected value"
             )
 
             page.clear_item_set_filter(filter_name, selected_value)
@@ -115,12 +88,9 @@ class TestSMEItemSetFilters:
                 ),
                 timeout=30,
             )
-            self.capture_checkpoint(
-                request,
-                evidence_screenshots,
+            page_evidence.checkpoint(
                 f"{filter_name} filter cleared; the original {len(restored_rows)} "
-                "item-set row(s) were restored before applying the next filter.",
-                f"{filter_name.casefold()}_filter_cleared",
+                "item-set row(s) were restored before applying the next filter"
             )
 
         request.node.user_properties.extend(

@@ -273,6 +273,12 @@ class LoginPage(BasePage):
                 self.driver._logged_in_user = username
                 return
             except TimeoutException:
+                # A throttled or locked account leaves the form up looking
+                # exactly like a slow login, so the loop above used to spend
+                # all three attempts on it - and every attempt extends the
+                # lock on an account the whole suite shares. Stop at the first
+                # sight of it and say so, rather than retrying into it.
+                self.raise_if_login_throttled(username)
                 if attempt == 2:
                     raise
 
@@ -309,6 +315,42 @@ class LoginPage(BasePage):
         return (
             self.is_element_visible_quick(self.USERNAME_TEXTBOX, timeout)
             and self.is_element_visible_quick(self.PASSWORD_TEXTBOX, timeout)
+        )
+
+    # The portal rate-limits sign-in per account and answers HTTP 429 once an
+    # account has failed too often ("Too many attempts. Your account is
+    # temporarily locked due to repeated tries."). The SPA surfaces that on the
+    # login screen and simply leaves the form up, which is indistinguishable
+    # from a slow login unless the text is read - so read it.
+    LOCKOUT_MARKERS = (
+        "too many attempts",
+        "too many requests",
+        "temporarily locked",
+        "account is locked",
+        "account has been locked",
+        "repeated tries",
+        "try again later",
+        "rate limit",
+    )
+
+    def is_login_throttled(self):
+        """True when the login screen is reporting a rate limit or lockout."""
+        page_text = self.get_login_error_text()
+        return any(marker in page_text for marker in self.LOCKOUT_MARKERS)
+
+    def raise_if_login_throttled(self, username):
+        """Fail fast, and in the environment's own words, on a locked account.
+
+        Deliberately not retried: each further attempt extends the lockout
+        window on an account every test in the suite signs in with.
+        """
+        if not self.is_login_throttled():
+            return
+        raise TimeoutException(
+            f"Login for {username!r} was refused by the portal's rate limit - the "
+            "account is temporarily locked after repeated sign-in attempts. Not "
+            "retrying: another attempt extends the lock. Wait out the lockout "
+            f"window before re-running. Login screen said: {self.get_login_error_text()[:300]!r}"
         )
 
     def get_login_error_text(self):

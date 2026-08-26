@@ -4,6 +4,7 @@ from pages.admin.admin_dashboard_page import AdminDashboardPage
 from pages.admin.item_bank_page import ItemBankPage
 from pages.admin.user_management_page import UserManagementPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 from utilities.smoke_support import sign_in
 
@@ -31,12 +32,16 @@ class TestSmokeM2WebPortalAdmin:
 
     def sign_in_as_admin(self):
         sign_in(self.driver, self.admin_username())
+        checkpoint(f"Admin {self.admin_username()} signed in")
 
-    def test_smoke_m2_01_admin_dashboard_kpis_render(self, record_property):
+    def test_smoke_m2_01_admin_dashboard_kpis_render(
+        self, record_property, page_evidence
+    ):
         """Admin lands on the dashboard and its KPI cards carry real numbers."""
         self.sign_in_as_admin()
         dashboard = AdminDashboardPage(self.driver)
         dashboard.wait_for_dashboard_ready()
+        page_evidence.checkpoint("Admin dashboard reported ready")
 
         # Additive only: every assertion below stays exactly as hard as it
         # was, so the smoke gate still fails loudly and fast.
@@ -71,6 +76,10 @@ class TestSmokeM2WebPortalAdmin:
             "Total Users": dashboard.get_metric_value(dashboard.METRIC_CARD_TOTAL_USERS),
             "QAR Failed": dashboard.get_metric_value(dashboard.METRIC_CARD_QAR_FAILED),
         }
+        page_evidence.checkpoint(
+            f"KPI cards read: {metrics}; welcome greeting: "
+            f"{welcome_message[:80] or 'none'}"
+        )
         record_property(
             "result_description",
             f"Admin dashboard loaded for {self.admin_username()} — {metrics}. "
@@ -83,11 +92,14 @@ class TestSmokeM2WebPortalAdmin:
         unreadable_cards = [name for name, value in metrics.items() if value is None]
         assert not unreadable_cards, f"Dashboard KPI cards missing or non-numeric: {unreadable_cards}"
 
-    def test_smoke_m2_02_item_bank_overview_loads(self, record_property):
+    def test_smoke_m2_02_item_bank_overview_loads(
+        self, record_property, page_evidence
+    ):
         """Item Bank Overview renders its table with the expected columns."""
         self.sign_in_as_admin()
         item_bank = ItemBankPage(self.driver)
         item_bank.open(ReadConfig.get_base_url())
+        page_evidence.checkpoint("Item Bank Overview opened")
 
         checks = ElementChecks(
             item_bank, record_property, page_name="Item Bank Overview — Smoke"
@@ -108,6 +120,10 @@ class TestSmokeM2WebPortalAdmin:
         for column in item_bank.EXPECTED_COLUMNS:
             checks.check_condition(f"Column — {column}", column not in missing_columns)
         row_count = len(item_bank.get_rows())
+        page_evidence.checkpoint(
+            f"Item Bank table rendered {row_count} row(s) on page 1; missing "
+            f"columns: {missing_columns or 'none'}"
+        )
         record_property(
             "result_description",
             f"Item Bank Overview loaded with {row_count} row(s) on the first page. "
@@ -117,11 +133,14 @@ class TestSmokeM2WebPortalAdmin:
         assert item_bank.is_on_page(), "Item Bank Overview header/subtext did not render"
         assert not missing_columns, f"Item Bank table is missing columns: {missing_columns}"
 
-    def test_smoke_m2_03_user_management_lists_accounts(self, record_property):
+    def test_smoke_m2_03_user_management_lists_accounts(
+        self, record_property, page_evidence
+    ):
         """User Management opens and returns the account listing."""
         self.sign_in_as_admin()
         user_management = UserManagementPage(self.driver)
         user_management.open(ReadConfig.get_base_url())
+        page_evidence.checkpoint("User Management opened")
 
         checks = ElementChecks(
             user_management, record_property, page_name="User Management — Smoke"
@@ -132,6 +151,11 @@ class TestSmokeM2WebPortalAdmin:
         checks.check("Account rows", user_management.TABLE_ROWS, timeout=2)
 
         listed_users = user_management.get_listed_users()
+        page_evidence.checkpoint(
+            f"User Management listed {len(listed_users)} account(s) on page 1; "
+            "accounts with no user code: "
+            f"{[u for u in listed_users if not u['code']] or 'none'}"
+        )
         record_property(
             "result_description",
             f"User Management listed {len(listed_users)} account(s) on the first page. "

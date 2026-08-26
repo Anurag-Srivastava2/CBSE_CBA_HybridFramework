@@ -3,6 +3,7 @@ import pytest
 from pages.admin.assignment_queue_page import AssignmentQueuePage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -20,6 +21,7 @@ class TestM2AssignmentQueueBasics:
         )
         page = AssignmentQueuePage(self.driver)
         page.open(ReadConfig.get_base_url())
+        checkpoint(f"Admin {username} opened the Assignment Queue")
         return page
 
     EXPECTED_COLUMNS = (
@@ -48,7 +50,9 @@ class TestM2AssignmentQueueBasics:
             )
         return checks
 
-    def test_tc_wpad_item_02_verify_page_load_and_ui(self, record_property):
+    def test_tc_wpad_item_02_verify_page_load_and_ui(
+        self, record_property, page_evidence
+    ):
         """Page furniture, columns and filters, all recorded softly."""
         queue = self.open_queue()
         checks = self.survey(queue, record_property, "Page Load")
@@ -57,12 +61,18 @@ class TestM2AssignmentQueueBasics:
         checks.check_condition(
             "Queue loaded rows", row_count > 0, detail=f"{row_count} rows"
         )
+        page_evidence.checkpoint(
+            f"Assignment Queue loaded {row_count} row(s); columns missing: "
+            f"{[c for c in self.EXPECTED_COLUMNS if c not in checks.safe_call(queue.get_column_headers)] or 'none'}"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. Loaded {row_count} rows.",
         )
 
-    def test_tc_wpad_item_03_search_functionality(self, record_property):
+    def test_tc_wpad_item_03_search_functionality(
+        self, record_property, page_evidence
+    ):
         """Search behaviour stays hard; the control's responsiveness is recorded."""
         queue = self.open_queue()
         checks = self.survey(queue, record_property, "Search")
@@ -83,6 +93,10 @@ class TestM2AssignmentQueueBasics:
         seed_code = queue.get_set_codes_in_view()[0]
         queue.search(seed_code)
         code_matches = queue.get_set_codes_in_view()
+        page_evidence.checkpoint(
+            f"Search by set code {seed_code!r} returned {len(code_matches)} row(s); "
+            f"all of them match: {all(seed_code in c for c in code_matches)}"
+        )
         assert code_matches, f"Search by set code {seed_code!r} returned no results."
         assert all(seed_code in code for code in code_matches), (
             f"Search for {seed_code!r} returned unrelated set codes: {sorted(set(code_matches))}"
@@ -93,11 +107,19 @@ class TestM2AssignmentQueueBasics:
         reviewer = next((name for name in queue.get_assigned_users_in_view() if name), None)
         assert reviewer, "No assignee names available to exercise reviewer search."
         queue.search(reviewer)
-        assert queue.get_row_count() >= 1, f"Search by reviewer {reviewer!r} returned no results."
+        reviewer_rows = queue.get_row_count()
+        page_evidence.checkpoint(
+            f"Search by reviewer {reviewer!r} returned {reviewer_rows} row(s)"
+        )
+        assert reviewer_rows >= 1, f"Search by reviewer {reviewer!r} returned no results."
 
         # Negative: gibberish yields the empty state.
         queue.search("INVALID-CODE-999")
         empty_count = queue.get_row_count()
+        page_evidence.checkpoint(
+            f"Search for a set code that does not exist left {empty_count} row(s) "
+            "— must be 0"
+        )
         record_property(
             "result_description",
             f"Search verified — set code {seed_code!r}, reviewer {reviewer!r}, "
@@ -109,7 +131,7 @@ class TestM2AssignmentQueueBasics:
 
         queue.search("")
 
-    def test_tc_wpad_item_04_dropdown_filters(self, record_property):
+    def test_tc_wpad_item_04_dropdown_filters(self, record_property, page_evidence):
         """Each dropdown is driven and recorded; the filtering contract stays hard."""
         queue = self.open_queue()
         checks = self.survey(queue, record_property, "Filters")
@@ -128,6 +150,10 @@ class TestM2AssignmentQueueBasics:
 
         queue.filter_by_stage("RWG")
         stages = queue.get_stages_in_view()
+        page_evidence.checkpoint(
+            f"Stage=RWG returned {len(stages)} row(s); distinct stages in view: "
+            f"{sorted(set(stages)) or 'none'}"
+        )
         assert stages, "Stage filter 'RWG' produced an empty table."
         assert set(stages) == {"RWG"}, f"Stage filter leaked other stages: {sorted(set(stages))}"
 
@@ -135,6 +161,11 @@ class TestM2AssignmentQueueBasics:
         queue.filter_by_status("Completed")
         statuses = queue.get_statuses_in_view()
         stages_after = queue.get_stages_in_view()
+        page_evidence.checkpoint(
+            f"Stacked Status=Completed on Stage=RWG — {len(statuses)} row(s); "
+            f"statuses {sorted(set(statuses)) or 'none'}, stages "
+            f"{sorted(set(stages_after)) or 'none'} (the Stage filter must survive)"
+        )
         record_property(
             "result_description",
             f"Stage=RWG + Status=Completed returned {len(statuses)} rows.",
@@ -145,7 +176,7 @@ class TestM2AssignmentQueueBasics:
             f"Stacking Status dropped the Stage filter: {sorted(set(stages_after))}"
         )
 
-    def test_tc_wpad_item_05_reassign_action(self, record_property):
+    def test_tc_wpad_item_05_reassign_action(self, record_property, page_evidence):
         """Reassignment mutates real queue state, so it stays a hard gate."""
         queue = self.open_queue()
         self.survey(queue, record_property, "Reassign").publish()
@@ -153,6 +184,11 @@ class TestM2AssignmentQueueBasics:
         # Completed work exposes no action; only pending rows can be reassigned.
         queue.filter_by_status("Completed")
         completed_rows = queue.get_rows()
+        page_evidence.checkpoint(
+            f"{len(completed_rows)} Completed row(s); any offering a Reassign "
+            f"action: {any(queue.row_has_action(row) for row in completed_rows)} "
+            "(must be False — completed work is not reassignable)"
+        )
         assert completed_rows, "No Completed rows available to check action visibility."
         assert not any(queue.row_has_action(row) for row in completed_rows), (
             "Completed assignments must not offer a Reassign action."
@@ -162,6 +198,10 @@ class TestM2AssignmentQueueBasics:
         queue.open(ReadConfig.get_base_url())
         queue.filter_by_status("Overdue")
         row, values = queue.find_actionable_row()
+        page_evidence.checkpoint(
+            "Overdue filter applied; actionable row found: "
+            + (f"{values['set_code']} ({values['stage']})" if row is not None else "none")
+        )
         if row is None:
             pytest.skip("No pending/overdue assignment is available to reassign in this environment.")
 
@@ -179,6 +219,10 @@ class TestM2AssignmentQueueBasics:
         )
         new_reviewer = candidates[0]
         expected_assignee = queue.reviewer_display_name(new_reviewer)
+        page_evidence.checkpoint(
+            f"Reassigning {values['set_code']} from {current_assignee!r} to "
+            f"{expected_assignee!r}; {len(candidates)} alternative reviewer(s) offered"
+        )
 
         queue.select_reviewer(new_reviewer)
         queue.confirm_reassign()
@@ -186,6 +230,10 @@ class TestM2AssignmentQueueBasics:
 
         queue.search(values["set_code"])
         assignees = queue.get_assigned_users_in_view()
+        page_evidence.checkpoint(
+            f"After reassignment the Assigned To column reads {assignees}; "
+            f"toast: {toast or 'none'}"
+        )
         record_property(
             "result_description",
             f"Reassigned {values['set_code']} ({values['stage']}) from {current_assignee!r} "
@@ -196,7 +244,7 @@ class TestM2AssignmentQueueBasics:
             f"Assigned To column now reads {assignees}."
         )
 
-    def test_tc_wpad_item_06_pagination(self, record_property):
+    def test_tc_wpad_item_06_pagination(self, record_property, page_evidence):
         """Controls surveyed softly; advancing the queue stays hard."""
         queue = self.open_queue()
         self.survey(queue, record_property, "Pagination").publish()
@@ -205,6 +253,10 @@ class TestM2AssignmentQueueBasics:
         first_codes = queue.get_set_codes_in_view()
         second_page = queue.go_to_next_page()
         second_codes = queue.get_set_codes_in_view()
+        page_evidence.checkpoint(
+            f"Pagination moved {first_page!r} -> {second_page!r}; the set codes "
+            f"changed: {second_codes != first_codes}"
+        )
 
         record_property(
             "result_description",

@@ -1,4 +1,21 @@
-import json
+"""E2E: the whole teacher contribution review lifecycle on one item set.
+
+The five uploaded items are split into three lanes so a single upload, a
+single QAR cycle and three RWG iterations cover what used to take three
+separate uploads:
+
+- Image lane (2 items): sent back at RWG iterations 1 and 2, revised WITH an
+  attached image both times, approved at iteration 3, and published.  RWG
+  verifies the image before each send-back and every PIT reviewer verifies it
+  before voting - which is only observable because this lane survives to PIT.
+- Rejection lane (2 items): sent back at iterations 1 and 2, revised without
+  an image, then rejected at iteration 3 for exhausting the revision limit.
+- Clean lane (1 item): approved at iteration 1 and untouched afterwards.
+
+Both revised lanes also assert the teacher's revised content is visible to the
+reviewer after each round, so an item that reaches PIT proves the edit landed
+rather than merely that the status moved.
+"""
 import re
 from copy import copy as copy_cell_style
 from datetime import datetime
@@ -22,11 +39,21 @@ from utilities.arithmetic_question_factory import (
     generate_qar_ready_mixed_questions,
 )
 from utilities.logger import LogGenerator
+from utilities.page_evidence import attach
 from utilities.qar_recovery import recover_qar_need_improvement_items
 from tests.M1_Item_Bank_Mgmt.m1_surveys import enter_screen, survey_opened_item_set
 from utilities.element_checks import ElementChecks
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
+
+TEST_IMAGES_FOLDER = Path(__file__).parent.parent.parent / "test_images"
+
+
+def _pick_test_image():
+    """Return a real image Path from the shared test_images/ folder."""
+    images = sorted(TEST_IMAGES_FOLDER.glob("*.png"))
+    assert images, f"No PNG images found in {TEST_IMAGES_FOLDER}"
+    return images[0]
 
 
 class MajorActionEvidenceMixin:
@@ -100,6 +127,54 @@ class MajorActionEvidenceMixin:
 
 
 class TripleIterationUploadItemFilePage(MajorActionEvidenceMixin, UploadItemFilePage):
+    ITEM_INDEX_PATTERN = re.compile(r"-i(\d+)\s*$", re.IGNORECASE)
+
+    @classmethod
+    def item_index_of(cls, label):
+        """Return the trailing item number of an item label, or None.
+
+        The app names the same item set two different ways - the item header
+        renders a chapter-style form (``...-CH-1-i1``) while the timeline and
+        item content use the upload form (``...-Ch29-i1``) - and the revision
+        loop surfaces whichever the DOM happened to give it.  Only the ``-iN``
+        suffix is stable across both, so lane membership and the identities
+        reported back to the test are keyed on that rather than on the
+        item-set half of the label.
+        """
+        match = cls.ITEM_INDEX_PATTERN.search(label or "")
+        return match.group(1) if match else None
+
+    def revise_items_with_image_lane(self, item_set_id, image_item_ids, image_path):
+        """Revise every pending item, attaching image_path only to one lane.
+
+        The revision loop walks whatever the app currently lists as needing
+        improvement, so both lanes are edited in the same pass; the callback
+        decides per item whether an image goes with the edit.  Returns
+        canonical ``{item_set_id}-iN`` labels so the caller can assert on them
+        exactly whichever form the app rendered.
+        """
+        image_indexes = {
+            self.item_index_of(item_id)
+            for item_id in image_item_ids
+            if self.item_index_of(item_id)
+        }
+        assert len(image_indexes) == len(image_item_ids), (
+            f"Could not read an item index from every image-lane ID: {image_item_ids}."
+        )
+
+        def edit(label):
+            item_index = self.item_index_of(label)
+            canonical_label = (
+                f"{item_set_id}-i{item_index}" if item_index else label
+            )
+            self.edit_open_revision_item(
+                canonical_label,
+                image_path=image_path if item_index in image_indexes else None,
+            )
+            return canonical_label
+
+        return self._revise_items_loop(item_set_id, edit)
+
     def submit_uploaded_item_set_for_qar(self):
         self._confirmation_action_name = "Submit teacher item set for QAR"
         return super().submit_uploaded_item_set_for_qar()
@@ -281,9 +356,8 @@ class TripleIterationRWGReviewQueuePage(MajorActionEvidenceMixin, RWGReviewQueue
             if row_statuses.get(item_id, "").casefold() in {"pending", "under review"}
         ]
         if pending_approved_ids:
-            approved = self.approve_items_with_yes(item_set_id, pending_approved_ids)
+            self.approve_items_with_yes(item_set_id, pending_approved_ids)
         else:
-            approved = list(approved_item_ids)
             self.click_item(approved_item_ids[0])
 
         self.click_required_and_confirm(
@@ -291,7 +365,12 @@ class TripleIterationRWGReviewQueuePage(MajorActionEvidenceMixin, RWGReviewQueue
             "Submit RWG Review",
             timeout=30,
         )
-        return rejected, approved
+        # Return every item RWG leaves approved, not only the ones this
+        # iteration had to action: a lane approved in an earlier iteration is
+        # already "Approved" here, so it is filtered out of
+        # pending_approved_ids while still being PIT-actionable. The caller
+        # compares this list against the PIT queue, which shows both.
+        return rejected, list(approved_item_ids)
 
 
 class TripleIterationPITReviewQueuePage(MajorActionEvidenceMixin, PITReviewQueuePage):
@@ -393,12 +472,20 @@ class TripleIterationPITReviewQueuePage(MajorActionEvidenceMixin, PITReviewQueue
 
 
 @pytest.mark.flaky(reruns=1, reruns_delay=5)
-# Shares the teacher, RWG and PIT accounts with the other M5 teacher-to-PIT
-# flows; see the note on TestE2ETeacherExcelDoubleRevisionToPITPublication.
+# Drives the shared teacher account, the app-assigned RWG reviewer and the same
+# three PIT accounts as the other M5 flows, and the portal keeps one active
+# session per account - two of these running at once sign each other out
+# mid-flow and read each other's queue state.
 @pytest.mark.serial
 @pytest.mark.usefixtures("setup")
 class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
     logger = LogGenerator.loggen()
+    # Of the MAX_MIXED_QUESTION_COUNT items uploaded, these many are revised
+    # with an image and approved at iteration 3, and these many are revised
+    # without one and rejected at iteration 3. Whatever is left over is
+    # approved at iteration 1 and never touched again.
+    IMAGE_LANE_SIZE = 2
+    REJECTION_LANE_SIZE = 2
 
     @staticmethod
     def copy_row_format_and_values(worksheet, source_row, target_row, max_column):
@@ -483,7 +570,7 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                 self.driver.get(ReadConfig.get_base_url())
                 LoginPage(self.driver).login_to_application(
                     username,
-                    ReadConfig.get_all_users_password(),
+                    ReadConfig.get_password_for_username(username),
                 )
                 page.wait_for_application_to_load()
                 page.close_popup_if_open()
@@ -847,17 +934,6 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         )
         return f"{checkpoint}: {'; '.join(stage_details)}. {codes}."
 
-    @staticmethod
-    def sync_evidence_to_report(request, evidence_screenshots):
-        request.node.user_properties[:] = [
-            property_entry
-            for property_entry in request.node.user_properties
-            if property_entry[0] != "evidence_screenshots"
-        ]
-        request.node.user_properties.append(
-            ("evidence_screenshots", json.dumps(evidence_screenshots))
-        )
-
     def record_checkpoint_evidence(
         self,
         request,
@@ -865,14 +941,21 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         checkpoint_detail,
         screenshot_path,
     ):
-        one_line_detail = re.sub(r"\s+", " ", str(checkpoint_detail)).strip()
-        checkpoint_name = (
-            f"Checkpoint {len(evidence_screenshots) + 1:02d} - {one_line_detail}"
-        )
+        """File one checkpoint through the shared recorder.
+
+        This used to keep its own list and republish the whole property, which
+        dropped every page screenshot `ElementChecks` had filed under the same
+        key — including the one taken the moment this test starts. `attach`
+        appends to that single list instead, so page visits and checkpoints
+        share one numbered series.
+
+        `evidence_screenshots` is still appended to because callers derive the
+        `popup_NN` screenshot suffix from its length.
+        """
+        checkpoint_name = attach(checkpoint_detail, screenshot_path)
         evidence_screenshots.append(
             {"name": checkpoint_name, "path": str(screenshot_path)}
         )
-        self.sync_evidence_to_report(request, evidence_screenshots)
         return str(screenshot_path), checkpoint_name
 
     def capture_checkpoint_evidence(
@@ -982,7 +1065,10 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         request, record_property,
     ):
         request.node.user_properties.append(
-            ("result_checkpoint", "fresh teacher Excel upload for isolated triple-iteration flow")
+            (
+                "result_checkpoint",
+                "fresh teacher Excel upload for the isolated three-lane review lifecycle",
+            )
         )
         upload_page = TripleIterationUploadItemFilePage(self.driver)
         rwg_page = TripleIterationRWGReviewQueuePage(self.driver)
@@ -991,7 +1077,9 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         # One collector for the whole teacher -> RWG -> PIT chain, re-pointed at
         # each screen as the item set moves through it.
         self.checks = ElementChecks(
-            upload_page, record_property, page_name="Teacher Contribution — Triple Revision Rejection"
+            upload_page,
+            record_property,
+            page_name="Teacher Contribution — Review Lifecycle (image, revision, rejection)",
         )
         self.checks.publish()
         evidence_screenshots = []
@@ -1019,6 +1107,7 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                 f"popup_{len(evidence_screenshots) + 1:02d}",
             )
         )
+        image_path = _pick_test_image()
         default_teacher = ReadConfig.get_username()
         teacher_username = next(
             (
@@ -1065,8 +1154,33 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             },
         )
 
+        # Lanes are sliced off the same ordered list that
+        # revise_some_items_and_approve_rest slices, so the send-back set at
+        # iteration 1 is exactly the image lane plus the rejection lane.
+        image_lane_item_ids = item_ids[: self.IMAGE_LANE_SIZE]
+        rejection_lane_item_ids = item_ids[
+            self.IMAGE_LANE_SIZE : self.IMAGE_LANE_SIZE + self.REJECTION_LANE_SIZE
+        ]
+        revision_lane_item_ids = image_lane_item_ids + rejection_lane_item_ids
+        clean_lane_item_ids = item_ids[len(revision_lane_item_ids) :]
+        assert clean_lane_item_ids, (
+            f"{item_set_id} produced no lane for RWG to approve at iteration 1: "
+            f"{item_ids}."
+        )
+        request.node.user_properties.extend(
+            [
+                ("image_lane_item_ids", ", ".join(image_lane_item_ids)),
+                ("rejection_lane_item_ids", ", ".join(rejection_lane_item_ids)),
+                ("clean_lane_item_ids", ", ".join(clean_lane_item_ids)),
+                ("image_path", str(image_path)),
+            ]
+        )
+
         request.node.user_properties.append(
-            ("result_checkpoint", "RWG iteration 1 revises two items and approves two items")
+            (
+                "result_checkpoint",
+                "RWG iteration 1 revises the image and rejection lanes and approves the clean lane",
+            )
         )
         rwg_username = self.resolve_rwg_username_for_item_set(
             upload_page, item_set_id, rwg_username, item_set_url
@@ -1076,10 +1190,15 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                 item_set_id,
                 item_ids,
                 item_set_url,
-                revision_count=2,
+                revision_count=len(revision_lane_item_ids),
             )
         )
-        rejected_item_ids = list(sent_back_round_1)
+        self.assert_exact_item_ids(
+            sent_back_round_1,
+            revision_lane_item_ids,
+            "RWG first send-back",
+        )
+        rejected_item_ids = list(rejection_lane_item_ids)
         pit_allowed_item_ids = list(rwg_approved_item_ids)
         evidence_screenshot = rwg_page.capture_review_screenshot(
             request.node.name,
@@ -1089,7 +1208,8 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             request,
             evidence_screenshots,
             f"RWG iteration 1 submitted: {len(sent_back_round_1)} items moved to the "
-            f"Teacher revision bucket and {len(rwg_approved_item_ids)} items remained approved.",
+            f"Teacher revision bucket ({len(image_lane_item_ids)} of them the image lane) "
+            f"and {len(rwg_approved_item_ids)} items remained approved.",
             evidence_screenshot,
         )
 
@@ -1114,10 +1234,14 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             },
             previous_signature=progress_signature,
         )
-        teacher_revised_round_1 = upload_page.revise_items_in_open_item_set(item_set_id)
+        teacher_revised_round_1 = upload_page.revise_items_with_image_lane(
+            item_set_id,
+            image_lane_item_ids,
+            image_path,
+        )
         self.assert_exact_item_ids(
             teacher_revised_round_1,
-            rejected_item_ids,
+            revision_lane_item_ids,
             "Teacher first revision",
         )
         first_resubmit_message = upload_page.rerun_qar_if_enabled()
@@ -1129,7 +1253,8 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         self.record_checkpoint_evidence(
             request,
             evidence_screenshots,
-            f"Teacher revision 1 saved for {len(teacher_revised_round_1)} items; "
+            f"Teacher revision 1 saved for {len(teacher_revised_round_1)} items, with an "
+            f"image attached to the {len(image_lane_item_ids)} image-lane items; "
             f"{first_resubmit_message} The set moved back to the RWG iteration 2 bucket.",
             evidence_screenshot,
         )
@@ -1141,18 +1266,48 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             pass
 
         request.node.user_properties.append(
-            ("result_checkpoint", "RWG iteration 2 sends the same teacher items for revision")
+            (
+                "result_checkpoint",
+                "RWG iteration 2 sees the round-1 edits and image, then sends both lanes back",
+            )
         )
-        upload_page.reset_browser_session_to_login()
-        self.login_as(rwg_username)
+        rwg_username = self.resolve_rwg_username_for_item_set(
+            upload_page, item_set_id, rwg_username, item_set_url
+        )
+        rwg_revised_content_round_1 = rwg_page.verify_revised_items_visible_to_reviewer(
+            item_set_id,
+            revision_lane_item_ids,
+        )
+        rwg_image_visibility_round_1 = rwg_page.verify_image_visible_for_items(
+            item_set_id,
+            image_lane_item_ids,
+        )
+        request.node.user_properties.extend(
+            [
+                ("rwg_visible_revised_content_round_1", str(rwg_revised_content_round_1)),
+                ("rwg_image_visibility_round_1", str(rwg_image_visibility_round_1)),
+            ]
+        )
+        evidence_screenshot = rwg_page.capture_review_screenshot(
+            request.node.name,
+            "rwg_iteration_2_revised_content_and_image_visible",
+        )
+        self.record_checkpoint_evidence(
+            request,
+            evidence_screenshots,
+            f"RWG opened all {len(revision_lane_item_ids)} revised items before iteration 2: "
+            f"the teacher's round-1 text is visible on each and the attached image is "
+            f"visible on the {len(image_lane_item_ids)} image-lane items.",
+            evidence_screenshot,
+        )
         sent_back_round_2 = rwg_page.send_item_set_back_as_rwg(
             item_set_id,
-            rejected_item_ids,
+            revision_lane_item_ids,
             item_set_url,
         )
         self.assert_exact_item_ids(
             sent_back_round_2,
-            rejected_item_ids,
+            revision_lane_item_ids,
             "RWG second send-back",
         )
         evidence_screenshot = rwg_page.capture_review_screenshot(
@@ -1188,10 +1343,14 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             },
             previous_signature=progress_signature,
         )
-        teacher_revised_round_2 = upload_page.revise_items_in_open_item_set(item_set_id)
+        teacher_revised_round_2 = upload_page.revise_items_with_image_lane(
+            item_set_id,
+            image_lane_item_ids,
+            image_path,
+        )
         self.assert_exact_item_ids(
             teacher_revised_round_2,
-            rejected_item_ids,
+            revision_lane_item_ids,
             "Teacher second revision",
         )
         second_resubmit_message = upload_page.rerun_qar_if_enabled()
@@ -1203,7 +1362,8 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         self.record_checkpoint_evidence(
             request,
             evidence_screenshots,
-            f"Teacher revision 2 saved for {len(teacher_revised_round_2)} items; "
+            f"Teacher revision 2 saved for {len(teacher_revised_round_2)} items, with the "
+            f"image re-attached to the {len(image_lane_item_ids)} image-lane items; "
             f"{second_resubmit_message} The set moved back to the final RWG review bucket.",
             evidence_screenshot,
         )
@@ -1215,15 +1375,49 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             pass
 
         request.node.user_properties.append(
-            ("result_checkpoint", "RWG iteration 3 rejects repeatedly revised teacher items")
+            (
+                "result_checkpoint",
+                "RWG iteration 3 approves the twice-revised image lane and rejects the rejection lane",
+            )
         )
-        upload_page.reset_browser_session_to_login()
-        self.login_as(rwg_username)
+        rwg_username = self.resolve_rwg_username_for_item_set(
+            upload_page, item_set_id, rwg_username, item_set_url
+        )
+        rwg_revised_content_round_2 = rwg_page.verify_revised_items_visible_to_reviewer(
+            item_set_id,
+            revision_lane_item_ids,
+        )
+        rwg_image_visibility_round_2 = rwg_page.verify_image_visible_for_items(
+            item_set_id,
+            image_lane_item_ids,
+        )
+        request.node.user_properties.extend(
+            [
+                ("rwg_visible_revised_content_round_2", str(rwg_revised_content_round_2)),
+                ("rwg_image_visibility_round_2", str(rwg_image_visibility_round_2)),
+            ]
+        )
+        evidence_screenshot = rwg_page.capture_review_screenshot(
+            request.node.name,
+            "rwg_iteration_3_revised_content_and_image_visible",
+        )
+        self.record_checkpoint_evidence(
+            request,
+            evidence_screenshots,
+            f"RWG opened all {len(revision_lane_item_ids)} twice-revised items before "
+            "iteration 3: the teacher's round-2 text is visible on each and the image is "
+            f"still visible on the {len(image_lane_item_ids)} image-lane items.",
+            evidence_screenshot,
+        )
+        # Both lanes have been revised twice; iteration 3 decides them
+        # differently in one submission - the image lane is approved and
+        # carries its attachment on to PIT, the rejection lane is rejected for
+        # exhausting the revision limit.
         rwg_rejected_item_ids, final_rwg_approved_item_ids = (
             rwg_page.reject_revised_and_approve_remaining_as_rwg(
                 item_set_id,
                 rejected_item_ids,
-                pit_allowed_item_ids,
+                image_lane_item_ids + pit_allowed_item_ids,
                 item_set_url,
             )
         )
@@ -1302,16 +1496,35 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
 
         completed_pit_approvals = []
         pit_observations = []
+        pit_image_visibility = {}
         pit_item_set_status = ""
         for pit_index, pit_username in enumerate(ReadConfig.get_pit_usernames()[:3], start=1):
             request.node.user_properties.append(
                 (
                     "result_checkpoint",
-                    f"PIT {pit_index}/3 acts only on RWG-approved items; rejected IDs excluded",
+                    f"PIT {pit_index}/3 sees the attached image and acts only on "
+                    "RWG-approved items; rejected IDs excluded",
                 )
             )
             upload_page.reset_browser_session_to_login()
             self.login_as(pit_username)
+
+            # Read-only pass first: opening items to look at the attachment
+            # marks no criteria, so it cannot consume this reviewer's one vote.
+            pit_page.open_review_item_set(item_set_id, item_set_url)
+            self.survey_reviewer_screen(pit_page, "PIT")
+            pit_image_visibility[pit_username] = pit_page.verify_image_visible_for_items(
+                item_set_id,
+                image_lane_item_ids,
+            )
+            self.capture_checkpoint_evidence(
+                request,
+                evidence_screenshots,
+                f"PIT reviewer {pit_username} can see the teacher's attached image on all "
+                f"{len(image_lane_item_ids)} image-lane items before voting.",
+                f"pit_{pit_index}_image_visible",
+            )
+
             all_pit_ids, actionable_pit_ids, pit_statuses = (
                 pit_page.approve_only_expected_items_as_pit(
                     item_set_id,
@@ -1347,8 +1560,19 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         assert len(completed_pit_approvals) == 3, (
             f"Expected PIT 3/3, completed {completed_pit_approvals}."
         )
-        request.node.user_properties.append(
-            ("pit_actionability", " | ".join(pit_observations))
+        request.node.user_properties.extend(
+            [
+                ("pit_actionability", " | ".join(pit_observations)),
+                ("pit_image_visibility", str(pit_image_visibility)),
+            ]
+        )
+        assert all(
+            visible
+            for reviewer_results in pit_image_visibility.values()
+            for visible in reviewer_results.values()
+        ), (
+            "Every PIT reviewer must see the teacher's attached image before voting: "
+            f"{pit_image_visibility}"
         )
 
         request.node.user_properties.append(
@@ -1394,16 +1618,28 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         assert int(final_summary.get("Rejected", 0)) == len(rejected_item_ids), (
             f"Rejected count changed after PIT publication: {final_status_text}"
         )
+        published_statuses = self.get_teacher_item_statuses(item_set_id)
+        for image_item_id in image_lane_item_ids:
+            assert published_statuses.get(image_item_id, "").casefold() != "rejected", (
+                f"Image-lane item {image_item_id} was expected to survive iteration 3 and "
+                f"reach publication, but the Sets view shows: {published_statuses}."
+            )
         request.node.user_properties.extend(
             [
                 ("post_approval_status", final_status_text),
-                ("pit_approval_message", "Three PIT users approved only the two non-rejected items."),
+                (
+                    "pit_approval_message",
+                    f"Three PIT users approved only the {len(final_rwg_approved_item_ids)} "
+                    "non-rejected items.",
+                ),
                 ("progress_bar_result", final_progress_description),
                 ("qar_success_screenshot", evidence_screenshot),
                 (
                     "result_description",
-                    f"Fresh {item_set_id} passed: RWG rejected {len(rejected_item_ids)} "
-                    f"teacher items at iteration 3, PIT excluded them, approved only "
+                    f"Fresh {item_set_id} passed: the {len(image_lane_item_ids)} image-lane "
+                    "items survived two revision rounds with an attached image that RWG and "
+                    f"all 3 PIT reviewers could see, RWG rejected {len(rejected_item_ids)} "
+                    "teacher items at iteration 3, PIT excluded them, approved only "
                     f"{len(final_rwg_approved_item_ids)} items through 3/3, and published the set.",
                 ),
             ]

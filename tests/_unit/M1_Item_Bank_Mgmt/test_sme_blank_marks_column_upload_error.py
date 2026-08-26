@@ -7,6 +7,7 @@ import pytest
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 # A previously downloaded annotated file whose single item ("is sun largest
@@ -26,13 +27,14 @@ class TestSMEUploadValidationErrorFlow:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_sme2_username(),
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_sme2_username()),
         )
         upload_page = UploadItemFilePage(self.driver)
         upload_page.close_popup_if_open()
         upload_page.open_item_creation_module()
         upload_page.open_upload_item_file_tab()
         upload_page.open_upload_step()
+        checkpoint("SME signed in and reached the Upload Documents step")
         return upload_page
 
     @staticmethod
@@ -97,6 +99,9 @@ class TestSMEUploadValidationErrorFlow:
             timeout=45,
         )
         error_details = upload_page.click_view_errors_and_get_message(history_row)
+        checkpoint(
+            f"View Errors on the {uploaded_file.name} row reports: {error_details}"
+        )
         assert error_keyword in error_details.casefold(), (
             f"Expected the View Errors details to mention {error_keyword!r}, "
             f"got: {error_details!r}"
@@ -125,6 +130,12 @@ class TestSMEUploadValidationErrorFlow:
         annotated_workbook = load_workbook(downloaded_file, read_only=True, data_only=False)
         try:
             annotated_worksheet = annotated_workbook.active
+            checkpoint(
+                f"Annotated error workbook downloaded as {downloaded_file.name} "
+                f"({downloaded_file.stat().st_size} bytes, "
+                f"{annotated_worksheet.max_row} rows x "
+                f"{annotated_worksheet.max_column} columns)"
+            )
             assert annotated_worksheet.max_row >= 1
             assert annotated_worksheet.max_column >= 1
         finally:
@@ -151,6 +162,10 @@ class TestSMEUploadValidationErrorFlow:
         # 1) Upload is rejected inline on the Upload step.
         rejection_message = upload_page.wait_for_upload_rejection(timeout=60)
         normalized_message = rejection_message.casefold()
+        checkpoint(
+            f"{uploaded_file.name} rejected inline on the Upload step: "
+            f"{rejection_message}"
+        )
         assert rejection_keyword in normalized_message, (
             f"Expected the rejection message to mention {rejection_keyword!r}, "
             f"got: {rejection_message!r}"
@@ -163,7 +178,12 @@ class TestSMEUploadValidationErrorFlow:
             uploaded_file.name,
             timeout=45,
         )
-        assert upload_page.get_upload_history_row_status(history_row) == "FAILED", (
+        row_status = upload_page.get_upload_history_row_status(history_row)
+        checkpoint(
+            f"Previously Uploaded Files listed {uploaded_file.name} as "
+            f"{row_status} without a manual refresh"
+        )
+        assert row_status == "FAILED", (
             f"Expected the just-uploaded {uploaded_file.name!r} row to show FAILED."
         )
 
@@ -183,9 +203,14 @@ class TestSMEUploadValidationErrorFlow:
         self,
         tmp_path,
         request,
+        page_evidence,
     ):
         blank_marks_file = tmp_path / "blank_marks_column_items.xlsx"
         self.build_blank_marks_column_file(blank_marks_file)
+        page_evidence.checkpoint(
+            f"Built {blank_marks_file.name} from the valid template with the "
+            "Marks column blanked on every row"
+        )
 
         upload_page = self.login_and_open_upload()
         self.assert_upload_error_flow(
@@ -206,9 +231,14 @@ class TestSMEUploadValidationErrorFlow:
         self,
         tmp_path,
         request,
+        page_evidence,
     ):
         duplicate_file = tmp_path / "duplicate_item_content_items.xlsx"
         self.build_known_duplicate_item_file(duplicate_file)
+        page_evidence.checkpoint(
+            f"Uploading {duplicate_file.name}, whose item content the bank "
+            "already holds"
+        )
 
         upload_page = self.login_and_open_upload()
         upload_page.upload_file(duplicate_file)
@@ -222,6 +252,13 @@ class TestSMEUploadValidationErrorFlow:
         )
         row_status = upload_page.get_upload_history_row_status(history_row)
         request.node.user_properties.append(("upload_history_row_text", history_row.text))
+        # Recorded before the guard below, which xfails on KI-M1-UPLOAD-001 —
+        # this pairing of message and row status is exactly what makes the
+        # non-determinism legible across runs.
+        page_evidence.checkpoint(
+            f"Duplicate upload outcome — row status: {row_status}; rejection: "
+            f"{rejection_message or 'no toast shown'}"
+        )
 
         # If duplicate detection is ever fixed to reliably hard-fail the whole
         # file, the same flow as the blank-Marks case should hold. Any deviation

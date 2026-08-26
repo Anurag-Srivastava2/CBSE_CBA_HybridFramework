@@ -8,8 +8,10 @@ data/typology_templates/, so a full pytest run of this file exercises all 12
 typologies.
 """
 import os
+import random
 import zipfile
 from copy import copy as copy_cell_style
+from datetime import date
 from pathlib import Path
 from shutil import copy2
 from time import monotonic, sleep
@@ -31,6 +33,7 @@ from tests.M1_Item_Bank_Mgmt.m1_surveys import (
 )
 from utilities.element_checks import ElementChecks
 from utilities.logger import LogGenerator
+from utilities.page_evidence import checkpoint
 from utilities.qar_recovery import recover_qar_need_improvement_items
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
@@ -57,6 +60,66 @@ TYPOLOGY_CASES = [
     ("11_CABA.xlsx", "Case Based Question"),
     ("12_SBQ.xlsx", "Source Based Question"),
 ]
+
+# Only one typology is exercised end to end. The full SME -> RWG -> Sr. RWG ->
+# PIT chain costs roughly 27 minutes per typology, so running all twelve is a
+# ~5h block that dominates the wall clock of any full-suite run.
+#
+# The other eleven are still collected - their node ids keep resolving, which
+# tools/run_m1_groups.ps1 depends on - but carry xfail(run=False), so they are
+# reported as expected failures without a browser ever starting.
+#
+# Which typology gets the real run is picked at random rather than always
+# falling to the first template, so coverage rotates across all twelve instead
+# of only ever proving MCQ works.
+#
+# The pick is random but stable for the whole run: seeding on the UTC date keeps
+# every xdist worker, rerun and retry collecting the *same* typology (workers
+# that disagreed would abort the session), while still rotating day to day. The
+# seed is salted so this suite and the manual-item suite (which seeds on the
+# bare date) rotate independently rather than moving in lockstep.
+#
+# Pin one explicitly to reproduce a failure:
+#   CBSE_TYPOLOGY_E2E_CASE=05_AR.xlsx
+def select_active_typology_template():
+    templates = [template for template, _ in TYPOLOGY_CASES]
+    override = os.getenv("CBSE_TYPOLOGY_E2E_CASE", "").strip()
+    if override:
+        if override not in templates:
+            # Fail loudly at collection rather than silently xfailing all twelve.
+            raise ValueError(
+                f"CBSE_TYPOLOGY_E2E_CASE={override!r} matches no typology template. "
+                f"Valid values: {', '.join(templates)}"
+            )
+        return override
+    return random.Random(f"{date.today().isoformat()}:typology-e2e").choice(templates)
+
+
+ACTIVE_TYPOLOGY_TEMPLATE = select_active_typology_template()
+
+
+def build_typology_params():
+    """TYPOLOGY_CASES stays a plain list of tuples - .index() is used to derive
+    typology_index - so the xfail marks are applied in a separate params list."""
+    params = []
+    for template_name, typology in TYPOLOGY_CASES:
+        if template_name == ACTIVE_TYPOLOGY_TEMPLATE:
+            params.append(pytest.param(template_name, typology))
+            continue
+        params.append(
+            pytest.param(
+                template_name,
+                typology,
+                marks=pytest.mark.xfail(
+                    reason=(
+                        f"Typology E2E is limited to {ACTIVE_TYPOLOGY_TEMPLATE} for run time. "
+                        f"Set CBSE_TYPOLOGY_E2E_CASE={template_name} to exercise this typology."
+                    ),
+                    run=False,
+                ),
+            )
+        )
+    return params
 
 
 class AppendingBulkUploadPage(BulkUploadPage):
@@ -241,6 +304,7 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
             raise AssertionError(message)
         self.logger.warning("[SOFT FAILURE] %s", message)
         request.node.user_properties.append(("soft_failure", message))
+        checkpoint(f"SOFT FAILURE — {message}")
         return False
 
     def soft_call(self, request, description, fn, *args, **kwargs):
@@ -253,6 +317,7 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
             message = f"{description}: {error}"
             self.logger.warning("[SOFT FAILURE] %s", message)
             request.node.user_properties.append(("soft_failure", message))
+            checkpoint(f"SOFT FAILURE — {message}")
             return None
 
     def capture_item_set_url(self, upload_page, item_set_id, fallback_url):
@@ -437,9 +502,9 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         )
         upload_page.close_popup_if_open()
 
-    @pytest.mark.parametrize("template_name, typology", TYPOLOGY_CASES)
+    @pytest.mark.parametrize("template_name, typology", build_typology_params())
     def test_e2e_sme_typology_image_revision_rwg_srrwg_pit_publish(
-        self, request, template_name, typology, record_property
+        self, request, template_name, typology, record_property, page_evidence
     ):
         typology_index = TYPOLOGY_CASES.index((template_name, typology))
         request.node.user_properties.append(
@@ -453,6 +518,10 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
 
         sme_username = self.get_sme_username(typology_index)
         self.login_as(sme_username, upload_page)
+        page_evidence.checkpoint(
+            f"SME {sme_username} signed in to run the {typology} "
+            f"upload -> RWG -> Sr. RWG -> PIT chain"
+        )
 
         # One collector for the whole SME -> RWG -> Sr. RWG -> PIT chain,
         # re-pointed at each screen as the set moves through it.
@@ -489,6 +558,10 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         upload_evidence_screenshot = ScreenshotUtils.capture(
             self.driver, f"{request.node.name}_upload_zip_accepted"
         )
+        page_evidence.checkpoint(
+            f"{template_name} + images ZIP ({image_filename}) accepted: "
+            f"{upload_outcome['message']}"
+        )
         self.logger.info(
             "Upload accepted for %s: %s", typology, upload_outcome["message"]
         )
@@ -496,6 +569,11 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         qar_outcome = upload_page.submit_for_qar(run_token)
         item_ids = qar_outcome["item_ids"]
         item_set_id = qar_outcome["item_set_id"]
+        page_evidence.checkpoint(
+            f"Submitted for QAR as set {item_set_id} with {len(item_ids)} "
+            f"item(s) {item_ids} — CABA/SBQ sub-rows must not split into "
+            "separate items"
+        )
         assert len(item_ids) == 1, (
             f"Expected exactly 1 item for {typology}, got {item_ids} "
             "(CABA/SBQ sub-rows should not create separate items)."
@@ -520,6 +598,10 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
             run_label=f"TYPOLOGY-{typology_index + 1:02d}-E2E",
         )
         item_set_url = self.driver.current_url
+        page_evidence.checkpoint(
+            f"QAR settled for {item_set_id}; any Need Improvement verdict was "
+            "corrected and re-run, so the set is ready for RWG"
+        )
 
         # 3. RWG round 1 - send the item back for revision.
         request.node.user_properties.append(
@@ -539,6 +621,10 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         )
         rwg_round1_send_back_screenshot = rwg_page.capture_review_screenshot(
             request.node.name, "rwg_round1_sent_back"
+        )
+        page_evidence.checkpoint(
+            f"RWG {rwg_username} sent {sent_back_item_ids_1} back for revision "
+            "(round 1)"
         )
 
         # 4. SME adds an image and edits the text, then resubmits.
@@ -560,6 +646,11 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         upload_page.rerun_qar_if_enabled()
         sme_round1_resubmit_screenshot = upload_page.capture_sets_verification_screenshot(
             f"{request.node.name}_sme_round1_resubmitted"
+        )
+        page_evidence.checkpoint(
+            f"SME appended {first_image_path.name} and the marker "
+            f"{round_1_marker_text!r} to {len(revised_round_1)} revision "
+            "item(s), then re-ran QAR"
         )
         item_set_url = self.capture_item_set_url(upload_page, item_set_id, item_set_url)
 
@@ -597,6 +688,10 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
                 ("rwg_visible_images_round1", str(rwg_images_visible)),
             ]
         )
+        page_evidence.checkpoint(
+            f"RWG sees the round-1 revision — revised content: "
+            f"{rwg_revised_visible}, images: {rwg_images_visible}"
+        )
         rwg_approved_item_ids = rwg_page.approve_item_set_as_rwg(
             item_set_id, item_ids, item_set_url
         )
@@ -608,6 +703,7 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         rwg_round1_approved_screenshot = rwg_page.capture_review_screenshot(
             request.node.name, "rwg_round1_approved"
         )
+        page_evidence.checkpoint(f"RWG approved {rwg_approved_item_ids}")
 
         # 6. SRRWG round - send the item back for revision.
         request.node.user_properties.append(
@@ -627,6 +723,10 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         )
         sr_rwg_send_back_screenshot = sr_rwg_page.capture_review_screenshot(
             request.node.name, "sr_rwg_sent_back"
+        )
+        page_evidence.checkpoint(
+            f"Senior RWG {sr_rwg_username} sent {sent_back_item_ids_2} back for "
+            "revision (round 2)"
         )
 
         # 7. SME adds an image and edits the text again, then resubmits.
@@ -648,6 +748,11 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         upload_page.rerun_qar_if_enabled()
         sme_round2_resubmit_screenshot = upload_page.capture_sets_verification_screenshot(
             f"{request.node.name}_sme_round2_resubmitted"
+        )
+        page_evidence.checkpoint(
+            f"SME appended {second_image_path.name} and the marker "
+            f"{round_2_marker_text!r} to {len(revised_round_2)} revision "
+            "item(s), then re-ran QAR — the item now carries both rounds' images"
         )
         item_set_url = self.capture_item_set_url(upload_page, item_set_id, item_set_url)
 
@@ -686,6 +791,10 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
                 ("sr_rwg_visible_images", str(sr_rwg_images_visible)),
             ]
         )
+        page_evidence.checkpoint(
+            f"Senior RWG sees the round-2 revision — revised content: "
+            f"{sr_rwg_revised_visible}, images: {sr_rwg_images_visible}"
+        )
         sr_rwg_approved_item_ids = sr_rwg_page.approve_item_set_as_sr_rwg(
             item_set_id, item_ids, item_set_url
         )
@@ -697,6 +806,7 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
         sr_rwg_approved_screenshot = sr_rwg_page.capture_review_screenshot(
             request.node.name, "sr_rwg_approved"
         )
+        page_evidence.checkpoint(f"Senior RWG approved {sr_rwg_approved_item_ids}")
 
         # 9. PIT 3/3 quorum publishes the item.
         request.node.user_properties.append(
@@ -709,6 +819,9 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
             completed_pit_approvals.append(pit_username)
             pit_page.capture_review_screenshot(
                 request.node.name, f"pit_approval_{len(completed_pit_approvals)}"
+            )
+            page_evidence.checkpoint(
+                f"PIT approval {len(completed_pit_approvals)}/3 by {pit_username}"
             )
         self.soft_check(
             request,

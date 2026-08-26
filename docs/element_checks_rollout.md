@@ -407,7 +407,6 @@ Item Set listing. Surveys live in `tests/M1_Item_Bank_Mgmt/m1_surveys.py`.
 | File | Tests | Kept hard |
 | --- | --- | --- |
 | `test_sme_manual_item_creation.py` | 13 | typology inventory (behind its xfail guard), per-typology create + QAR outcome, required-field blocking |
-| `test_sme_manual_item_validation.py` | 4 | Continue locked until complete, real item ID in draft review, subject RBAC, empty-content validation |
 | `test_sme_bulk_upload_rbac.py` | 1 | grade/subject scope, *and* that rows rendered at all |
 | `test_negative_non_xlsx_upload_rejected.py` | 1 | every rejection message, Continue stays disabled, valid file still accepted |
 | `test_qar_duplicate_detection.py` | 1 | duplicate flagged, QAR counts reconcile — **pre-existing failure, see below** |

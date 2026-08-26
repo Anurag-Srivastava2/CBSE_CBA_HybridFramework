@@ -5,6 +5,7 @@ import pytest
 from pages.admin.audit_trail_page import AuditTrailPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -24,6 +25,7 @@ class TestM2AuditTrail:
         )
         page = AuditTrailPage(self.driver)
         page.open(ReadConfig.get_base_url())
+        checkpoint(f"Admin {username} opened the Audit Trail")
         return page
 
     def survey(self, audit, record_property, scope):
@@ -40,7 +42,9 @@ class TestM2AuditTrail:
         checks.check("Page indicator", audit.PAGE_INDICATOR)
         return checks
 
-    def test_tc_wpad_audit_01_verify_page_ui_and_immutability(self, record_property):
+    def test_tc_wpad_audit_01_verify_page_ui_and_immutability(
+        self, record_property, page_evidence
+    ):
         """Page structure is surveyed softly; immutability stays a hard gate."""
         audit = self.open_audit()
         checks = self.survey(audit, record_property, "Structure")
@@ -66,6 +70,15 @@ class TestM2AuditTrail:
         # Hard gate: immutability is a compliance contract, not a rendering
         # detail. A soft row here would let tamperable audit logs ship green.
         mutating_controls = audit.get_mutating_controls()
+        page_evidence.checkpoint(
+            f"{row_count} log entries rendered; columns missing from the grid: "
+            f"{[c for c in audit.EXPECTED_COLUMNS if c not in headers] or 'none'}"
+        )
+        page_evidence.checkpoint(
+            "Immutability — controls in the grid that could alter a record: "
+            f"{mutating_controls or 'none'}; cells contenteditable: "
+            f"{audit.are_table_cells_editable()}"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. {row_count} entries; "
@@ -79,7 +92,7 @@ class TestM2AuditTrail:
             "SECURITY FAILURE: Audit Trail cells are contenteditable; logs must be immutable."
         )
 
-    def test_tc_wpad_audit_02_search_and_filter(self, record_property):
+    def test_tc_wpad_audit_02_search_and_filter(self, record_property, page_evidence):
         """Free-text search and the Event Type filter both narrow the grid.
 
         Controls are surveyed softly; the filtering behaviour stays hard.
@@ -113,6 +126,11 @@ class TestM2AuditTrail:
         assert seed_user, "No non-System user available in the audit grid to search for."
         audit.search_audit_log(seed_user)
         matched = audit.get_row_text()
+        page_evidence.checkpoint(
+            f"Searching for a user already in the grid ({seed_user!r}) returned "
+            f"{len(matched)} row(s); all of them mention it: "
+            f"{all(seed_user in text for text in matched)}"
+        )
         assert matched, f"Search for user {seed_user!r} returned no results."
         assert all(seed_user in text for text in matched), (
             f"Search for {seed_user!r} returned unrelated rows."
@@ -121,6 +139,10 @@ class TestM2AuditTrail:
         # Negative: gibberish yields the empty state.
         audit.search_audit_log("INVALID-USER-9999")
         empty_count = audit.get_table_row_count()
+        page_evidence.checkpoint(
+            f"Searching for a user that does not exist left {empty_count} row(s) "
+            "— must be 0"
+        )
         assert empty_count == 0, (
             f"Audit table should be empty for a non-existent search but showed {empty_count} rows."
         )
@@ -133,6 +155,11 @@ class TestM2AuditTrail:
         audit.filter_by_event_type("LOGIN_SUCCESS")
         actions = audit.get_actions_in_view()
         expected_action = audit.humanise_event_type("LOGIN_SUCCESS")
+        page_evidence.checkpoint(
+            f"LOGIN_SUCCESS filter returned {len(actions)} row(s); distinct "
+            f"actions in view: {sorted(set(actions)) or 'none'} (only "
+            f"{expected_action!r} expected)"
+        )
         record_property(
             "result_description",
             f"Search matched {len(matched)} rows for {seed_user!r}; "
@@ -143,7 +170,7 @@ class TestM2AuditTrail:
             f"LOGIN_SUCCESS filter leaked other actions: {sorted(set(actions))}"
         )
 
-    def test_tc_wpad_audit_03_export_file(self, record_property):
+    def test_tc_wpad_audit_03_export_file(self, record_property, page_evidence):
         """Export File downloads a CSV whose header matches the audit columns.
 
         The export contents stay a hard gate — a missing column in the CSV is a
@@ -154,6 +181,10 @@ class TestM2AuditTrail:
         checks.publish()
 
         exported = audit.export_file_and_wait()
+        page_evidence.checkpoint(
+            f"Export File produced {exported.name} "
+            f"({exported.stat().st_size if exported.exists() else 0} bytes)"
+        )
 
         assert exported.exists(), f"Export file {exported} does not exist."
         size = exported.stat().st_size
@@ -167,15 +198,19 @@ class TestM2AuditTrail:
             header = next(reader, [])
             data_rows = sum(1 for _ in reader)
 
+        missing = [column for column in audit.EXPECTED_COLUMNS if column not in header]
+        page_evidence.checkpoint(
+            f"CSV holds {data_rows} record(s); audit columns missing from its "
+            f"header: {missing or 'none'}"
+        )
         record_property(
             "result_description",
             f"Exported {exported.name} ({size} bytes, {data_rows} rows) with header {header}.",
         )
-        missing = [column for column in audit.EXPECTED_COLUMNS if column not in header]
         assert not missing, f"Export CSV is missing audit columns {missing}. Header: {header}"
         assert data_rows > 0, "Export CSV contains a header but no audit records."
 
-    def test_tc_wpad_audit_04_pagination(self, record_property):
+    def test_tc_wpad_audit_04_pagination(self, record_property, page_evidence):
         """Pagination controls are surveyed softly; advancing the grid is hard."""
         audit = self.open_audit()
         checks = self.survey(audit, record_property, "Pagination")
@@ -185,6 +220,10 @@ class TestM2AuditTrail:
         first_rows = audit.get_row_text()
         second_page = audit.go_to_next_page()
         second_rows = audit.get_row_text()
+        page_evidence.checkpoint(
+            f"Pagination moved {first_page!r} -> {second_page!r}; the rows "
+            f"changed: {second_rows != first_rows}"
+        )
 
         record_property(
             "result_description",

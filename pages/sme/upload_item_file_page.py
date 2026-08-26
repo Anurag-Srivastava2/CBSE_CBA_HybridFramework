@@ -3,7 +3,11 @@ from pathlib import Path
 import re
 from time import sleep
 
-from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.common.exceptions import (
+    StaleElementReferenceException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -416,10 +420,46 @@ class UploadItemFilePage(BasePage):
                     break
         return statuses
 
+    # Every history row offers exactly one download control, but which one is
+    # decided by the rejected-item count rather than by the PASSED/FAILED
+    # status: a partially-rejected upload still passes and offers the annotated
+    # workbook, while a wholly-failed upload that produced no annotations offers
+    # the plain file. Callers therefore ask for "this row's download action" and
+    # let the page report which of the two it turned out to be, instead of
+    # deriving the label from the status and timing out when the app disagrees.
+    UPLOAD_HISTORY_DOWNLOAD_LABELS = ("Download Annotated File", "Download File")
+
+    @classmethod
+    def row_action_locator(cls, label):
+        return (
+            By.XPATH,
+            ".//*[self::button or self::a]"
+            f"[contains(normalize-space(), {cls.xpath_literal(label)})]",
+        )
+
+    def find_row_action(self, row, action_texts):
+        """This row's first usable control, and the label it matched.
+
+        Labels are tried in the order given, so the caller decides precedence.
+        Returns ``(None, "")`` when the row offers none of them - an absent
+        control is an answer here, not an error.
+        """
+        for label in action_texts:
+            for action in row.find_elements(*self.row_action_locator(label)):
+                try:
+                    if action.is_displayed() and action.is_enabled():
+                        return action, label
+                except Exception:  # noqa: BLE001 - an unreadable control is an absent one
+                    continue
+        return None, ""
+
     def get_upload_history_row(self, status, action_text=None, timeout=30):
         normalized_status = str(status).strip().upper()
         if normalized_status not in ("PASSED", "FAILED"):
             raise ValueError(f"Unsupported upload-history status: {status!r}")
+        action_texts = (
+            (action_text,) if isinstance(action_text, str) else tuple(action_text or ())
+        )
 
         def matching_row(driver):
             for row in driver.find_elements(*self.UPLOAD_HISTORY_ROWS):
@@ -433,23 +473,40 @@ class UploadItemFilePage(BasePage):
                     }
                     if normalized_status not in row_lines:
                         continue
-                    if action_text:
-                        matching_actions = row.find_elements(
-                            By.XPATH,
-                            ".//*[self::button or self::a]"
-                            f"[contains(normalize-space(), '{action_text}')]",
-                        )
-                        if not any(
-                            action.is_displayed() and action.is_enabled()
-                            for action in matching_actions
-                        ):
-                            continue
+                    if action_texts and not self.find_row_action(row, action_texts)[0]:
+                        continue
                     return row
                 except Exception:
                     continue
             return False
 
         return self.wait_utils.until_condition(matching_row, timeout=timeout)
+
+    def get_upload_history_download_label(self, status, timeout=30):
+        """Which download action the first `status` row actually offers."""
+        row = self.get_upload_history_row(
+            status,
+            action_text=self.UPLOAD_HISTORY_DOWNLOAD_LABELS,
+            timeout=timeout,
+        )
+        return self.find_row_action(row, self.UPLOAD_HISTORY_DOWNLOAD_LABELS)[1]
+
+    def has_downloadable_upload_history_row(self, status, timeout=5):
+        """Whether a `status` row exists that can actually be downloaded.
+
+        Used to pick a usable account: an account whose history merely *shows*
+        both statuses is not enough, because the row still has to carry a
+        download control for the rest of the flow to have anything to click.
+        """
+        try:
+            self.get_upload_history_row(
+                status,
+                action_text=self.UPLOAD_HISTORY_DOWNLOAD_LABELS,
+                timeout=timeout,
+            )
+            return True
+        except TimeoutException:
+            return False
 
     def capture_upload_history_status_screenshot(
         self,
@@ -467,11 +524,7 @@ class UploadItemFilePage(BasePage):
     def download_upload_history_file(self, status, download_directory, timeout=45):
         """Download the first PASSED or FAILED upload-history workbook."""
         normalized_status = str(status).strip().upper()
-        action_text = {
-            "PASSED": "Download File",
-            "FAILED": "Download Annotated File",
-        }.get(normalized_status)
-        if not action_text:
+        if normalized_status not in ("PASSED", "FAILED"):
             raise ValueError(f"Unsupported upload-history status: {status!r}")
 
         download_directory = Path(download_directory).resolve()
@@ -484,21 +537,16 @@ class UploadItemFilePage(BasePage):
 
         row = self.get_upload_history_row(
             normalized_status,
-            action_text=action_text,
+            action_text=self.UPLOAD_HISTORY_DOWNLOAD_LABELS,
             timeout=timeout,
         )
-        buttons = row.find_elements(
-            By.XPATH,
-            ".//*[self::button or self::a]"
-            f"[contains(normalize-space(), '{action_text}')]",
-        )
-        download_button = next(
-            (button for button in buttons if button.is_displayed() and button.is_enabled()),
-            None,
+        download_button, action_text = self.find_row_action(
+            row, self.UPLOAD_HISTORY_DOWNLOAD_LABELS
         )
         if download_button is None:
             raise TimeoutException(
-                f"{action_text!r} was not available for the {normalized_status} upload row."
+                "No download action was available for the "
+                f"{normalized_status} upload row."
             )
 
         self.driver.execute_script(
@@ -1499,7 +1547,59 @@ class UploadItemFilePage(BasePage):
             )
         )
 
+    SWITCH_FILE_CONFIRM_LOCATORS = [
+        (
+            By.XPATH,
+            "//*[@role='dialog' or @role='alertdialog' or contains(@class,'modal') "
+            "or contains(@class,'Dialog')]"
+            "[.//*[contains(normalize-space(),'Switch uploaded file')]]"
+            "//button[normalize-space()='Continue' and not(@disabled)]",
+        ),
+    ]
+
+    def confirm_switch_uploaded_file_if_prompted(self):
+        """Confirm the app's "Switch uploaded file?" guard, if it is showing.
+
+        An account left holding an unfinished upload ("Currently working on
+        this file") makes the app guard any replacement behind this dialog.
+        Cancel - and the ESCAPE that close_popup_if_open() sends - keeps the
+        stale file, so the upload step never renders and
+        discard_active_upload_if_present(), which exists to clear exactly
+        that leftover, is never reached. Continue discards the stale draft,
+        which is what a test starting a fresh upload wants.
+        """
+        for locator in self.SWITCH_FILE_CONFIRM_LOCATORS:
+            for button in self.driver.find_elements(*locator):
+                if button.is_displayed() and button.is_enabled():
+                    self.driver.execute_script("arguments[0].click();", button)
+                    return True
+        return False
+
     def open_upload_step(self):
+        self.click_continue()
+        try:
+            self.wait_utils.until_visible(self.UPLOAD_DOCUMENTS_HEADING, timeout=20)
+            return
+        except TimeoutException:
+            # A leftover unfinished upload holds this step back in one of two
+            # ways: the app guards the replacement behind a "Switch uploaded
+            # file?" dialog, or it simply parks the wizard on the stale file's
+            # later step with no dialog at all. Clear whichever it is.
+            #
+            # discard_active_upload_if_present() is the existing cleanup for
+            # exactly this state - it just normally runs *after* this method,
+            # so it was unreachable precisely when the leftover blocked the
+            # step it is meant to unblock.
+            recovered = self.confirm_switch_uploaded_file_if_prompted()
+            try:
+                recovered = self.discard_active_upload_if_present() or recovered
+            except AssertionError:
+                # The leftover could not be cleared. Report the original
+                # "upload step never opened" timeout, which describes the
+                # actual blockage, rather than the cleanup's own complaint.
+                pass
+            if not recovered:
+                raise
         self.click_continue()
         self.wait_utils.until_visible(self.UPLOAD_DOCUMENTS_HEADING, timeout=20)
 
@@ -1557,6 +1657,338 @@ class UploadItemFilePage(BasePage):
             if text and text.lower() != "item id" and text not in item_ids:
                 item_ids.append(text)
         return item_ids
+
+    # --- Step 3: Review & Tag Metadata -----------------------------------
+    #
+    # Every metadata value on this step is an inline Radix combobox living in
+    # its own table cell - eight per row (Grade, Subject, Chapter, Typology,
+    # Marks, Bloom's Level, Competency, Learning Outcome). Cells are addressed
+    # by column heading rather than by index so that a reordered or newly
+    # inserted column moves the lookup with it instead of silently reading the
+    # neighbouring cell.
+    #
+    # Values are read through one JS snapshot rather than by holding element
+    # references: the table re-renders as each wizard step loads, and a
+    # reference taken a moment earlier goes stale mid-read. The snapshot also
+    # scopes itself to the table carrying an "Item ID" heading, because the
+    # upload history table on step 2 matches a bare //table just as well, and
+    # it reads form-field values as well as text because Confirm & Submit
+    # renders the very same metadata as inputs instead of as plain cells.
+
+    ROW_COMBOBOX = (By.XPATH, ".//*[@role='combobox']")
+    DROPDOWN_OPTION = (By.XPATH, "//*[@role='option']")
+    REVIEW_TABLE_ROWS_XPATH = (
+        "//table[.//th[normalize-space()='Item ID']]//tbody/tr[.//td]"
+    )
+    EDITABLE_METADATA_COLUMNS = (
+        "Grade",
+        "Subject",
+        "Chapter",
+        "Typology",
+        "Marks",
+        "Bloom's Level",
+        "Competency",
+        "Learning Outcome",
+    )
+    # The same metadata is headed differently at different stages - the review
+    # step's "Learning Outcome" is "Learning Outcomes" on the created item set
+    # - so callers name a column once and let this resolve it per stage.
+    METADATA_COLUMN_ALIASES = {
+        "Learning Outcome": ("Learning Outcome", "Learning Outcomes"),
+        "Bloom's Level": ("Bloom's Level", "Blooms Level"),
+        "Typology": ("Typology", "Item Type"),
+    }
+    REVIEW_TABLE_SNAPSHOT_SCRIPT = """
+        const table = Array.from(document.querySelectorAll('table')).find(
+            candidate => Array.from(candidate.querySelectorAll('th')).some(
+                header => (header.innerText || '').trim() === 'Item ID'
+            )
+        );
+        if (!table) { return null; }
+        return {
+            headers: Array.from(table.querySelectorAll('th'))
+                .map(header => (header.innerText || '').trim()),
+            rows: Array.from(table.querySelectorAll('tbody tr'))
+                .filter(row => row.querySelector('td'))
+                .map(row => Array.from(row.querySelectorAll('td')).map(cell => {
+                    const text = (cell.innerText || '').trim();
+                    if (text) { return text; }
+                    // Confirm & Submit renders the same metadata as form
+                    // fields rather than text, so their value never shows up
+                    // in innerText.
+                    const field = cell.querySelector('input, textarea, select');
+                    return field ? (field.value || '').trim() : '';
+                })),
+        };
+    """
+
+    @staticmethod
+    def metadata_cell_matches(cell_text, value):
+        """True when a cell and a metadata label stand for the same value.
+
+        Both sides ellipsize, independently and at different lengths: the
+        review table truncates long values ("Identifies and extends simple
+        ..."), the dropdown labels they are picked from truncate too, and
+        Confirm & Submit renders the whole string in a form field. So neither
+        side can be assumed to be the complete text - match on whichever
+        visible prefix is shorter instead of on equality.
+        """
+
+        def visible(text):
+            # The item detail screen Title-Cases what the review table shows
+            # in sentence case, so the comparison has to ignore case too.
+            return (
+                (text or "").strip().rstrip("…").rstrip(". ").strip().casefold()
+            )
+
+        shown, wanted = visible(cell_text), visible(value)
+        if not shown or not wanted:
+            return False
+        return shown.startswith(wanted) or wanted.startswith(shown)
+
+    def get_review_snapshot(self):
+        """Headers and cell text for the metadata table, or None if absent."""
+        return self.driver.execute_script(self.REVIEW_TABLE_SNAPSHOT_SCRIPT)
+
+    def get_review_headers(self):
+        snapshot = self.get_review_snapshot()
+        return snapshot["headers"] if snapshot else []
+
+    def get_review_rows(self):
+        """Live row elements, for interacting with a cell's combobox."""
+        return [
+            row
+            for row in self.driver.find_elements(
+                By.XPATH, self.REVIEW_TABLE_ROWS_XPATH
+            )
+            if row.is_displayed()
+        ]
+
+    def wait_for_review_step(self, timeout=90):
+        """Block until the metadata table has rendered and settled.
+
+        Rows keep streaming in for a moment after the loading banner clears,
+        so a single read can catch a partial table - and a combobox clicked in
+        a row that re-renders underneath the click silently does nothing at
+        all. Only trust the table once two consecutive reads agree, the same
+        guard submit_for_qar() applies to the item IDs it reads here.
+        """
+        previous = {"snapshot": None}
+
+        def settled(driver):
+            snapshot = self.get_review_snapshot()
+            if not snapshot or not snapshot["rows"]:
+                previous["snapshot"] = None
+                return None
+            if previous["snapshot"] == snapshot:
+                return snapshot
+            previous["snapshot"] = snapshot
+            return None
+
+        return self.wait_utils.until_condition(settled, timeout=timeout)
+
+    def review_row_index_where(self, column, value):
+        """Which review row carries `value` in `column`.
+
+        Rows are not guaranteed to keep their order between the review step
+        and the created item set, so every stage locates its row by content
+        rather than reusing an index captured earlier.
+        """
+        snapshot = self.wait_for_review_step()
+        headers = snapshot["headers"]
+        heading = self.resolve_column(headers, column)
+        assert heading, (
+            f"No {column!r} column on screen; columns were {headers}."
+        )
+        target = headers.index(heading)
+        for index, row in enumerate(snapshot["rows"]):
+            if target < len(row) and self.metadata_cell_matches(row[target], value):
+                return index
+        raise AssertionError(
+            f"No row has {value!r} under {column!r} among the "
+            f"{len(snapshot['rows'])} row(s) on screen."
+        )
+
+    def review_row_index_for_item(self, item_id):
+        """Which review row belongs to `item_id`.
+
+        Only valid before the set is submitted: submission renumbers every
+        item from the staged "IS-<chapter>-iN" into the created set's
+        "IS<number>-<chapter>-iN", so an ID captured earlier will not be
+        found afterwards. Track an item across that boundary by its question
+        text instead.
+        """
+        return self.review_row_index_where("Item ID", item_id)
+
+    def get_review_metadata(self, row_index=0):
+        """Every value shown for one review row, keyed by column heading."""
+        snapshot = self.wait_for_review_step()
+        assert row_index < len(snapshot["rows"]), (
+            f"Review step shows {len(snapshot['rows'])} row(s); row "
+            f"{row_index} was requested."
+        )
+        return dict(zip(snapshot["headers"], snapshot["rows"][row_index]))
+
+    @classmethod
+    def resolve_column(cls, headers, column):
+        """The heading this stage uses for `column`, or None if it has none."""
+        for candidate in cls.METADATA_COLUMN_ALIASES.get(column, (column,)):
+            if candidate in headers:
+                return candidate
+        return None
+
+    def get_review_metadata_values(self, row_index, columns):
+        """Values for `columns` on one row, resolving each stage's headings.
+
+        A column the current stage does not render comes back as None, which
+        callers can report as "not shown here" rather than as a wrong value.
+        """
+        row = self.get_review_metadata(row_index)
+        return {
+            column: row.get(self.resolve_column(list(row), column))
+            for column in columns
+        }
+
+    ITEM_DETAIL_METADATA_SCRIPT = """
+        const wanted = arguments[0];
+        const found = {};
+        const nodes = Array.from(
+            document.querySelectorAll('div, section, li, td, p, dd, dl')
+        );
+        for (const label of wanted) {
+            for (const node of nodes) {
+                const text = (node.innerText || '').trim();
+                if (!text.startsWith(label)) { continue; }
+                const rest = text.slice(label.length).trim()
+                    .split(String.fromCharCode(10))[0].trim();
+                if (!rest) { continue; }
+                // The most specific container wins: outer ones carry the
+                // label plus every sibling field's text as well.
+                if (!(label in found) || text.length < found[label].scope) {
+                    found[label] = {value: rest, scope: text.length};
+                }
+            }
+        }
+        return Object.fromEntries(
+            Object.entries(found).map(([label, hit]) => [label, hit.value])
+        );
+    """
+
+    def get_item_detail_metadata(self, labels):
+        """Metadata read off an opened item, keyed by the label beside it.
+
+        The item detail screen does not use a table - each value sits under
+        its own label - so the review-step readers do not apply here.
+        """
+        return self.driver.execute_script(
+            self.ITEM_DETAIL_METADATA_SCRIPT, list(labels)
+        )
+
+    def get_review_metadata_value(self, column, row_index=0):
+        return self.get_review_metadata(row_index).get(column, "")
+
+    def review_metadata_cell(self, column, row_index=0):
+        """The live cell element, re-found on each call so it is never stale."""
+        headers = self.get_review_headers()
+        heading = self.resolve_column(headers, column)
+        assert heading, (
+            f"{column!r} is not a column on the review step. Columns: {headers}"
+        )
+        rows = self.get_review_rows()
+        assert row_index < len(rows), (
+            f"Review step shows {len(rows)} row(s); row {row_index} was requested."
+        )
+        return rows[row_index].find_elements(By.XPATH, "./td")[headers.index(heading)]
+
+    def open_metadata_dropdown(self, column, row_index=0, attempts=3):
+        """Open one cell's dropdown and return its visible options.
+
+        Retried because a JS click on a row that re-rendered a moment earlier
+        raises nothing and simply never opens the list, which would otherwise
+        surface as an unexplained timeout.
+        """
+        last_error = None
+        for _ in range(attempts):
+            self.wait_for_review_step()
+            try:
+                combobox = self.review_metadata_cell(
+                    column, row_index
+                ).find_element(*self.ROW_COMBOBOX)
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center'});", combobox
+                )
+                self.pause_before_action()
+                self.driver.execute_script("arguments[0].click();", combobox)
+                return self.wait_utils.until_condition(
+                    lambda driver: [
+                        option
+                        for option in driver.find_elements(*self.DROPDOWN_OPTION)
+                        if option.is_displayed() and option.text.strip()
+                    ]
+                    or None,
+                    timeout=10,
+                )
+            except (TimeoutException, StaleElementReferenceException) as error:
+                last_error = error
+                self.close_metadata_dropdown()
+        raise AssertionError(
+            f"The {column!r} dropdown on review row {row_index} did not open "
+            f"after {attempts} attempts."
+        ) from last_error
+
+    def close_metadata_dropdown(self):
+        self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+
+    def get_review_metadata_options(self, column, row_index=0):
+        options = [
+            option.text.strip()
+            for option in self.open_metadata_dropdown(column, row_index)
+        ]
+        self.close_metadata_dropdown()
+        return options
+
+    def set_review_metadata(self, column, value, row_index=0):
+        """Pick `value` in this row's `column`, then wait for the cell to show it."""
+        for option in self.open_metadata_dropdown(column, row_index):
+            if option.text.strip() != value:
+                continue
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'nearest'});", option
+            )
+            self.pause_before_action()
+            self.driver.execute_script("arguments[0].click();", option)
+            self.wait_utils.until_condition(
+                lambda driver: self.metadata_cell_matches(
+                    self.get_review_metadata_value(column, row_index), value
+                ),
+                timeout=20,
+            )
+            return value
+        self.close_metadata_dropdown()
+        raise AssertionError(
+            f"{value!r} is not offered by the {column!r} dropdown on review row "
+            f"{row_index}."
+        )
+
+    def change_review_metadata(self, column, row_index=0):
+        """Switch this row's `column` to any value other than the current one.
+
+        Returns (before, after). Choosing whatever the dropdown offers keeps
+        the test free of environment-specific metadata values, which differ
+        per grade-subject and would otherwise pin it to one data set.
+        """
+        before = self.get_review_metadata_value(column, row_index)
+        options = self.get_review_metadata_options(column, row_index)
+        alternatives = [
+            option
+            for option in options
+            if option and not self.metadata_cell_matches(before, option)
+        ]
+        assert alternatives, (
+            f"{column!r} offers no alternative to {before!r} on review row "
+            f"{row_index}; the dropdown listed {options}."
+        )
+        return before, self.set_review_metadata(column, alternatives[0], row_index)
 
     def get_qar_result_item_ids(self):
         item_ids = []
@@ -2434,6 +2866,27 @@ class UploadItemFilePage(BasePage):
     def compact_item_id(value):
         return re.sub(r"[^A-Za-z0-9]", "", value or "")
 
+    @classmethod
+    def item_identity_key(cls, value):
+        """Stable identity for a single item across screens: IS number + -i<n>.
+
+        An item's chapter segment is not stable between views - the upload
+        review step renders "...-Ch29-i1" where the QAR results page renders
+        "...-CH-1-i1" for that same item. This is the per-item form of the
+        backend quirk item_set_numeric_prefix() already documents at set
+        level, so comparing whole compacted IDs matches nothing and every
+        item reads as missing. Compare on the two parts that never move.
+
+        Falls back to compact_item_id for anything without both parts, so
+        set-level IDs (no "-i<n>" suffix) never collide with item rows.
+        """
+        text = str(value or "")
+        set_match = re.match(r"\s*(IS\d+)", text, re.IGNORECASE)
+        index_match = re.search(r"i(\d+)\s*$", text, re.IGNORECASE)
+        if not (set_match and index_match):
+            return cls.compact_item_id(text).casefold()
+        return f"{set_match.group(1)}i{int(index_match.group(1))}".casefold()
+
     @staticmethod
     def get_rendered_page_text(driver):
         """Page text read through JS innerText.
@@ -2791,11 +3244,18 @@ class UploadItemFilePage(BasePage):
         (By.XPATH, "(//*[@contenteditable='true'])[1]"),
         (By.XPATH, "(//textarea)[1]"),
     ]
+    # QAR blocks an item with either wording depending on how hard its checks
+    # failed - a borderline item comes back "Needs Revision", a clear failure
+    # (e.g. a strong duplicate match) "Rejected". Both mean the same thing to
+    # the retry flow: the item did not pass and is offered for correction and
+    # re-run, which the app's own "Re-run QAR (n)" control confirms by
+    # counting the rejected items among the ones it will re-submit.
     QAR_RETRY_STATUS_LABELS = (
         "Need Improvement",
         "Needs Improvement",
         "Needs Revision",
         "Revise",
+        "Rejected",
     )
 
     # --- Revision item actions ---

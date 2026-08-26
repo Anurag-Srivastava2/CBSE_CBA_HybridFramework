@@ -6,6 +6,7 @@ from selenium.common.exceptions import TimeoutException
 from pages.admin.user_management_page import UserManagementPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -27,6 +28,7 @@ class TestM2UserLifecycle:
         self.login(username, ReadConfig.get_password_for_username(username))
         page = UserManagementPage(self.driver)
         page.open(ReadConfig.get_base_url())
+        checkpoint(f"Admin {username} opened User Management")
         return page
 
     def logout(self):
@@ -36,7 +38,9 @@ class TestM2UserLifecycle:
         """A signed-in session renders the app shell; the login form is gone."""
         return not LoginPage(self.driver).is_login_form_displayed()
 
-    def test_tc_wpad_user_05_create_login_deactivate_and_block(self, record_property):
+    def test_tc_wpad_user_05_create_login_deactivate_and_block(
+        self, record_property, page_evidence
+    ):
         run_id = uuid4().hex[:6]
         first_name = "Lifecycle"
         last_name = f"Auto{run_id}"
@@ -82,10 +86,16 @@ class TestM2UserLifecycle:
             pytest.fail(f"Admin could not create the lifecycle user: {error}")
 
         admin_page.search_user(full_name)
-        assert admin_page.is_user_listed(full_name), (
+        listed = admin_page.is_user_listed(full_name)
+        user_code = admin_page.get_user_code(full_name) if listed else ""
+        page_evidence.checkpoint(
+            f"Step 1 — created {full_name} <{email}> as an SME; listed in User "
+            f"Management: {listed}; user code {user_code or 'not assigned'}; "
+            f"status {admin_page.get_user_status(full_name) if listed else 'n/a'}"
+        )
+        assert listed, (
             f"Newly created user {full_name!r} is not listed in User Management."
         )
-        user_code = admin_page.get_user_code(full_name)
         record_property("manual_item_id", user_code)
         assert admin_page.is_user_active(full_name), (
             f"{user_code} should be Active immediately after creation, "
@@ -96,7 +106,12 @@ class TestM2UserLifecycle:
         # --- Step 2: the active user can sign in ------------------------------
         record_property("result_checkpoint", "Step 2 — active user signs in")
         self.login(email, self.NEW_USER_PASSWORD)
-        assert self.is_signed_in(), (
+        signed_in_while_active = self.is_signed_in()
+        page_evidence.checkpoint(
+            f"Step 2 — the Active user {email} signed in with its provisioned "
+            f"password: {signed_in_while_active}"
+        )
+        assert signed_in_while_active, (
             f"Active user {email} could not sign in with the provisioned password."
         )
         self.logout()
@@ -112,6 +127,10 @@ class TestM2UserLifecycle:
         toast = admin_page.get_toast_message()
         admin_page.search_user(full_name)
         status_after = admin_page.get_user_status(full_name)
+        page_evidence.checkpoint(
+            f"Step 3 — {user_code} toggled; status now {status_after!r} "
+            f"(Inactive expected). Toast: {toast or 'none'}"
+        )
         record_property(
             "result_description",
             f"{user_code} ({full_name}) status after toggle: {status_after}. Toast: {toast or 'none'}",
@@ -128,6 +147,12 @@ class TestM2UserLifecycle:
         except TimeoutException:
             # The app refused the credentials and kept the login form up.
             pass
-        assert not self.is_signed_in(), (
+        signed_in_after_deactivation = self.is_signed_in()
+        page_evidence.checkpoint(
+            f"Step 4 — the same credentials after deactivation got "
+            f"{email} into the portal: {signed_in_after_deactivation} "
+            "(must be False)"
+        )
+        assert not signed_in_after_deactivation, (
             f"Deactivated user {email} ({user_code}) was still able to sign in."
         )

@@ -3,6 +3,7 @@ import pytest
 from pages.admin.admin_portal_page import AdminPortalPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 # Every absent affordance costs its full timeout, and by design all of them are
@@ -51,13 +52,21 @@ class TestM2MFASessionContracts:
         affordances = list(login_page.MFA_AFFORDANCES)
         if session_scope:
             affordances += list(login_page.SESSION_AFFORDANCES)
+        present = []
         for label, attribute in affordances:
-            checks.check(
+            if checks.check(
                 f"Affordance — {label}",
                 getattr(login_page, attribute),
                 timeout=CHECK_TIMEOUT,
-            )
+            ):
+                present.append(label)
 
+        # The run this stops reading "none" is the run the xfail guard below can
+        # be retired, which is strictly more than a bare xfail records.
+        checkpoint(
+            f"{known_issue} — affordances shipped so far: "
+            f"{', '.join(present) if present else 'none of ' + str(len(affordances))}"
+        )
         record_property("result_description", checks.publish())
         return checks
 
@@ -65,7 +74,7 @@ class TestM2MFASessionContracts:
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             ReadConfig.get_role_usernames("teacher")[0],
-            ReadConfig.get_all_users_password(),
+            ReadConfig.get_password_for_username(ReadConfig.get_role_usernames("teacher")[0]),
         )
         self.driver.find_element("tag name", "body").send_keys("\ue00c")
         page = AdminPortalPage(self.driver)

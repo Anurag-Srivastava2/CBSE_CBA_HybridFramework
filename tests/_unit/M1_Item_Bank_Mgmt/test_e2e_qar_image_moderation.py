@@ -79,6 +79,7 @@ class TestE2EQARImageModeration:
         source_filename,
         request,
         worker_id,
+        page_evidence,
     ):
         prefix = f"QAR_AUTO_IMG_ONE_{uuid4().hex[:10]}"
         source_case = next(
@@ -116,11 +117,9 @@ class TestE2EQARImageModeration:
         assert fixture_rows[0]["filename"] == upload_case.filename
 
         sme_username = self.sme_user_for_worker(worker_id)
-        sme_password = (
-            ReadConfig.get_sme2_password()
-            if sme_username == ReadConfig.get_sme2_username()
-            else ReadConfig.get_all_users_password()
-        )
+        # get_password_for_username covers the sme2 special case this used to
+        # hand-roll, and every other account with a per-user override too.
+        sme_password = ReadConfig.get_password_for_username(sme_username)
         self.driver.get(ReadConfig.get_base_url())
         LoginPage(self.driver).login_to_application(
             sme_username,
@@ -128,6 +127,11 @@ class TestE2EQARImageModeration:
         )
         upload_page = BulkUploadPage(self.driver)
         upload_page.close_popup_if_open()
+        page_evidence.checkpoint(
+            f"SME {sme_username} signed in to upload {source_filename} as the "
+            f"neutrally-named {upload_case.filename}, expecting "
+            f"accepted={expected_accepted}"
+        )
         validation = upload_page.upload_excel_and_images_zip_for_validation(
             workbook_path,
             zip_path,
@@ -154,6 +158,20 @@ class TestE2EQARImageModeration:
 
         rejection_screenshot = (
             viewport_screenshot if not validation["accepted"] else None
+        )
+        # Filed through the shared recorder rather than republished as a list of
+        # their own: these two shots are purpose-built (an element crop and its
+        # viewport context, both also kept for Allure), and the old wholesale
+        # republish dropped whatever else the run had already recorded.
+        page_evidence.attach(
+            f"Product evidence ({evidence_kind}) for {upload_case.filename}: "
+            f"{evidence_text or 'no text on the element'}",
+            focused_screenshot,
+        )
+        page_evidence.attach(
+            f"Validation context — upload {outcome_label} "
+            f"(expected accepted={expected_accepted}): {validation['message']}",
+            viewport_screenshot,
         )
 
         result = {
@@ -199,14 +217,9 @@ class TestE2EQARImageModeration:
             attachment_type=allure.attachment_type.JSON,
         )
         print(f"[IMAGE_UPLOAD_RESULT] {json.dumps(result, sort_keys=True)}", flush=True)
-        evidence_screenshots = [
-            {"name": focused_name, "path": str(focused_screenshot)},
-            {"name": viewport_name, "path": str(viewport_screenshot)},
-        ]
         request.node.user_properties.extend(
             [
                 ("single_image_upload_validation", json.dumps(result, sort_keys=True)),
-                ("evidence_screenshots", json.dumps(evidence_screenshots)),
                 ("qar_success_screenshot", str(viewport_screenshot)),
                 (
                     "result_description",

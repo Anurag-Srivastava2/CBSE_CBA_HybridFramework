@@ -8,6 +8,7 @@ from pages.common.login_page import LoginPage
 from pages.sme.manual_item_page import ManualItemPage
 from pages.teacher.dashboard_page import DashboardPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -24,12 +25,15 @@ class TestM2UserManagementRBAC:
         self.driver.find_element("tag name", "body").send_keys("\ue00c")
         page = AdminPortalPage(self.driver)
         page.wait_for_application_ready()
+        checkpoint(f"Signed in as {username}")
         return page
 
     def login_as_admin(self):
         return self.login_as(ReadConfig.get_admin_username())
 
-    def test_tc_wpad_01_p01_admin_creates_new_user_with_required_fields(self):
+    def test_tc_wpad_01_p01_admin_creates_new_user_with_required_fields(
+        self, page_evidence
+    ):
         page = self.login_as_admin()
         run_id = uuid4().hex[:8]
         email = f"rwg_test_{run_id}@demo.com"
@@ -48,11 +52,18 @@ class TestM2UserManagementRBAC:
             )
 
         text = page.normalized_body_text()
+        page_evidence.checkpoint(
+            f"Created RWG user {email} in {duration:.2f}s (2.0s budget); the "
+            f"address is on the page: {email.casefold() in text}; status Active: "
+            f"{'active' in text}"
+        )
         assert duration <= 2.0
         assert email.casefold() in text
         assert "active" in text
 
-    def test_tc_wpad_01_p02_admin_deactivates_user_and_login_is_blocked(self):
+    def test_tc_wpad_01_p02_admin_deactivates_user_and_login_is_blocked(
+        self, page_evidence
+    ):
         page = self.login_as_admin()
         users = ReadConfig.get_role_usernames("rwg")
         target_user = users[0]
@@ -62,9 +73,13 @@ class TestM2UserManagementRBAC:
             pytest.xfail(
                 f"KI-M2-USER-002 [M2 User Lifecycle] Deactivate User control is not available for a safe fixture user: {error}"
             )
+        page_evidence.checkpoint(
+            f"Deactivated {target_user}; the page confirms it: "
+            f"{'deactivated' in page.normalized_body_text()}"
+        )
         assert "deactivated" in page.normalized_body_text()
 
-    def test_tc_wpad_01_n01_duplicate_email_is_rejected(self):
+    def test_tc_wpad_01_n01_duplicate_email_is_rejected(self, page_evidence):
         page = self.login_as_admin()
         existing_email = ReadConfig.get_role_usernames("rwg")[0]
         try:
@@ -80,9 +95,13 @@ class TestM2UserManagementRBAC:
             pytest.xfail(
                 f"KI-M2-USER-003 [M2 User Validation] Duplicate email validation could not be exercised: {error}"
             )
+        page_evidence.checkpoint(
+            f"Re-used the existing address {existing_email}; the app rejected it "
+            f"with 'already exists': {'already exists' in page.normalized_body_text()}"
+        )
         assert "already exists" in page.normalized_body_text()
 
-    def test_tc_wpad_01_n02_duplicate_mobile_is_rejected(self):
+    def test_tc_wpad_01_n02_duplicate_mobile_is_rejected(self, page_evidence):
         page = self.login_as_admin()
         try:
             page.create_user(
@@ -105,9 +124,17 @@ class TestM2UserManagementRBAC:
             pytest.xfail(
                 f"KI-M2-USER-004 [M2 User Validation] Duplicate mobile validation could not be exercised: {error}"
             )
+        duplicate_text = page.normalized_body_text()
+        page_evidence.checkpoint(
+            "Created two users on the same mobile 9999999999; the second was "
+            f"rejected — 'mobile' on the page: {'mobile' in duplicate_text}, "
+            f"'registered': {'registered' in duplicate_text}"
+        )
         assert "mobile" in page.normalized_body_text() and "registered" in page.normalized_body_text()
 
-    def test_tc_wpad_02_p01_sidebar_rbac_is_enforced_for_core_roles(self, record_property):
+    def test_tc_wpad_02_p01_sidebar_rbac_is_enforced_for_core_roles(
+        self, record_property, page_evidence
+    ):
         """Each role's expected sidebar markers are recorded individually; the
         RBAC negative (an SME must not see QP Builder) stays a hard gate."""
         checks = ElementChecks(None, record_property, page_name="Sidebar RBAC")
@@ -134,6 +161,15 @@ class TestM2UserManagementRBAC:
             # whatever page is actually on screen, which is not evidence of an
             # access-control leak. Scoping this guard to sme alone is what made
             # the assertion fire on a login screen.
+            page_evidence.checkpoint(
+                f"{role} ({username}) sidebar — expected markers missing: "
+                f"{missing or 'none'}"
+                + (
+                    f"; QP Builder visible to this SME: {'qp builder' in text}"
+                    if role == "sme"
+                    else ""
+                )
+            )
             if missing:
                 checks.publish()
                 pytest.xfail(
@@ -146,7 +182,9 @@ class TestM2UserManagementRBAC:
                 )
         record_property("result_description", checks.publish())
 
-    def test_tc_wpad_02_p02_sme_grade_subject_restriction_is_enforced(self, record_property):
+    def test_tc_wpad_02_p02_sme_grade_subject_restriction_is_enforced(
+        self, record_property, page_evidence
+    ):
         self.login_as(ReadConfig.get_sme2_username())
         page = ManualItemPage(self.driver)
         try:
@@ -161,12 +199,19 @@ class TestM2UserManagementRBAC:
             lambda: page.is_dropdown_option_available("Subject *", "Mathematics") is True,
         )
         record_property("result_description", checks.publish())
+        page_evidence.checkpoint(
+            "SME authoring scope — Mathematics offered: "
+            f"{page.is_dropdown_option_available('Subject *', 'Mathematics')}; "
+            "restricted Grade 10 offered: "
+            f"{page.is_dropdown_option_available('Grade *', 'Grade 10')} "
+            "(must be False)"
+        )
         # The restriction itself is an access-control contract, so it stays hard.
         assert page.is_dropdown_option_available("Grade *", "Grade 10") is False, (
             "RBAC FAILURE: a restricted grade is selectable for this SME."
         )
 
-    def test_tc_wpad_02_n01_teacher_direct_admin_url_is_denied(self):
+    def test_tc_wpad_02_n01_teacher_direct_admin_url_is_denied(self, page_evidence):
         self.login_as(ReadConfig.get_role_usernames("teacher")[0])
         self.driver.get(ReadConfig.get_base_url().rstrip("/") + "/admin/dashboard")
         page = AdminPortalPage(self.driver)
@@ -182,11 +227,25 @@ class TestM2UserManagementRBAC:
         denied = any(marker in text for marker in denial_markers) or teacher_dashboard.is_element_visible_quick(
             teacher_dashboard.DASHBOARD_TEXT
         )
+        page_evidence.checkpoint(
+            "A teacher requested /admin/dashboard directly — denied: "
+            f"{denied}; markers seen: "
+            f"{[m for m in denial_markers if m in text] or 'none (bounced to their own dashboard)'}"
+        )
         assert denied, (
             "Teacher hitting /admin/dashboard saw neither a denial nor their own dashboard. "
             f"Page text: {page.body_text()[:400]}"
         )
 
+        leaked = [
+            forbidden
+            for forbidden in ("user management", "create user", "audit logs")
+            if forbidden in text
+        ]
+        page_evidence.checkpoint(
+            f"Admin-only content leaked into the teacher session: "
+            f"{leaked or 'none'}"
+        )
         # Whatever the denial style, no admin-only content may render.
         for forbidden in ("user management", "create user", "audit logs"):
             assert forbidden not in text, f"Admin-only content {forbidden!r} leaked to a teacher session."

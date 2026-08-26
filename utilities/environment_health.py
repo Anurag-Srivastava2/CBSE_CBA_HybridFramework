@@ -42,6 +42,14 @@ INFRA_ERROR_MARKERS = (
     # The SPA loaded but its bootstrap API never answered, so login never
     # rendered. Raised by LoginPage.wait_for_login_form_or_authenticated_page.
     "remained on its global loading screen",
+    # The portal's sign-in rate limit locked a shared test account. This is an
+    # environment state, not a product defect: the credentials are correct and
+    # the only cure is time. Naming it here stops pytest-rerunfailures from
+    # spending its retries extending the lock.
+    "temporarily locked after repeated sign-in attempts",
+    "too many attempts",
+    "temporarily locked",
+    "repeated tries",
     # The browser or its driver died underneath the test.
     "chrome not reachable",
     "disconnected: not connected to devtools",

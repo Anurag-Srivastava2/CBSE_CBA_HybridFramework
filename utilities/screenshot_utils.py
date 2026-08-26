@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -26,10 +27,16 @@ class ScreenshotUtils:
         # Page labels carry spaces and dashes that each sanitize to an
         # underscore, so collapse the runs instead of shipping "01____Dashboard".
         safe_name = re.sub(r"_{2,}", "_", safe_name).strip("_")
-        # Microseconds, because two workers capturing the same page in the same
-        # second would otherwise write the same file and one report would show
-        # the other's screenshot.
-        file_name = f"{safe_name}_{datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')}.png"
+        # Microseconds *and* the xdist worker id. Microseconds alone were not
+        # enough: this clock is coarse on Windows, and page evidence labels
+        # repeat across tests ("01 - Login" is filed by nearly every suite), so
+        # two workers shooting the same label in the same tick wrote the same
+        # file and one report showed the other's screenshot. The worker id makes
+        # the name unique by construction rather than by luck.
+        worker_id = os.getenv("PYTEST_XDIST_WORKER", "").strip()
+        stamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
+        suffix = f"_{worker_id}" if worker_id else ""
+        file_name = f"{safe_name}_{stamp}{suffix}.png"
         screenshot_path = screenshot_dir / file_name
         driver.save_screenshot(str(screenshot_path))
         return str(screenshot_path)

@@ -5,6 +5,7 @@ import pytest
 from pages.admin.item_bank_page import ItemBankPage
 from pages.common.login_page import LoginPage
 from utilities.element_checks import ElementChecks
+from utilities.page_evidence import checkpoint
 from utilities.read_config import ReadConfig
 
 
@@ -50,6 +51,7 @@ class TestM2ItemBankOverview:
         )
         page = ItemBankPage(self.driver)
         page.open(ReadConfig.get_base_url())
+        checkpoint(f"Admin {username} opened Item Bank Overview")
         return page
 
     def survey(self, item_bank, record_property, scope):
@@ -89,7 +91,7 @@ class TestM2ItemBankOverview:
             )
         return checks
 
-    def test_tc_wpad_itembank_01_core_ui_kpis(self, record_property):
+    def test_tc_wpad_itembank_01_core_ui_kpis(self, record_property, page_evidence):
         """Phase 1: page furniture, metric cards and grid, all recorded softly."""
         item_bank = self.open_item_bank()
         checks = self.survey(item_bank, record_property, "Core UI")
@@ -105,13 +107,17 @@ class TestM2ItemBankOverview:
             "Grid loaded data", row_count > 0, detail=f"{row_count} rows"
         )
 
+        page_evidence.checkpoint(
+            f"Metric cards {kpis}; grid loaded {row_count} row(s) "
+            f"({item_bank.get_showing_summary()})"
+        )
         record_property(
             "result_description",
             f"{checks.publish()}. Metric cards {kpis}, {row_count} grid rows "
             f"({item_bank.get_showing_summary()}).",
         )
 
-    def test_tc_wpad_itembank_02_quick_filters(self, record_property):
+    def test_tc_wpad_itembank_02_quick_filters(self, record_property, page_evidence):
         """Phase 2: All / IB1 / IB2 / Retired tabs each scope the grid to their badge count.
 
         Tab presence is soft; the badge arithmetic and the scoping contract stay
@@ -130,6 +136,11 @@ class TestM2ItemBankOverview:
             )
         checks.publish()
 
+        page_evidence.checkpoint(
+            f"Tab badges {badges}; All must equal IB1 + IB2 "
+            f"({badges['IB1']} + {badges['IB2']} = {badges['IB1'] + badges['IB2']}), "
+            "with Retired tracked separately"
+        )
         # The All badge is the sum of the bank tabs; Retired is tracked separately.
         assert badges["All"] == badges["IB1"] + badges["IB2"], (
             f"All badge ({badges['All']}) does not equal IB1 + IB2 "
@@ -164,11 +175,17 @@ class TestM2ItemBankOverview:
         item_bank.switch_tab("IB2")
         ib2_ids = set(item_bank.get_item_ids_in_view())
         overlap = ib1_ids & ib2_ids
+        page_evidence.checkpoint(
+            f"Each tab's grid total matched its badge ({totals}); IB1 and IB2 "
+            f"are disjoint — items in both: {sorted(overlap) or 'none'}"
+        )
         assert not overlap, f"Items appear in both the IB1 and IB2 tabs: {sorted(overlap)}"
 
         item_bank.switch_tab("All")
 
-    def test_tc_wpad_itembank_03_advanced_filters_export(self, record_property):
+    def test_tc_wpad_itembank_03_advanced_filters_export(
+        self, record_property, page_evidence
+    ):
         """Phase 3: the Filters toggle reveals the metadata filters and Export downloads a CSV."""
         item_bank = self.open_item_bank()
         checks = self.survey(item_bank, record_property, "Filters & Export")
@@ -212,6 +229,12 @@ class TestM2ItemBankOverview:
         total_in_bank = item_bank.get_total_item_count()
 
         exported = item_bank.export_file_and_wait()
+        page_evidence.checkpoint(
+            f"Exported {exported.name} "
+            f"({exported.stat().st_size if exported.exists() else 0} bytes) "
+            f"against {rows_on_screen} row(s) on screen and {total_in_bank} "
+            "item(s) in the bank"
+        )
 
         assert exported.exists(), f"Export file {exported} does not exist."
         size = exported.stat().st_size
@@ -247,9 +270,17 @@ class TestM2ItemBankOverview:
         )
 
         banks = {row[1].strip() for row in data_rows if len(row) > 1}
+        page_evidence.checkpoint(
+            f"CSV holds {len(data_rows)} data row(s); columns missing from its "
+            f"header: {missing_export_columns or 'none'}; on-screen items it "
+            f"omits: {sorted(set(row_ids_on_screen) - exported_ids) or 'none'}; "
+            f"Bank values: {sorted(banks)}"
+        )
         assert banks <= {"IB1", "IB2"}, f"Export CSV carries unexpected Bank values: {sorted(banks)}"
 
-    def test_tc_wpad_itembank_04_interactions_pagination(self, record_property):
+    def test_tc_wpad_itembank_04_interactions_pagination(
+        self, record_property, page_evidence
+    ):
         """Phase 4: controls surveyed softly; advancing the grid stays hard."""
         item_bank = self.open_item_bank()
         self.survey(item_bank, record_property, "Pagination").publish()
@@ -259,6 +290,11 @@ class TestM2ItemBankOverview:
         second_page = item_bank.go_to_next_page()
         second_ids = item_bank.get_item_ids_in_view()
 
+        page_evidence.checkpoint(
+            f"Pagination moved {first_page!r} -> {second_page!r}; page 1 held "
+            f"{len(first_ids)} item(s), page 2 held {len(second_ids)}; items "
+            f"repeated across both: {sorted(set(first_ids) & set(second_ids)) or 'none'}"
+        )
         record_property(
             "result_description",
             f"Pagination moved from {first_page!r} to {second_page!r}; "
@@ -272,7 +308,7 @@ class TestM2ItemBankOverview:
             f"Page 2 repeated items from page 1: {sorted(set(first_ids) & set(second_ids))}"
         )
 
-    def test_tc_wpad_itembank_05_bulk_actions(self, record_property):
+    def test_tc_wpad_itembank_05_bulk_actions(self, record_property, page_evidence):
         """Phase 5: the master checkbox selects and clears every row on the page.
 
         Selection behaviour stays hard; only the page furniture is soft.
@@ -300,6 +336,10 @@ class TestM2ItemBankOverview:
         checked = item_bank.get_checked_rows_count()
         summary = item_bank.get_selection_summary()
 
+        page_evidence.checkpoint(
+            f"Master checkbox selected {checked}/{total_rows} row(s); selection "
+            f"summary reads {summary!r}"
+        )
         record_property(
             "result_description",
             f"Master checkbox selected {checked}/{total_rows} rows; summary read {summary!r}.",
@@ -313,13 +353,17 @@ class TestM2ItemBankOverview:
         )
 
         item_bank.toggle_master_checkbox()
+        page_evidence.checkpoint(
+            "Master checkbox toggled off; rows still selected: "
+            f"{item_bank.get_checked_rows_count()} (must be 0)"
+        )
         assert item_bank.get_checked_rows_count() == 0, (
             "Toggling the master checkbox off did not clear the row selection."
         )
 
     @pytest.mark.e2e
     @pytest.mark.serial
-    def test_tc_wpad_itembank_06_retire_item(self, record_property):
+    def test_tc_wpad_itembank_06_retire_item(self, record_property, page_evidence):
         """Phase 6: retiring an item moves it out of the active bank into Retired.
 
         Retirement cannot be undone from the UI, so this never touches a seeded
@@ -352,6 +396,11 @@ class TestM2ItemBankOverview:
         all_before = item_bank.get_tab_badge_count("All")
 
         target_row_id = item_bank.get_row_id_for_item(target_item_id)
+        page_evidence.checkpoint(
+            f"Retiring automation residue {target_item_id} (row #{target_row_id}); "
+            f"badges before — All {all_before}, Retired {retired_before}. No "
+            "seeded item is touched: retirement cannot be reversed from the UI"
+        )
 
         item_bank.expand_item_view(target_item_id)
         assert item_bank.is_item_expanded(), f"Expanding {target_item_id} revealed no detail panel."
@@ -368,6 +417,12 @@ class TestM2ItemBankOverview:
         )
         assert target_row_id and f"#{target_row_id}" in prompt, (
             f"The retire confirmation names the wrong item — expected #{target_row_id}, got {prompt!r}"
+        )
+        page_evidence.checkpoint(
+            f"Retire confirmation guards the action — warns it cannot be undone: "
+            f"{'cannot be undone' in prompt.casefold()}; names #{target_row_id}: "
+            f"{bool(target_row_id and f'#{target_row_id}' in prompt)}; demands a "
+            f"reason: {item_bank.is_retire_reason_required()}"
         )
         assert item_bank.is_retire_reason_required(), (
             "The retire confirmation does not ask for a reason for retirement."
@@ -389,6 +444,10 @@ class TestM2ItemBankOverview:
             f"Retired {retired_before} -> {retired_after}. Toast: {toast!r}",
         )
 
+        page_evidence.checkpoint(
+            f"After retirement — All {all_before} -> {all_after}, Retired "
+            f"{retired_before} -> {retired_after}; toast {toast!r}"
+        )
         assert not item_bank.is_item_present_in_table(target_item_id), (
             f"Item {target_item_id} is still listed on the 'All' tab after being retired."
         )
@@ -402,6 +461,10 @@ class TestM2ItemBankOverview:
         )
 
         item_bank.switch_tab("Retired")
+        page_evidence.checkpoint(
+            f"{target_item_id} now appears on the Retired tab: "
+            f"{item_bank.is_item_present_in_table(target_item_id)}"
+        )
         assert item_bank.is_item_present_in_table(target_item_id), (
             f"Item {target_item_id} did not appear on the 'Retired' tab after retirement."
         )
