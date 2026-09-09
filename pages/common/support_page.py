@@ -129,22 +129,44 @@ class SupportPage(BasePage):
         except WebDriverException:
             return False
 
-    def select_category(self, category_name):
-        self.dismiss_overlays()
-        self.click_resilient(self.CATEGORY_TRIGGER)
+    def select_category(self, category_name, attempts=3):
+        """Pick a category, and confirm the trigger actually took it.
+
+        The option list settles after it is scrolled into view, so a native
+        click aimed at an option's centre can land on its neighbour: a ticket
+        asked for 'Portal Error' was raised under 'Login and Access'. The click
+        goes through JS so it cannot miss, and the trigger is read back
+        afterwards because a click that landed next door is otherwise
+        indistinguishable from one that worked - the caller was told it got the
+        category it asked for. Same failure, and same remedy, as
+        `select_option_with_exact_text()` in the QP builder.
+        """
         option = (By.XPATH, f"//*[@role='option'][normalize-space()='{category_name}']")
-        element = self.wait_utils.until_visible(option, timeout=15)
-        self.element_utils.scroll_to_element(element)
-        self.click_resilient(option)
-        try:
-            self.wait_utils.until_condition(
-                lambda driver: driver.find_element(*self.CATEGORY_TRIGGER).get_attribute("aria-expanded")
-                != "true",
-                timeout=15,
-            )
-        except (TimeoutException, WebDriverException):
+        shown = None
+        for _ in range(attempts):
             self.dismiss_overlays()
-        sleep(1)
+            self.click_resilient(self.CATEGORY_TRIGGER)
+            element = self.wait_utils.until_visible(option, timeout=15)
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", element
+            )
+            self.driver.execute_script("arguments[0].click();", element)
+            try:
+                self.wait_utils.until_condition(
+                    lambda driver: driver.find_element(*self.CATEGORY_TRIGGER).get_attribute("aria-expanded")
+                    != "true",
+                    timeout=15,
+                )
+            except (TimeoutException, WebDriverException):
+                self.dismiss_overlays()
+            sleep(1)
+            shown = self.get_selected_category()
+            if shown == category_name:
+                return category_name
+        raise AssertionError(
+            f"The category control would not take {category_name!r} in "
+            f"{attempts} attempts - it still shows {shown!r}."
+        )
 
     def get_selected_category(self):
         try:
