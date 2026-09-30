@@ -1,4 +1,3 @@
-from copy import copy as copy_cell_style
 from pathlib import Path
 from shutil import copy2
 from time import monotonic
@@ -12,6 +11,12 @@ from selenium.webdriver.common.by import By
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    last_item_column,
+    resolve_columns,
+)
 from utilities.read_config import ReadConfig
 
 
@@ -33,25 +38,21 @@ class TestQARResubmissionFreshRun:
         copy2(source, target)
         workbook = load_workbook(target)
         worksheet = workbook.active
+        columns = resolve_columns(worksheet)
+        assert columns, "Upload template has no recognisable item-data sheet."
+        max_data_column = last_item_column(worksheet)
         run_id = uuid4().hex[:10]
         for offset, question in enumerate(questions):
             row = offset + 2
             if row != 2:
-                for column in range(1, 25):
-                    source_cell = worksheet.cell(2, column)
-                    target_cell = worksheet.cell(row, column)
-                    target_cell.value = source_cell.value
-                    if source_cell.has_style:
-                        target_cell._style = copy_cell_style(source_cell._style)
-            worksheet.cell(row, 5).value = offset + 1
-            worksheet.cell(row, 10).value = "True or False"
-            worksheet.cell(row, 11).value = f"{question} QAR run {run_id}-{offset + 1}"
-            worksheet.cell(row, 21).value = "True"
-            worksheet.cell(row, 23).value = "Automation QAR resubmission scenario explanation."
-            worksheet.cell(row, 24).value = "1"
-        for row in range(len(questions) + 2, worksheet.max_row + 1):
-            for column in range(1, 25):
-                worksheet.cell(row, column).value = None
+                copy_item_row(worksheet, 2, row, max_data_column)
+            worksheet.cell(row, columns["sequence"]).value = offset + 1
+            worksheet.cell(row, columns["typology"]).value = "True or False"
+            worksheet.cell(row, columns["question"]).value = f"{question} QAR run {run_id}-{offset + 1}"
+            worksheet.cell(row, columns["answer"]).value = "True"
+            worksheet.cell(row, columns["explanation"]).value = "Automation QAR resubmission scenario explanation."
+            worksheet.cell(row, columns["marks"]).value = "1"
+        clear_rows_from(worksheet, len(questions) + 2, max_data_column)
         workbook.save(target)
         workbook.close()
         return target
@@ -78,7 +79,7 @@ class TestQARResubmissionFreshRun:
         return session, headers
 
     def test_tc_neg_m1_09_resubmission_triggers_fresh_qar_run(
-        self, tmp_path, page_evidence
+        self, tmp_path, page_evidence, record_property
     ):
         """TC-NEG-M1-09: Verify resubmitting a revised item set triggers a fresh QAR run.
         
@@ -91,6 +92,16 @@ class TestQARResubmissionFreshRun:
         6. Assert duplicate score improves and timeline displays both QAR runs.
         7. Query GET /item-sets/{id}/qar-history and assert 2 distinct QAR run records exist.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Upload a workbook built to fail QAR on near-duplicate items, and let it "
+            "fail.\n"
+            "Revise the failed items and resubmit the set.\n"
+            "Check QAR runs again from scratch and scores the revised content, rather "
+            "than serving the previous cached result.",
+        )
         # Step 1: Login as SME2
         self.step(1, "Logging in as SME2")
         self.driver.get(ReadConfig.get_base_url())

@@ -1,6 +1,6 @@
 # Item-Upload Templates — All 12 Typologies (Tester Pack)
 
-One ready-to-upload Excel file per question typology. Every file uses the **24
+One ready-to-upload Excel file per question typology. Every file uses the **25
 canonical template columns** and is pre-filled with a **valid sample row** using
 **real dev master data**. All 12 were verified on dev (`cba-api-dev-new`) on
 2026-07-14: each uploads with `passedRows: 1, failedRows: 0`, and the review-grid
@@ -30,6 +30,8 @@ The samples use this **real curriculum chain** (Grade 1 / Mathematics):
 
 - **Grade:** `Grade 1`
 - **Subject:** `Mathematics`
+- **Book:** `Book 1`
+- **Unit:** *(left empty — see below)*
 - **Chapter No._Name:** `CH-1: Finding the Furry Cat! (Pre-number Concepts)`
 - **Competency:** `Counts up to 99 both forwards and backwards and in groups of IOS and 20s`
 - **Learning Outcome:** `Recognises quantities in groups of 2s`
@@ -40,8 +42,9 @@ So the SME/Teacher account you log in with **must be scoped to Grade 1 +
 Mathematics**, otherwise the chapter/competency/LO won't resolve.
 
 > On a **different environment (QA/UAT)** or a differently-scoped account, replace
-> `Grade`, `Subject`, `Chapter No._Name`, `Competency`, `Learning Outcome`, and
-> `Blooms Taxonomy` with values that exist in **that** environment's master data.
+> `Grade`, `Subject`, `Book`, `Unit`, `Chapter No._Name`, `Competency`,
+> `Learning Outcome`, and `Blooms Taxonomy` with values that exist in **that**
+> environment's master data.
 > Competency must belong to the chapter's grade/subject, and the Learning Outcome
 > must belong to that Competency, or the row will fail validation.
 
@@ -60,15 +63,56 @@ filename here and upload the matching zip in the 2-step staged flow.
 
 ---
 
-## The 24 columns (fixed order)
+## The 25 columns (fixed order)
 
 ```
-Grade | Subject | Unit/Theme | Chapter No._Name | S.No. | Competency |
+Grade | Subject | Book | Unit | Chapter No._Name | S.No. | Competency |
 Learning Outcome | Blooms Taxonomy | Explanation of Blooms Taxonomy |
 Typology | Question | Question Image |
 Option 1 | Option 2 | Option 3 | Option 4 |
 Image 1 | Image 2 | Image 3 | Image 4 |
 Answer | Answer Image | Explanation/Remarks | Marks
+```
+
+The single source of truth for this list is
+`utilities/item_template_columns.CANONICAL_HEADERS`. Nothing in the suite writes
+to a column by number: `resolve_columns(worksheet)` maps a field name to
+whichever column the sheet in hand actually puts it in, which is what let Book
+and Unit be inserted without renumbering nine sets of constants.
+
+## Book and Unit
+
+`Book` and `Unit` replaced the single `Unit/Theme` column that used to sit at
+position 3, pushing `Chapter No._Name` and everything after it one column to the
+right — `Marks` moved from X to **Y**.
+
+- **`Book` is mandatory.** The manual authoring form renders it as `Book *`
+  between `Subject *` and `Chapter *`, and the chapter list stays empty until a
+  book is chosen.
+- **`Unit` is optional**, and only exists where the master data has units for
+  that subject. In this pack's Grade 1 / Mathematics chain there are none, so
+  every sample leaves `Unit` empty and the chapter resolves against the book.
+  Grade 1 / Hindi has five units; a row for it may fill `Unit`, and then the
+  chapter has to be one that belongs to that unit.
+- On multi-row **CABA / SBQ** samples, `Book` is filled on the parent row only.
+  Sub-rows inherit it along with the rest of the metadata.
+
+The dropdowns are backed by defined names inside the workbook
+(`G<g>_S<s>_Books`, `G<g>_S<s>_B<b>_Units`,
+`G<g>_S<s>_B<b>_U<u>_Chapters`, …). `utilities/item_template_curriculum.py`
+reads that chain, so tests can pick a real book, unit and chapter for whatever
+environment they are pointed at instead of hard-coding one.
+
+## Refreshing these files
+
+When the app's template changes again:
+
+```bash
+# the trimmed per-typology files, migrated in place
+python tools/migrate_item_templates.py
+
+# sme_sheet.xlsx, which keeps the lookup columns and so must be rebuilt
+python tools/migrate_item_templates.py     --from-download ~/Downloads/item-set-template.xlsx     --sample-from data/upload_templates/sme_sheet.xlsx     data/upload_templates/sme_sheet.xlsx
 ```
 
 ## Per-typology format (how each maps the columns)

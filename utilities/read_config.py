@@ -175,6 +175,20 @@ class ReadConfig:
         return ReadConfig._secret("CBSE_SME2_USERNAME")
 
     @staticmethod
+    def get_configured_sme2_username():
+        """CBSE_SME2_USERNAME itself, never the per-worker slot.
+
+        get_sme2_username() trades the configured account for one out of
+        CBSE_SME_USERNAMES so that two xdist workers never drive the same SME
+        session. That trade assumes the pool's accounts are interchangeable,
+        and they are not: their grade/subject access is disjoint, so a worker
+        can be handed an SME that cannot reach the curriculum its tests need.
+        A suite pinned to a particular subject asks for the configured account
+        instead, which is the one documented to carry full curriculum access.
+        """
+        return ReadConfig._secret("CBSE_SME2_USERNAME")
+
+    @staticmethod
     def get_sme2_password():
         """Password for whichever account get_sme2_username() resolved to.
 
@@ -221,12 +235,52 @@ class ReadConfig:
         return os.getenv("CBSE_ADMIN2_USERNAME", "").strip() or ReadConfig.get_role_usernames("admin")[0]
 
     @staticmethod
+    def get_helpdesk_l1_username():
+        """First-line helpdesk agent. Works tickets on /l1/helpdesk."""
+        return ReadConfig._secret("CBSE_HELPDESK_L1_USERNAME")
+
+    @staticmethod
+    def get_helpdesk_l2_username():
+        """Second-line helpdesk agent. Works tickets on /l2/helpdesk."""
+        return ReadConfig._secret("CBSE_HELPDESK_L2_USERNAME")
+
+    @staticmethod
     def get_pit1_username():
         return ReadConfig._secret("CBSE_PIT1_USERNAME")
 
     @staticmethod
     def get_pit_usernames():
         return ReadConfig.get_role_usernames("pit")
+
+    # Publication needs a 3/3 PIT quorum, and the portal allows one active
+    # session per account - so two heavy E2E suites that both take
+    # get_pit_usernames()[:3] cannot run at the same time. They sign each
+    # other out mid-quorum. That is why both were marked `serial` and queued
+    # back to back on one worker, which is the M1 critical path.
+    #
+    # A lane takes its own disjoint slice instead. With 6 PIT accounts the two
+    # suites hold quorum concurrently; with fewer, every lane falls back to the
+    # same first three and conftest keeps them serial, so this is safe to land
+    # before the extra account is provisioned.
+    PIT_QUORUM_SIZE = 3
+
+    @staticmethod
+    def pit_quorum_lanes_available():
+        """How many suites can hold a PIT quorum at once."""
+        return len(ReadConfig.get_pit_usernames()) // ReadConfig.PIT_QUORUM_SIZE
+
+    @staticmethod
+    def get_pit_quorum(lane=0):
+        """The PIT accounts this lane votes with.
+
+        Falls back to lane 0 when the pool cannot cover the requested lane, so
+        an under-provisioned environment still runs - just not concurrently.
+        """
+        pool = ReadConfig.get_pit_usernames()
+        size = ReadConfig.PIT_QUORUM_SIZE
+        if lane < 0 or (lane + 1) * size > len(pool):
+            lane = 0
+        return pool[lane * size:(lane + 1) * size]
 
     @staticmethod
     def get_all_user_username(user_key):
@@ -313,24 +367,93 @@ class ReadConfig:
     def get_manual_item_answer():
         return ReadConfig.config.get("manual_item", "answer")
 
+    #: Repo-owned copy of the app's item-upload template, refreshed by
+    #: tools/migrate_item_templates.py. The default is this rather than a file
+    #: in the operator's Downloads folder so a fresh clone can run the upload
+    #: suites without anyone first downloading a template by hand — and so the
+    #: columns the suites write against are the ones under version control.
+    BUNDLED_UPLOAD_TEMPLATE = (
+        Path(__file__).resolve().parent.parent / "data" / "upload_templates" / "sme_sheet.xlsx"
+    )
+
+    _reported_stale_templates = set()
+
+    @staticmethod
+    def _carries_current_columns(path):
+        """Does this workbook match the column contract the target env expects?
+
+        A template downloaded before Book and Unit existed still opens, still
+        looks like a valid sheet, and still resolves most fields — it just has
+        no Book column and puts everything from Chapter rightwards one place to
+        the left. Uploads built from it fail row validation with a message that
+        says nothing about the real cause, so it is caught here instead.
+        """
+        from openpyxl import load_workbook  # local: keeps config import cheap
+
+        from utilities.item_template_columns import resolve_columns
+
+        try:
+            workbook = load_workbook(path, read_only=True, data_only=True)
+        except Exception:  # noqa: BLE001 - unreadable is as unusable as stale
+            return False
+        try:
+            for worksheet in workbook.worksheets:
+                columns = resolve_columns(worksheet)
+                if columns and columns["book"] and columns["unit"]:
+                    return True
+            return False
+        finally:
+            workbook.close()
+
     @staticmethod
     def get_upload_item_file_path():
-        default_path = Path.home() / "Downloads" / "sme_sheet.xlsx"
-        configured_path = Path(
-            os.getenv("CBSE_UPLOAD_ITEM_FILE", str(default_path))
-        )
-        if configured_path.exists():
-            return str(configured_path)
+        configured = os.getenv("CBSE_UPLOAD_ITEM_FILE", "").strip()
+        candidates = []
+        if configured:
+            configured_path = Path(configured)
+            if configured_path.exists():
+                candidates.append(configured_path)
+            else:
+                # A configured path that has gone away still names the folder
+                # the operator keeps their downloads in, so sheets there beat
+                # falling back to the bundled copy they chose to override.
+                candidates.extend(
+                    sorted(
+                        configured_path.parent.glob("sme_sheet*.xlsx"),
+                        key=lambda path: path.stat().st_mtime,
+                        reverse=True,
+                    )
+                )
 
-        matching_files = sorted(
-            configured_path.parent.glob("sme_sheet*.xlsx"),
-            key=lambda path: path.stat().st_mtime,
-            reverse=True,
-        )
-        if matching_files:
-            return str(matching_files[0])
+        for candidate in candidates:
+            if ReadConfig._carries_current_columns(candidate):
+                return str(candidate)
+            # Loud rather than silent: the operator asked for this file, and
+            # quietly using a different one would make a green run misleading.
+            # Reported once per path so it does not bury the run output.
+            if str(candidate) not in ReadConfig._reported_stale_templates:
+                ReadConfig._reported_stale_templates.add(str(candidate))
+                print(
+                    f"WARNING: CBSE_UPLOAD_ITEM_FILE points at {candidate}, which "
+                    "predates the Book/Unit columns. Falling back to the bundled "
+                    f"{ReadConfig.BUNDLED_UPLOAD_TEMPLATE.name}. Download a fresh "
+                    "template from the app, or drop the CBSE_UPLOAD_ITEM_FILE "
+                    "override, to silence this.",
+                    flush=True,
+                )
 
-        return str(configured_path)
+        return str(ReadConfig.BUNDLED_UPLOAD_TEMPLATE)
+
+    @staticmethod
+    def get_qp_subject():
+        """Subject the M4 question papers are built for.
+
+        Unset, the QP Builder's first offered subject is taken - the
+        behaviour every M4 suite had before this knob existed. Set it to build
+        against a different one (e.g. Mathematics) on an environment whose
+        item bank carries it.
+        """
+        return os.getenv("CBSE_QP_SUBJECT", "").strip() or None
 
     @staticmethod
     def get_environment_key():
@@ -341,6 +464,24 @@ class ReadConfig:
 
         hostname = urlparse(ReadConfig.get_base_url()).hostname or "unknown"
         return re.sub(r"[^a-z0-9]+", "-", hostname.lower()).strip("-")
+
+    @staticmethod
+    def get_docx_template_dir():
+        """Directory holding the Word item-upload sample documents.
+
+        These ship in the repo beside the Excel typology templates, so a fresh
+        checkout can run the Word suite without anyone fetching a download
+        first. Point CBSE_DOCX_TEMPLATE_DIR at a newer drop when the template
+        changes rather than editing the checked-in copies, so the suite can be
+        run against a candidate template without a commit.
+        """
+        default_path = ReadConfig.project_root / "data" / "typology_templates_docx"
+        return str(Path(os.getenv("CBSE_DOCX_TEMPLATE_DIR", str(default_path))))
+
+    @staticmethod
+    def get_docx_images_zip_path():
+        """The companion image .zip the Word documents reference by filename."""
+        return str(Path(ReadConfig.get_docx_template_dir()) / "images.zip")
 
     @staticmethod
     def get_question_bank_path():

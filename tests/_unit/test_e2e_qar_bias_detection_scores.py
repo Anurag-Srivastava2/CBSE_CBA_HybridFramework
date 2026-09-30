@@ -39,8 +39,17 @@ class TestE2EQARBiasDetectionScores:
     def test_each_fresh_bias_item_exposes_a_severity_sensitive_score(
         self,
         request,
-        tmp_path,
+        tmp_path, record_property,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Build a fresh workbook of bias items spanning several topics and "
+            "severities, and submit it for QAR.\n"
+            "Check every item's QAR report exposes a score, and that those scores "
+            "track the severity the fixture built in.",
+        )
         prefix = self.make_prefix()
         workbook_path, fixture_rows = build_qar_bias_workbook(
             ReadConfig.get_upload_item_file_path(),
@@ -115,8 +124,16 @@ class TestE2EQARBiasDetectionScores:
     def test_each_text_bias_case_flags_or_clears_against_live_threshold(
         self,
         request,
-        tmp_path,
+        tmp_path, record_property,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Build a workbook of text bias cases and submit it for QAR.\n"
+            "Check each case is flagged or cleared according to the bias threshold "
+            "this environment is actually running.",
+        )
         prefix = self.make_prefix()
         workbook_path, fixture_rows = build_qar_text_bias_workbook(
             ReadConfig.get_upload_item_file_path(),

@@ -1,3 +1,5 @@
+from time import sleep
+
 import pytest
 
 from pages.admin.assignment_queue_page import AssignmentQueuePage
@@ -49,14 +51,29 @@ class TestM2AssignmentQueueAutoAssignment:
         return page
 
     def set_user_active(self, users_page, name, should_be_active):
-        """Drive a user's status to the requested state; True if it changed."""
+        """Drive a user's status to the requested state; True if it changed.
+
+        The result is read back rather than assumed. A toggle that does not
+        take is otherwise invisible here, and this helper is what the restore
+        block relies on to hand the environment back — an unverified restore
+        reports success and leaves shared accounts disabled.
+        """
         users_page.search_user(name)
         if not users_page.is_user_listed(name):
-            return False
+            raise AssertionError(f"{name} is not listed in the user grid.")
         if users_page.is_user_active(name) == should_be_active:
             return False
         users_page.toggle_user_status(name)
-        return True
+        wanted = "Active" if should_be_active else "Inactive"
+        for _ in range(10):
+            if users_page.is_user_active(name) == should_be_active:
+                return True
+            sleep(1)
+            users_page.search_user(name)
+        raise AssertionError(
+            f"{name} did not move to {wanted}; it still reads "
+            f"{users_page.get_user_status(name)!r}."
+        )
 
     def overdue_stage_assignees(self):
         queue = self.open_queue()
@@ -67,19 +84,36 @@ class TestM2AssignmentQueueAutoAssignment:
     def test_tc_wpad_assign_01_inactive_role_unassigns_and_reactivation_reassigns(
         self, record_property, page_evidence
     ):
+        # Plain-English orientation for the report, for a reader who does not
+        # know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an admin and switch off every reviewer holding the RWG "
+            "role, so no one in that role is available to review.\n"
+            "Check the Assignment Queue: overdue RWG work should no longer sit "
+            "with a switched-off reviewer, it should read Unassigned.\n"
+            "Switch one reviewer back on and expect that reviewer to pick the "
+            "work up.\n"
+            "Switch every account the test touched back on, so the shared test "
+            "environment is left as it was found.",
+        )
         self.login_as_admin()
         users_page = self.open_users()
 
         # Deactivating a role holder mutates shared state, so everything below
         # the survey stays a hard gate.
         checks = ElementChecks(users_page, record_property, page_name="User Management — Roles")
+        # Enumerate exactly once and let the survey report that same read. The
+        # Roles menu entry toggles, so asking twice switched the filter back
+        # off and the second read came back from an unfiltered first page —
+        # which looked like "nobody holds this role" and skipped the test.
+        rwg_users = checks.safe_call(lambda: users_page.find_users_by_role(self.ROLE_LABEL))
         checks.check_condition(
             f"Role holders listed — {self.ROLE_LABEL}",
-            lambda: users_page.find_users_by_role(self.ROLE_LABEL),
+            bool(rwg_users),
         )
         checks.publish()
 
-        rwg_users = users_page.find_users_by_role(self.ROLE_LABEL)
         if not rwg_users:
             # Missing fixture data is not a product defect - and this is the
             # same judgement the "no active holder" branch below already makes,

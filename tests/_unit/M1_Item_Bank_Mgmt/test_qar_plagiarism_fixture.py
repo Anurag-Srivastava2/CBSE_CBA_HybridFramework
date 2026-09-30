@@ -6,10 +6,19 @@ from utilities.qar_plagiarism_fixture import (
     build_qar_plagiarism_workbook,
     source_similarity,
 )
+from utilities.item_template_columns import resolve_columns
 from utilities.read_config import ReadConfig
 
 
-def test_pdf_plagiarism_fixture_preserves_six_verbatim_sources(tmp_path):
+def test_pdf_plagiarism_fixture_preserves_six_verbatim_sources(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Build the PDF plagiarism fixture workbook.\n"
+        "Check it carries six items copied word for word from their published "
+        "sources, with the source evidence recorded alongside each.",
+    )
     output, evidence = build_qar_plagiarism_workbook(
         ReadConfig.get_upload_item_file_path(),
         tmp_path / "pdf-plagiarism.xlsx",
@@ -25,15 +34,25 @@ def test_pdf_plagiarism_fixture_preserves_six_verbatim_sources(tmp_path):
 
     workbook = load_workbook(output, data_only=True)
     worksheet = workbook.active
+    columns = resolve_columns(worksheet)
+    assert columns, "Built workbook has no recognisable item-data sheet."
     for row, source in enumerate(PUBLISHED_SOURCE_ITEMS, start=2):
-        assert worksheet.cell(row, 10).value == "True or False"
-        assert worksheet.cell(row, 11).value == source.question
-        assert source_similarity(worksheet.cell(row, 11).value, source.question) == 100
-        assert worksheet.cell(row, 21).value == source.answer
+        assert worksheet.cell(row, columns["typology"]).value == "True or False"
+        assert worksheet.cell(row, columns["question"]).value == source.question
+        assert source_similarity(worksheet.cell(row, columns["question"]).value, source.question) == 100
+        assert worksheet.cell(row, columns["answer"]).value == source.answer
     workbook.close()
 
 
-def test_similarity_contract_rejects_content_below_97_percent():
+def test_similarity_contract_rejects_content_below_97_percent(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Score a passage against itself, and then against unrelated text.\n"
+        "Check identical text scores 100 and unrelated text falls below the 97 "
+        "percent mark the fixture relies on.",
+    )
     source = PUBLISHED_SOURCE_ITEMS[0].question
     assert source_similarity(source, source) == 100
     assert source_similarity("An unrelated new question.", source) < 97

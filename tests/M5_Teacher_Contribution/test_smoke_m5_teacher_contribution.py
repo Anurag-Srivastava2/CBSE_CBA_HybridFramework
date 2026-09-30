@@ -66,6 +66,13 @@ class TestSmokeM5TeacherContribution:
         self, record_property, page_evidence
     ):
         """Teacher signs in, lands on the dashboard and opens item creation."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher, land on the dashboard and open item creation.\n"
+            "Read-only by design: no item is authored and no file is uploaded.",
+        )
         page = self.open_contribution_workspace()
 
         # Additive only: every assertion below stays exactly as hard as it was.
@@ -94,6 +101,13 @@ class TestSmokeM5TeacherContribution:
         self, record_property, page_evidence
     ):
         """The teacher's Previously Uploaded Files history table renders."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and open their Previously Uploaded Files history.\n"
+            "Check the history table renders. Read-only, nothing is uploaded.",
+        )
         page = self.open_contribution_workspace()
         page.open_upload_item_file_tab()
         page.open_upload_step()

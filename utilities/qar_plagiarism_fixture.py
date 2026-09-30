@@ -1,10 +1,16 @@
-from copy import copy as copy_cell_style
 from dataclasses import asdict, dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
 from shutil import copy2
 
 from openpyxl import load_workbook
+
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    resolve_columns,
+    write_row_fields,
+)
 
 
 EXPECTED_PLAGIARISM_THRESHOLD = 97.0
@@ -67,18 +73,6 @@ def source_similarity(candidate, source):
     return SequenceMatcher(None, normalized_candidate, normalized_source).ratio() * 100
 
 
-def _copy_template_row(worksheet, source_row, target_row):
-    for column in range(1, 25):
-        source_cell = worksheet.cell(source_row, column)
-        target_cell = worksheet.cell(target_row, column)
-        target_cell.value = source_cell.value
-        if source_cell.has_style:
-            target_cell._style = copy_cell_style(source_cell._style)
-        target_cell.alignment = copy_cell_style(source_cell.alignment)
-        target_cell.protection = copy_cell_style(source_cell.protection)
-        target_cell.number_format = source_cell.number_format
-
-
 def build_qar_plagiarism_workbook(template_path, output_path, run_token):
     """Copy six published PDF items into a fresh upload workbook verbatim."""
     output_path = Path(output_path)
@@ -86,35 +80,48 @@ def build_qar_plagiarism_workbook(template_path, output_path, run_token):
     copy2(template_path, output_path)
     workbook = load_workbook(output_path)
     worksheet = workbook.active
+    columns = resolve_columns(worksheet)
+    if columns is None:
+        raise ValueError(f"{template_path} has no recognisable item-data sheet.")
 
     evidence = []
     for offset, source in enumerate(PUBLISHED_SOURCE_ITEMS):
         row = offset + 2
         if row > 2:
-            _copy_template_row(worksheet, 2, row)
-        worksheet.cell(row, 5).value = offset + 1
-        worksheet.cell(row, 10).value = "True or False"
-        worksheet.cell(row, 11).value = source.question
-        worksheet.cell(row, 12).value = None
-        for column in range(13, 21):
-            worksheet.cell(row, column).value = None
-        worksheet.cell(row, 21).value = source.answer
-        worksheet.cell(row, 22).value = None
-        worksheet.cell(row, 23).value = (
-            f"{run_token}: exact published-source plagiarism threshold fixture."
+            copy_item_row(worksheet, 2, row)
+        write_row_fields(
+            worksheet,
+            row,
+            columns,
+            {
+                "sequence": offset + 1,
+                "typology": "True or False",
+                "question": source.question,
+                "question_image": None,
+                "option_1": None,
+                "option_2": None,
+                "option_3": None,
+                "option_4": None,
+                "image_1": None,
+                "image_2": None,
+                "image_3": None,
+                "image_4": None,
+                "answer": source.answer,
+                "answer_image": None,
+                "explanation": (
+                    f"{run_token}: exact published-source plagiarism threshold fixture."
+                ),
+                "marks": "1",
+            },
         )
-        worksheet.cell(row, 24).value = "1"
         row_evidence = asdict(source)
         row_evidence["source_similarity"] = source_similarity(
-            worksheet.cell(row, 11).value,
+            worksheet.cell(row, columns["question"]).value,
             source.question,
         )
         evidence.append(row_evidence)
 
-    first_unused_row = len(PUBLISHED_SOURCE_ITEMS) + 2
-    for row in range(first_unused_row, worksheet.max_row + 1):
-        for column in range(1, 25):
-            worksheet.cell(row, column).value = None
+    clear_rows_from(worksheet, len(PUBLISHED_SOURCE_ITEMS) + 2)
 
     workbook.save(output_path)
     workbook.close()

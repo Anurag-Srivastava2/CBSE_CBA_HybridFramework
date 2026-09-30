@@ -93,6 +93,17 @@ class TestM3ItemTestingProbe:
         self, record_property, page_evidence
     ):
         """The portal exposes an Item Testing / psychometrics workspace."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in and look for an Item Testing or psychometrics workspace anywhere "
+            "in the portal.\n"
+            "M3 covers IRT 3PL calibration, ICC curves, DIF analysis and the "
+            "item-bank decisions that follow, none of which this build exposes.\n"
+            "The gap is recorded as known issue KI-M3-ITM-001 rather than asserted "
+            "against a screen that is not there.",
+        )
         username = ReadConfig.get_role_usernames("admin")[0]
         sign_in(self.driver, username)
 

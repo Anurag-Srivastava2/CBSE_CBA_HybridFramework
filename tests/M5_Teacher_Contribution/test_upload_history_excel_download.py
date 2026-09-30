@@ -12,6 +12,17 @@ from utilities.read_config import ReadConfig
 # every absent one costs its full timeout.
 CHECK_TIMEOUT = 2
 
+# How many history pages to walk per account looking for a FAILED row. The
+# table pages at 20 newest-first and a heavily exercised account runs past 15
+# pages; the observed depth of the first FAILED row is page 3, so 5 leaves room
+# without spending minutes per account on what is only a precondition search.
+MAX_HISTORY_PAGES_SEARCHED = 5
+
+# Word uploads share the history table, and a row downloads in the format it was
+# uploaded in (a Word row gives back "...-annotated.docx"). This test is about
+# Excel, so it only ever picks rows whose File Name is an Excel workbook.
+EXCEL_SUFFIX = ".xlsx"
+
 
 @pytest.mark.rtm
 # Signs in as the shared teacher and SME accounts and reads their upload
@@ -24,11 +35,12 @@ class TestUploadHistoryExcelDownload:
         """Every non-primary SME/Teacher account, most likely candidate first.
 
         This test needs an account whose upload history holds both a PASSED
-        and a FAILED row. The history view shows only the most recent uploads,
-        so a heavily exercised account can have its older FAILED rows pushed
-        out of view entirely by a run's worth of passing uploads - checking
-        one alternate per role then reports a data gap that other configured
-        accounts do not have.
+        and a FAILED row. The history pages at 20 newest-first, so a run's
+        worth of passing uploads pushes an account's older FAILED rows several
+        pages back; the search below walks pages, but only to a bounded depth,
+        so a heavily exercised account can still run out of budget before it
+        reaches one. Checking every configured alternate rather than one per
+        role keeps that from reporting a data gap the others do not have.
         """
         primary_users = {
             ReadConfig.get_sme2_username().casefold(),
@@ -230,6 +242,17 @@ class TestUploadHistoryExcelDownload:
         that both files arrive, open as workbooks, and are distinct files — is
         data integrity and stays hard.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Find a PASSED row and a FAILED row in the upload history and download "
+            "each one.\n"
+            "The upload step itself is surveyed softly.\n"
+            "Everything about the downloads is data integrity and stays hard: both "
+            "files must arrive, open as real workbooks, and be genuinely different "
+            "files.",
+        )
         contributors = self.get_secondary_contributor_users()
         assert contributors, "No secondary SME or Teacher user is configured."
 
@@ -253,19 +276,40 @@ class TestUploadHistoryExcelDownload:
                 )
                 continue
             upload_page = candidate_page
-            statuses = upload_page.get_upload_history_statuses()
-            # Showing both statuses is not enough: the row also has to carry a
-            # download control for the rest of this test to have anything to
-            # click, and a status can appear on a row that offers none.
-            downloadable = {
-                status
-                for status in ("PASSED", "FAILED")
-                if status in statuses
-                and upload_page.has_downloadable_upload_history_row(status)
-            }
+            # Page 1 alone is not the account's history. The table pages at 20
+            # newest-first, so an account that has since taken a run's worth of
+            # passing uploads shows nothing but PASSED on its first page while
+            # its FAILED rows sit further back — every configured account read
+            # as "no FAILED rows" that way, failing the run on a data gap that
+            # was not there. The walk stops on the page carrying both, so the
+            # downloads below are taken from rows that are actually on screen.
+            #
+            # Showing both statuses is still not enough: the row also has to
+            # carry a download control for the rest of this test to have
+            # anything to click, and a status can appear on a row that offers
+            # none.
+            statuses = []
+            downloadable = set()
+            pages_walked = 0
+            for pages_walked in range(1, MAX_HISTORY_PAGES_SEARCHED + 1):
+                statuses = upload_page.get_upload_history_statuses()
+                downloadable = {
+                    status
+                    for status in ("PASSED", "FAILED")
+                    if status in statuses
+                    and upload_page.has_downloadable_upload_history_row(
+                        status, file_suffix=EXCEL_SUFFIX
+                    )
+                }
+                if {"PASSED", "FAILED"}.issubset(downloadable):
+                    break
+                if not upload_page.go_to_next_upload_history_page():
+                    break
             checked_accounts.append(
                 f"{role}:{username}={','.join(statuses) or 'none'}"
-                f" (downloadable: {','.join(sorted(downloadable)) or 'none'})"
+                f" (downloadable: {','.join(sorted(downloadable)) or 'none'};"
+                f" {upload_page.get_upload_history_page_label() or 'single page'}"
+                f" after walking {pages_walked})"
             )
             if {"PASSED", "FAILED"}.issubset(downloadable):
                 selected_account = (role, username)
@@ -304,7 +348,8 @@ class TestUploadHistoryExcelDownload:
 
         assert selected_account is not None, (
             "A secondary SME/Teacher account must have both PASSED and FAILED "
-            "upload-history rows that offer a download action. Checked: "
+            "Excel upload-history rows that offer a download action, within the first "
+            f"{MAX_HISTORY_PAGES_SEARCHED} pages of its history. Checked: "
             + "; ".join(checked_accounts)
         )
 
@@ -320,8 +365,12 @@ class TestUploadHistoryExcelDownload:
         # the annotated workbook, while a wholly-failed one can offer the plain
         # file. So the label is read off the row and reported as evidence,
         # rather than assumed per status.
-        passed_action = upload_page.get_upload_history_download_label("PASSED")
-        failed_action = upload_page.get_upload_history_download_label("FAILED")
+        passed_action = upload_page.get_upload_history_download_label(
+            "PASSED", file_suffix=EXCEL_SUFFIX
+        )
+        failed_action = upload_page.get_upload_history_download_label(
+            "FAILED", file_suffix=EXCEL_SUFFIX
+        )
         request.node.user_properties.append(
             ("download_actions", f"PASSED: {passed_action}; FAILED: {failed_action}")
         )
@@ -330,11 +379,13 @@ class TestUploadHistoryExcelDownload:
             "PASSED",
             f"{request.node.name}_passed_file_status",
             action_text=passed_action,
+            file_suffix=EXCEL_SUFFIX,
         )
         failed_status_screenshot = upload_page.capture_upload_history_status_screenshot(
             "FAILED",
             f"{request.node.name}_failed_file_status",
             action_text=failed_action,
+            file_suffix=EXCEL_SUFFIX,
         )
         attach(
             f"PASSED row offers the {passed_action} action",
@@ -348,6 +399,7 @@ class TestUploadHistoryExcelDownload:
         passed_file = upload_page.download_upload_history_file(
             "PASSED",
             tmp_path / "passed",
+            file_suffix=EXCEL_SUFFIX,
         )
         self.verify_excel_workbook(passed_file)
         page_evidence.checkpoint(
@@ -358,6 +410,7 @@ class TestUploadHistoryExcelDownload:
         failed_file = upload_page.download_upload_history_file(
             "FAILED",
             tmp_path / "failed",
+            file_suffix=EXCEL_SUFFIX,
         )
         self.verify_excel_workbook(failed_file)
         page_evidence.checkpoint(

@@ -56,6 +56,14 @@ class TestSmokeM4QPCreation:
         self, record_property, page_evidence
     ):
         """QP Builder reaches Assessment Configuration and offers its creation modes."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and open the QP Builder.\n"
+            "Check it reaches Assessment Configuration and offers its creation modes. "
+            "Read-only: no paper is built or published, so no draft is left behind.",
+        )
         self.sign_in_as_teacher()
         builder = QuestionPaperBuilderPage(self.driver)
         builder.open()
@@ -91,6 +99,14 @@ class TestSmokeM4QPCreation:
 
     def test_smoke_m4_02_my_qp_listing_opens(self, record_property, page_evidence):
         """My QP renders the teacher's papers listing and the create entry point."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and open My QP.\n"
+            "Check the papers listing renders along with the entry point for creating "
+            "a new one. Read-only, nothing is created.",
+        )
         self.sign_in_as_teacher()
         builder = QuestionPaperBuilderPage(self.driver)
         builder.open_my_qp()

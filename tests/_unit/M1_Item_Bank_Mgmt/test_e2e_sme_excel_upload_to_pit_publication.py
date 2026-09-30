@@ -46,7 +46,15 @@ class TestE2ESMEExcelUploadToPITPublication:
         question_count = question_counts.pop()
         return unique_file, question_count
 
-    def test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish(self, request, page_evidence):
+    def test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish(self, request, page_evidence, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME, upload a fresh Excel workbook and submit it for QAR.\n"
+            "RWG and then Senior RWG each review the set and approve it.\n"
+            "PIT approves and publishes it, and the published state is checked.",
+        )
         request.node.user_properties.append(
             ("result_checkpoint", "fresh SME Excel upload and QAR validation")
         )

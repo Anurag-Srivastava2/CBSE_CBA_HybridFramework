@@ -102,6 +102,17 @@ class TestSMECrossRBACAPI:
         5. Re-request the same URL as SME1 -> assert 200, so the 403 above is
            attributable to ownership rather than to a bad URL or dead token.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as SME1 in the browser, take their auth token, and find an item "
+            "set SME1 owns.\n"
+            "Sign in as SME2, take their token, and ask the API for SME1's item set: "
+            "expect 403 Forbidden.\n"
+            "Ask for the very same URL again as SME1 and expect 200, proving the 403 "
+            "was about ownership and not a bad URL or a dead token.",
+        )
         sme_usernames = ReadConfig.get_role_usernames("sme")
         
         if len(sme_usernames) < 2:

@@ -6,7 +6,15 @@ from utilities.arithmetic_question_factory import (
 )
 
 
-def test_comparison_question_factory_is_unique_and_correct():
+def test_comparison_question_factory_is_unique_and_correct(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Generate two batches of comparison questions using different seeds.\n"
+        "Check each batch is internally unique and the two batches never overlap.\n"
+        "Check every question's stated comparison is arithmetically correct.",
+    )
     first_run = generate_unique_comparison_questions(8, seed="run-one")
     second_run = generate_unique_comparison_questions(8, seed="run-two")
 
@@ -32,7 +40,16 @@ def test_comparison_question_factory_is_unique_and_correct():
 
 
 @pytest.mark.parametrize("count", [3, 4, 5])
-def test_mixed_factory_keeps_each_sheet_between_three_and_five_items(count):
+def test_mixed_factory_keeps_each_sheet_between_three_and_five_items(count, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Ask the mixed-question factory for a sheet holding between three and "
+        "five items.\n"
+        "Check it returns exactly that many, all unique, each carrying its own "
+        "typology.",
+    )
     items = generate_qar_ready_mixed_questions(count, seed="offline-sheet")
 
     assert len(items) == count
@@ -46,12 +63,30 @@ def test_mixed_factory_keeps_each_sheet_between_three_and_five_items(count):
 
 
 @pytest.mark.parametrize("count", [0, 2, 6])
-def test_mixed_factory_rejects_question_counts_outside_sheet_limit(count):
+def test_mixed_factory_rejects_question_counts_outside_sheet_limit(count, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Ask the mixed-question factory for a sheet size outside the allowed "
+        "three-to-five range.\n"
+        "Check it refuses with a clear error instead of quietly building an "
+        "invalid sheet.",
+    )
     with pytest.raises(ValueError, match="between 3 and 5"):
         generate_qar_ready_mixed_questions(count, seed="invalid-sheet")
 
 
-def test_mixed_factory_is_unique_between_runs_and_has_valid_mcq_answer_key():
+def test_mixed_factory_is_unique_between_runs_and_has_valid_mcq_answer_key(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Generate two mixed sheets using different seeds.\n"
+        "Check no question repeats between the runs.\n"
+        "Check every multiple-choice item's answer key really is one of the "
+        "options offered.",
+    )
     first_run = generate_qar_ready_mixed_questions(5, seed="mixed-run-one")
     second_run = generate_qar_ready_mixed_questions(5, seed="mixed-run-two")
 

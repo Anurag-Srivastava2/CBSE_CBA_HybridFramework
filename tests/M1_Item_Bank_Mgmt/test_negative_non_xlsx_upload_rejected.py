@@ -10,6 +10,7 @@ from pages.sme.upload_item_file_page import UploadItemFilePage
 from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
 from utilities.element_checks import ElementChecks
 from utilities.page_evidence import checkpoint
+from utilities.item_template_columns import resolve_columns
 from utilities.read_config import ReadConfig
 
 
@@ -49,9 +50,11 @@ class TestNegativeNonXlsxUploadRejected:
             for old_header, new_header in header_override.items():
                 worksheet.cell(row=1, column=header_lookup[old_header]).value = new_header
 
+        columns = resolve_columns(worksheet)
+        assert columns, f"{source_file_path} has no recognisable item-data sheet."
         run_id = uuid4().hex[:10]
         for row_number in range(2, worksheet.max_row + 1):
-            question_cell = worksheet.cell(row=row_number, column=11)
+            question_cell = worksheet.cell(row=row_number, column=columns["question"])
             if question_cell.value:
                 question_cell.value = (
                     f"{question_cell.value} BUG-M1-001 recovery validation {run_id}-{row_number}"
@@ -103,6 +106,16 @@ class TestNegativeNonXlsxUploadRejected:
     def test_bug_m1_001_non_xlsx_and_bad_header_uploads_rejected_then_valid_xlsx_accepted(
         self, tmp_path, request, record_property
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and reach the bulk Upload Documents step.\n"
+            "Push a PDF, then a DOCX, then a spreadsheet with a mis-named column at "
+            "the uploader; each one must be refused with a clear message.\n"
+            "Upload a valid workbook straight afterwards and expect it to be "
+            "accepted, proving the rejections left the page usable.",
+        )
         pdf_file = tmp_path / "invalid_item_upload.pdf"
         pdf_file.write_bytes(b"%PDF-1.4\n% BUG-M1-001 invalid PDF upload regression\n")
 

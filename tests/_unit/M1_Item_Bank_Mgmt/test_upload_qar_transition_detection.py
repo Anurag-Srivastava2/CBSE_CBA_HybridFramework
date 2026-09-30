@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 
 from pages.sme.bulk_upload_page import BulkUploadPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from utilities.item_template_columns import write_canonical_headers
 from utilities.qar_recovery import (
     build_workbook_qar_correction_factory,
     recover_qar_need_improvement_items,
@@ -74,7 +75,15 @@ def build_redirected_page():
     return page
 
 
-def test_upload_file_uses_only_the_native_file_input_event(tmp_path):
+def test_upload_file_uses_only_the_native_file_input_event(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Upload a workbook and watch how the file reaches the input.\n"
+        "Check it is sent once through the native file input, with no duplicate "
+        "trigger.",
+    )
     workbook_path = tmp_path / "single-trigger.xlsx"
     workbook_path.write_bytes(b"test workbook placeholder")
 
@@ -92,6 +101,11 @@ def test_upload_file_uses_only_the_native_file_input_event(tmp_path):
         def until_present(self, _locator, timeout):
             assert timeout == 20
             return self.file_input
+
+        def until_condition(self, _condition, timeout):
+            # upload_file() then waits briefly for a "Switch uploaded file?"
+            # dialog; a clean account never raises one, which is a timeout.
+            raise TimeoutException()
 
     class UploadDriver:
         def __init__(self):
@@ -111,7 +125,15 @@ def test_upload_file_uses_only_the_native_file_input_event(tmp_path):
     assert "dispatchEvent" not in page.driver.scripts[0][0]
 
 
-def test_image_upload_stages_excel_then_zip_as_one_workflow(tmp_path):
+def test_image_upload_stages_excel_then_zip_as_one_workflow(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Upload a workbook together with an images ZIP.\n"
+        "Check the two are staged as a single workflow rather than as two "
+        "unrelated uploads.",
+    )
     workbook_path = tmp_path / "image-items.xlsx"
     images_zip_path = tmp_path / "test-images.zip"
     workbook_path.write_bytes(b"test workbook placeholder")
@@ -186,7 +208,15 @@ def test_image_upload_stages_excel_then_zip_as_one_workflow(tmp_path):
     ]
 
 
-def test_image_upload_validates_zip_before_staging_excel(tmp_path):
+def test_image_upload_validates_zip_before_staging_excel(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Upload a workbook and an images ZIP together.\n"
+        "Check the ZIP is validated before the Excel is staged, so a bad archive "
+        "is caught first.",
+    )
     workbook_path = tmp_path / "image-items.xlsx"
     workbook_path.write_bytes(b"test workbook placeholder")
     page = BulkUploadPage.__new__(BulkUploadPage)
@@ -200,7 +230,15 @@ def test_image_upload_validates_zip_before_staging_excel(tmp_path):
         )
 
 
-def test_submit_button_race_accepts_redirect_to_item_sets_as_success():
+def test_submit_button_race_accepts_redirect_to_item_sets_as_success(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Submit for QAR when the app redirects to the item sets listing before "
+        "the button settles.\n"
+        "Check the redirect is read as success rather than as a failed submit.",
+    )
     page = build_redirected_page()
     page.wait_utils = MissingSubmitWait()
 
@@ -210,7 +248,14 @@ def test_submit_button_race_accepts_redirect_to_item_sets_as_success():
     assert "under review" in page.wait_for_ocr_success_message().casefold()
 
 
-def test_qar_result_ids_ignore_item_set_rows_after_redirect():
+def test_qar_result_ids_ignore_item_set_rows_after_redirect(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Read QAR result IDs from a page that also lists item-set rows.\n"
+        "Check only the item IDs are picked up and the set-level row is ignored.",
+    )
     page = build_redirected_page()
     page.driver.find_elements = lambda *_locator: [
         Cell("IS431"),
@@ -224,7 +269,14 @@ def test_qar_result_ids_ignore_item_set_rows_after_redirect():
     ]
 
 
-def test_confirmation_guard_never_clicks_original_qar_submit_again():
+def test_confirmation_guard_never_clicks_original_qar_submit_again(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Handle a confirmation prompt raised after submitting for QAR.\n"
+        "Check the guard never clicks the original Submit button a second time.",
+    )
     button = OriginalSubmitButton()
     page = build_redirected_page()
     page.wait_utils = ReturnedConditionWait(button)
@@ -233,7 +285,15 @@ def test_confirmation_guard_never_clicks_original_qar_submit_again():
     assert not button.clicked
 
 
-def test_accepted_submit_is_not_retried_when_result_transition_times_out():
+def test_accepted_submit_is_not_retried_when_result_transition_times_out(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Submit for QAR successfully, then have the transition to results time "
+        "out.\n"
+        "Check the submit is not retried, because it had already been accepted.",
+    )
     page = build_redirected_page()
     page.wait_utils = AlwaysTimeoutWait()
     page.submit_calls = 0
@@ -246,16 +306,221 @@ def test_accepted_submit_is_not_retried_when_result_transition_times_out():
     page.has_qar_results_or_progress = lambda _driver: False
     page.get_visible_qar_submit_blocker = lambda: ""
 
-    with pytest.raises(TimeoutException):
+    # No item IDs were passed, so the outcome cannot be confirmed from the set
+    # record and the failure has to say exactly that - not "QAR failed".
+    with pytest.raises(AssertionError, match="could not be confirmed"):
         page.click_submit_for_qar_and_wait_for_results()
 
     assert page.submit_calls == 1
 
 
-def test_initial_qar_needs_revision_items_are_corrected_and_rerun(tmp_path):
+def test_stalled_wizard_reads_the_verdict_off_the_item_set_instead(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Submit for QAR, then have the upload wizard stop reporting on the run.\n"
+        "Check the verdict is read off the item set's own page instead of the "
+        "run being called a failure.\n"
+        "Check the submit is never sent a second time.",
+    )
+    page = build_redirected_page()
+    page.wait_utils = AlwaysTimeoutWait()
+    page.submit_calls = 0
+
+    def accepted_submit():
+        page.submit_calls += 1
+        return True
+
+    page.click_submit_for_qar = accepted_submit
+    page.has_qar_results_or_progress = lambda _driver: False
+    page.get_visible_qar_submit_blocker = lambda: ""
+    resolved = []
+
+    def resolve(item_set_id, item_ids, timeout, uploaded_file_name=""):
+        resolved.append((item_set_id, tuple(item_ids), timeout, uploaded_file_name))
+        return True
+
+    page.resolve_qar_outcome_from_item_set = resolve
+
+    outcome = page.click_submit_for_qar_and_wait_for_results(
+        item_ids=[
+            "IS431-G1-Mathematics-Ch38-i1",
+            "IS431-G1-Mathematics-Ch38-i2",
+        ],
+        uploaded_file_name="baseline_run.xlsx",
+    )
+
+    assert outcome == UploadItemFilePage.QAR_OUTCOME_ITEM_SET_DETAIL
+    assert page.submit_calls == 1
+    # The set ID is derived from the review-step item IDs, not re-scraped from
+    # a page the wizard has already left.
+    assert resolved == [
+        (
+            "IS431-G1-Mathematics-Ch38",
+            (
+                "IS431-G1-Mathematics-Ch38-i1",
+                "IS431-G1-Mathematics-Ch38-i2",
+            ),
+            420,
+            "baseline_run.xlsx",
+        )
+    ]
+
+
+def test_item_set_without_a_qar_verdict_still_fails_the_run(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Submit for QAR, have the wizard stop reporting, and have the item set "
+        "carry no verdict either.\n"
+        "Check this still fails, because now nothing anywhere shows a result.",
+    )
+    page = build_redirected_page()
+    page.wait_utils = AlwaysTimeoutWait()
+    page.click_submit_for_qar = lambda: True
+    page.has_qar_results_or_progress = lambda _driver: False
+    page.get_visible_qar_submit_blocker = lambda: ""
+    page.resolve_qar_outcome_from_item_set = lambda *_args, **_kwargs: False
+
+    with pytest.raises(AssertionError, match="genuinely did not produce a result"):
+        page.click_submit_for_qar_and_wait_for_results(
+            item_ids=["IS431-G1-Mathematics-Ch38-i1"]
+        )
+
+
+class ConditionWait:
+    """Runs each polled condition once and times out when it is not yet true."""
+
+    def __init__(self, driver):
+        self.driver = driver
+
+    def until_condition(self, condition, timeout):
+        assert timeout > 0
+        if not condition(self.driver):
+            raise TimeoutException()
+        return True
+
+
+def build_resolver_page(monkeypatch, statuses_by_attempt):
+    """A page whose item set page only shows its verdict on a later attempt."""
+    page = UploadItemFilePage.__new__(UploadItemFilePage)
+    page.driver = QarRedirectDriver()
+    page.wait_utils = ConditionWait(page.driver)
+    page.navigations = 0
+    page.verified = []
+    remaining = list(statuses_by_attempt)
+
+    def open_sets_module():
+        page.navigations += 1
+
+    page.open_sets_module = open_sets_module
+    page.open_item_set_from_sets_list = lambda _item_set_id: None
+    page.is_item_set_detail_loading = staticmethod(lambda _driver: False)
+    page.get_qar_item_statuses = lambda _item_set_id: (
+        remaining.pop(0) if remaining else {}
+    )
+    page.verify_items_in_opened_item_set = page.verified.append
+    monkeypatch.setattr(
+        "pages.sme.upload_item_file_page.QARReportPage",
+        lambda _driver: type("Report", (), {"open_report_if_available": lambda self: False})(),
+    )
+    monkeypatch.setattr("pages.sme.upload_item_file_page.sleep", lambda _seconds: None)
+    return page
+
+
+def test_verdict_that_appears_late_is_picked_up_by_re_reading_the_set(
+    monkeypatch, record_property
+):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Look up a set whose QAR verdict is not on its page yet, then appears.\n"
+        "Check the set is re-fetched rather than the first view being trusted, so "
+        "the verdict is found once it lands.",
+    )
+    page = build_resolver_page(
+        monkeypatch,
+        # First read: nothing yet. Second: the verdict has landed.
+        [{}, {"IS431-G1-Mathematics-Ch38-i1": "Rejected"}],
+    )
+
+    assert page.resolve_qar_outcome_from_item_set(
+        "IS431-G1-Mathematics-Ch38",
+        ["IS431-G1-Mathematics-Ch38-i1"],
+        timeout=120,
+    )
+    # Two navigations, not one poll of a page already on screen.
+    assert page.navigations == 2
+    assert page.verified == [["IS431-G1-Mathematics-Ch38-i1"]]
+
+
+def test_set_that_never_shows_a_verdict_is_reported_as_unresolved(
+    monkeypatch, record_property
+):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Look up a set that never shows a QAR verdict at all.\n"
+        "Check the lookup reports failure instead of inventing a result, and "
+        "stops once its time is up.",
+    )
+    page = build_resolver_page(monkeypatch, [])
+
+    assert not page.resolve_qar_outcome_from_item_set(
+        "IS431-G1-Mathematics-Ch38",
+        ["IS431-G1-Mathematics-Ch38-i1"],
+        timeout=0.1,
+    )
+    assert page.verified == []
+
+
+def test_resolver_does_nothing_without_an_item_set_id(monkeypatch, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Ask for a verdict without saying which set.\n"
+        "Check nothing is navigated, so a caller that passed no IDs cannot land "
+        "on some other set's result.",
+    )
+    page = build_resolver_page(monkeypatch, [{"IS431-G1-Mathematics-Ch38-i1": "Rejected"}])
+
+    assert not page.resolve_qar_outcome_from_item_set("", [])
+    assert page.navigations == 0
+
+
+def test_pending_qar_is_not_mistaken_for_analysis_still_running(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Look at the wording that means QAR is still analysing a set.\n"
+        "Check PENDING_QAR is not in that list, because it is the resting state "
+        "of a set QAR has already blocked.",
+    )
+    in_flight = UploadItemFilePage.QAR_ANALYSIS_IN_FLIGHT_MARKERS
+
+    assert "analysis in progress" in in_flight
+    assert not any("pending" in marker for marker in in_flight)
+
+
+def test_initial_qar_needs_revision_items_are_corrected_and_rerun(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Take a set whose first QAR run returned items needing revision.\n"
+        "Check those items are corrected in the workbook and the set is submitted "
+        "again.",
+    )
     workbook_path = tmp_path / "teacher-items.xlsx"
     workbook = Workbook()
     worksheet = workbook.active
+    columns = write_canonical_headers(worksheet)
     original_questions = (
         "Is the reading duration one hour?",
         "How much time passes between 8:00 and 9:00?",
@@ -263,7 +528,7 @@ def test_initial_qar_needs_revision_items_are_corrected_and_rerun(tmp_path):
         "What time is shown on the clock?",
     )
     for row, question in enumerate(original_questions, start=2):
-        worksheet.cell(row=row, column=11).value = question
+        worksheet.cell(row=row, column=columns["question"]).value = question
     workbook.save(workbook_path)
     workbook.close()
 
@@ -347,11 +612,19 @@ def test_initial_qar_needs_revision_items_are_corrected_and_rerun(tmp_path):
 
 
 def test_workbook_corrections_preserve_typology_answers_and_use_report_reason(
-    tmp_path, monkeypatch,
+    tmp_path, monkeypatch, record_property,
 ):
     # No question-bank match exists for this env, so the correction factory
     # falls back to its typology-preserving templated rewrite - see
     # test_qar_recovery_question_bank_replacement.py for the bank-backed path.
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Correct a workbook when the question bank holds no matching replacement.\n"
+        "Check the templated rewrite keeps the item's typology and answers "
+        "intact, and uses the reason QAR actually gave.",
+    )
     empty_bank_path = tmp_path / "empty_bank.json"
     empty_bank_path.write_text("[]", encoding="utf-8")
     monkeypatch.setenv("CBSE_QUESTION_BANK_PATH", str(empty_bank_path))
@@ -360,15 +633,16 @@ def test_workbook_corrections_preserve_typology_answers_and_use_report_reason(
     workbook_path = tmp_path / "mixed-items.xlsx"
     workbook = Workbook()
     worksheet = workbook.active
+    columns = write_canonical_headers(worksheet)
     rows = (
         ("True or False", "Original false statement?", "False"),
         ("Fill in the Blank", "The duration is ___.", "2"),
         ("Short Answer Question", "State the duration.", "2 hours"),
     )
     for row, (typology, question, answer) in enumerate(rows, start=2):
-        worksheet.cell(row=row, column=10).value = typology
-        worksheet.cell(row=row, column=11).value = question
-        worksheet.cell(row=row, column=21).value = answer
+        worksheet.cell(row=row, column=columns["typology"]).value = typology
+        worksheet.cell(row=row, column=columns["question"]).value = question
+        worksheet.cell(row=row, column=columns["answer"]).value = answer
     workbook.save(workbook_path)
     workbook.close()
 
@@ -393,13 +667,22 @@ def test_workbook_corrections_preserve_typology_answers_and_use_report_reason(
     assert "Duplicate Detection" in true_false["revision_note"]
 
 
-def test_positive_recovery_rejects_terminal_non_editable_qar_failures(tmp_path):
+def test_positive_recovery_rejects_terminal_non_editable_qar_failures(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Try to recover a set whose QAR failure is terminal and cannot be edited "
+        "away.\n"
+        "Check recovery refuses rather than looping on something it cannot fix.",
+    )
     workbook_path = tmp_path / "terminal.xlsx"
     workbook = Workbook()
     worksheet = workbook.active
-    worksheet.cell(row=2, column=10).value = "True or False"
-    worksheet.cell(row=2, column=11).value = "Is nine greater than four?"
-    worksheet.cell(row=2, column=21).value = "True"
+    columns = write_canonical_headers(worksheet)
+    worksheet.cell(row=2, column=columns["typology"]).value = "True or False"
+    worksheet.cell(row=2, column=columns["question"]).value = "Is nine greater than four?"
+    worksheet.cell(row=2, column=columns["answer"]).value = "True"
     workbook.save(workbook_path)
     workbook.close()
 
@@ -421,3 +704,78 @@ def test_positive_recovery_rejects_terminal_non_editable_qar_failures(tmp_path):
             item_ids=["IS700-i1"],
             workbook_path=workbook_path,
         )
+
+
+def test_review_step_ids_are_recognised_as_unnumbered(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Look at an item set ID built from review-step item IDs, before the set "
+        "has a number.\n"
+        "Check it is recognised as unnumbered, so the set is looked up by its "
+        "uploaded file instead of by an ID that names nothing.",
+    )
+    # What the review step actually produced on QA: no set number at all.
+    assert not UploadItemFilePage.item_set_id_is_numbered("IS-G1-Mathematics-Ch29")
+    assert not UploadItemFilePage.item_set_id_is_numbered("")
+    assert UploadItemFilePage.item_set_id_is_numbered("IS1405-G1-Mathematics-Ch29")
+
+
+def test_the_set_is_found_by_the_workbook_it_was_uploaded_from(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Search the item set grid for the set created from one uploaded workbook.\n"
+        "Check the row naming that workbook is matched, and rows for other "
+        "people's uploads are left alone.",
+    )
+    page = UploadItemFilePage.__new__(UploadItemFilePage)
+    page.get_item_set_list_rows = lambda: [
+        {"item_set_id": "IS1440-G1-Mathematics-CH-4", "uploaded_file": "someone_else.xlsx"},
+        {"item_set_id": "IS1405-G1-Mathematics-Ch29",
+         "uploaded_file": "IS10_baseline_ab12cd34ef_9f3a2b1c.xlsx"},
+    ]
+
+    assert page.find_item_set_id_by_uploaded_file(
+        "IS10_baseline_ab12cd34ef_9f3a2b1c.xlsx"
+    ) == "IS1405-G1-Mathematics-Ch29"
+    # A full path is accepted; only the file name is compared.
+    assert page.find_item_set_id_by_uploaded_file(
+        r"C:\tmp\IS10_baseline_ab12cd34ef_9f3a2b1c.xlsx"
+    ) == "IS1405-G1-Mathematics-Ch29"
+    assert page.find_item_set_id_by_uploaded_file("not_uploaded_here.xlsx") == ""
+    assert page.find_item_set_id_by_uploaded_file("") == ""
+
+
+def test_an_unnumbered_row_is_not_accepted_as_a_match(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Search the grid when the matching row has no set number yet.\n"
+        "Check it is not returned, because the set is only addressable once it "
+        "has been numbered.",
+    )
+    page = UploadItemFilePage.__new__(UploadItemFilePage)
+    page.get_item_set_list_rows = lambda: [
+        {"item_set_id": "IS-G1-Mathematics-Ch29", "uploaded_file": "pending.xlsx"},
+    ]
+
+    assert page.find_item_set_id_by_uploaded_file("pending.xlsx") == ""
+
+
+def test_recovery_needs_either_a_numbered_id_or_a_file_name(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Ask for a verdict with neither a set ID nor an uploaded file name.\n"
+        "Check nothing is navigated, so the lookup cannot wander onto another "
+        "set's result.",
+    )
+    page = UploadItemFilePage.__new__(UploadItemFilePage)
+    page.open_sets_module = lambda: pytest.fail("should not navigate")
+
+    assert not page.resolve_qar_outcome_from_item_set("", [], uploaded_file_name="")

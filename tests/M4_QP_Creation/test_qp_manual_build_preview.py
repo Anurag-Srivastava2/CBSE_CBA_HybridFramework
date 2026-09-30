@@ -13,6 +13,7 @@ from tests.M4_QP_Creation.qp_surveys import (
 )
 from utilities.element_checks import ElementChecks
 from utilities.page_evidence import checkpoint
+from utilities.qp_question_budget import cap_manual_marks, get_question_cap
 from utilities.read_config import ReadConfig
 
 
@@ -41,6 +42,16 @@ class TestQPManualBuildPreview:
         allocation, the published metadata and the section count are workflow
         outcomes and data integrity, so they stay hard.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and build a question paper by hand, then publish it "
+            "and preview the single set.\n"
+            "The builder, listing and preview furniture are surveyed softly.\n"
+            "Marks allocation, the published metadata and the section count are "
+            "workflow outcomes and data integrity, so they stay hard.",
+        )
         self.login_as_teacher()
         page = QuestionPaperBuilderPage(self.driver)
 
@@ -55,13 +66,17 @@ class TestQPManualBuildPreview:
         survey_builder(checks, page, mode="Manual Build")
 
         assert "manual build" in page.body_text().casefold()
+        # Items are added until the marks target is met, one mark per
+        # question in the worst case, so CBSE_QP_MAX_QUESTIONS - when set -
+        # caps the marks the paper is built for.
+        total_marks = cap_manual_marks(10)
         selections = page.configure_assessment(
-            select_all_chapters=True, total_marks=10
+            select_all_chapters=True, total_marks=total_marks
         )
         request.node.user_properties.append(("manual_metadata", str(selections)))
         page_evidence.checkpoint(
-            f"Assessment configured on the Manual Build tab for 10 marks: "
-            f"{selections}"
+            f"Assessment configured on the Manual Build tab for {total_marks} "
+            f"marks: {selections}"
         )
 
         # -------------------------------------------------------------
@@ -82,7 +97,9 @@ class TestQPManualBuildPreview:
             detail=f"allocation: {marks_before}",
         )
 
-        allocation = page.add_items_until_marks_target_met()
+        allocation = page.add_items_until_marks_target_met(
+            max_items=get_question_cap() or 30
+        )
         request.node.user_properties.append(("marks_allocation", str(allocation)))
         page_evidence.checkpoint(
             f"Items added from the Item Bank into Section A until the marks "
@@ -132,7 +149,7 @@ class TestQPManualBuildPreview:
         page_evidence.checkpoint(
             f"Published paper summary carries the configured metadata: {summary}"
         )
-        assert summary.get("Total Marks", "").strip() == "10", summary
+        assert summary.get("Total Marks", "").strip() == str(total_marks), summary
         assert selections["Subject"].casefold() in summary.get("Subject", "").casefold(), summary
         assert selections["Grade"].casefold() in summary.get("Class", "").casefold(), summary
         assert selections["Assessment Type"].casefold() in summary.get(

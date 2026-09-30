@@ -1,5 +1,4 @@
 import re
-from copy import copy as copy_cell_style
 from pathlib import Path
 from shutil import copy2
 from uuid import uuid4
@@ -13,6 +12,13 @@ from pages.sme.upload_item_file_page import UploadItemFilePage
 from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
 from utilities.element_checks import ElementChecks
 from utilities.page_evidence import checkpoint
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    resolve_columns,
+    trim_helper_columns,
+    write_row_fields,
+)
 from utilities.read_config import ReadConfig
 
 
@@ -46,41 +52,36 @@ class TestQARDuplicateDetection:
 
         workbook = load_workbook(target)
         worksheet = workbook.active
-        max_data_column = 24
-        if worksheet.max_column > max_data_column:
-            worksheet.delete_cols(max_data_column + 1, worksheet.max_column - max_data_column)
+        max_data_column = trim_helper_columns(worksheet)
+        columns = resolve_columns(worksheet)
+        assert columns, f"{source} has no recognisable item-data sheet."
 
         for offset, question in enumerate(questions):
             row = offset + 2
             if row != 2:
-                for column in range(1, max_data_column + 1):
-                    source_cell = worksheet.cell(2, column)
-                    target_cell = worksheet.cell(row, column)
-                    target_cell.value = source_cell.value
-                    if source_cell.has_style:
-                        target_cell._style = copy_cell_style(source_cell._style)
-                    if source_cell.number_format:
-                        target_cell.number_format = source_cell.number_format
-                    if source_cell.alignment:
-                        target_cell.alignment = copy_cell_style(source_cell.alignment)
+                copy_item_row(worksheet, 2, row, max_data_column)
 
-            worksheet.cell(row, 5).value = offset + 1
-            worksheet.cell(row, 10).value = "True or False"
-            worksheet.cell(row, 11).value = f"{question} Duplicate regression run {run_id}"
-            worksheet.cell(row, 21).value = "True"
-            # Deliberately not keyed on scenario_name: the duplicate upload
-            # must differ from the baseline in the Marks column and nothing
-            # else, so the explanation stays identical between the two.
-            worksheet.cell(row, 23).value = (
-                f"Automation explanation for duplicate regression item {offset + 1}."
-            )
-            worksheet.cell(row, 24).value = (
-                marks[offset] if marks else "1"
+            write_row_fields(
+                worksheet,
+                row,
+                columns,
+                {
+                    "sequence": offset + 1,
+                    "typology": "True or False",
+                    "question": f"{question} Duplicate regression run {run_id}",
+                    "answer": "True",
+                    # Deliberately not keyed on scenario_name: the duplicate
+                    # upload must differ from the baseline in the Marks column
+                    # and nothing else, so the explanation stays identical
+                    # between the two.
+                    "explanation": (
+                        f"Automation explanation for duplicate regression item {offset + 1}."
+                    ),
+                    "marks": marks[offset] if marks else "1",
+                },
             )
 
-        for row in range(len(questions) + 2, worksheet.max_row + 1):
-            for column in range(1, max_data_column + 1):
-                worksheet.cell(row, column).value = None
+        clear_rows_from(worksheet, len(questions) + 2, max_data_column)
 
         workbook.save(target)
         workbook.close()
@@ -123,16 +124,70 @@ class TestQARDuplicateDetection:
         # past three minutes. Observed 238s on a passing run and 303s on a run
         # that timed out at the default, which is what made this test look
         # intermittently broken rather than slow.
-        page.click_submit_for_qar_and_wait_for_results(analysis_timeout=420)
-        qar_toast = page.wait_for_ocr_success_message()
+        #
+        # The workbook name is passed so that a wizard which goes quiet mid-run
+        # falls back to reading the set's own page. QAR finishes on its own
+        # schedule server-side and the wizard's polling gives up first, so
+        # waiting longer here does not help. It has to be the file name rather
+        # than the item IDs: this step has not numbered the set yet, so the IDs
+        # read here are "IS-G1-Mathematics-Ch29-i1" and name no set to look up.
+        outcome = page.click_submit_for_qar_and_wait_for_results(
+            analysis_timeout=420,
+            item_ids=item_ids,
+            uploaded_file_name=Path(workbook_path).name,
+        )
+        recovered = outcome == UploadItemFilePage.QAR_OUTCOME_ITEM_SET_DETAIL
+        if recovered:
+            # No completion toast exists on this path - the wizard never
+            # reported the completion it is supposed to, which is the whole
+            # reason the verdict came from the set page. Record its absence
+            # rather than inventing a toast.
+            qar_toast = ""
+        else:
+            qar_toast = page.wait_for_ocr_success_message()
         report_text = self.driver.find_element("tag name", "body").text
-        item_set_id = page.get_item_set_id_from_item_ids(
-            page.get_qar_result_item_ids() or item_ids
+        # Numbered IDs only, from here on. The review step assigns no set
+        # number, so every ID it hands out reads "IS-G1-Mathematics-Ch29-i2"
+        # and addresses nothing - the report renders "IS1405-...-i2". The set's
+        # identity has to come from whichever view actually holds the result:
+        # the grid row matched to this workbook when the verdict was recovered,
+        # otherwise the result table's own IDs.
+        scraped_item_ids = [
+            candidate
+            for candidate in (page.get_qar_result_item_ids() or [])
+            if UploadItemFilePage.item_set_id_is_numbered(candidate)
+        ]
+        item_set_id = getattr(page, "recovered_item_set_id", "") or (
+            page.get_item_set_id_from_item_ids(scraped_item_ids)
         )
         status_summary = page.get_item_set_status_summary()
+        # IDs to open each item's own report with. Preferred source is the set's
+        # own status table: it is keyed by item ID, scoped to this set's "-i<n>"
+        # rows, and therefore both numbered and free of stray rows from
+        # elsewhere on the page (observed once: 4 IDs for a 3-row workbook).
+        report_item_ids = scraped_item_ids
+        if item_set_id:
+            scoped_ids = sorted(page.get_qar_item_statuses(item_set_id))
+            if scoped_ids:
+                report_item_ids = scoped_ids
+        set_number = re.match(r"\s*(IS\d+)", item_set_id or "", re.IGNORECASE)
+        if set_number:
+            prefix = set_number.group(1).casefold()
+            report_item_ids = [
+                candidate
+                for candidate in report_item_ids
+                if candidate.casefold().startswith(prefix)
+            ]
+        read_from = (
+            "the item set's own page (the upload wizard stopped reporting on "
+            "the run it started)"
+            if recovered
+            else "the upload wizard's results view"
+        )
         checkpoint(
             f"{label} QAR completed on set {item_set_id or 'UNKNOWN'} "
-            f"({len(item_ids)} item(s)) — toast: {qar_toast}; statuses: "
+            f"({len(item_ids)} item(s)), read from {read_from} — toast: "
+            f"{qar_toast or 'none shown'}; statuses: "
             f"{UploadItemFilePage.format_status_summary(status_summary) or 'none reported'}"
         )
         return page, {
@@ -140,8 +195,10 @@ class TestQARDuplicateDetection:
             "toast": qar_toast,
             "report_text": report_text,
             "item_ids": item_ids,
+            "report_item_ids": report_item_ids,
             "item_set_id": item_set_id,
             "status_summary": status_summary,
+            "recovered": recovered,
         }
 
     @staticmethod
@@ -159,12 +216,23 @@ class TestQARDuplicateDetection:
         looked strict and could never fail. The counts beside those labels do
         move with the result, so they are what gets asserted.
         """
+        summary = evidence.get("status_summary", {})
+        if evidence.get("recovered"):
+            # There is no toast to cross-check on this path: the verdict was
+            # read off the set's own page, which does not render one. Asserting
+            # on an absent toast would fail a run that produced a real result,
+            # so assert what this view does carry - a per-item verdict.
+            assert summary, (
+                "QAR was resolved from the item set page but that page reported "
+                "no item statuses to cross-check."
+            )
+            return
+
         toast = evidence["toast"]
         toast_numbers = [int(value) for value in re.findall(r"\b\d+\b", toast)]
         if not toast_numbers:
             raise AssertionError(f"QAR completion toast has no item counts: {toast}")
 
-        summary = evidence.get("status_summary", {})
         approved = TestQARDuplicateDetection.get_status_count(evidence, "Approved")
         blocked = TestQARDuplicateDetection.get_status_count(evidence, "Needs Revision")
 
@@ -204,6 +272,41 @@ class TestQARDuplicateDetection:
             "BUG-M1-002: QAR toast count does not match the counted item results. "
             f"Toast: {toast}; approved={approved}, blocked={blocked}; "
             f"status summary: {summary}."
+        )
+
+    # Only the upload wizard renders a "QAR completed" banner. The set's own
+    # page - where the verdict is read from when the wizard goes quiet - shows
+    # the same fact as a QAR-assigned status instead, so each view is checked
+    # for its own wording.
+    WIZARD_VERDICT_MARKERS = ("qar completed", "qar ran")
+    # Status *values*, never the status-filter labels. The set page renders
+    # "Approved", "Needs Revision" and "Rejected" as filter chips whatever the
+    # run did - the same trap the toast cross-check below documents - so
+    # matching those words here would make this assertion a permanent green.
+    # A bare "qar" is out for the same reason: it is in the page's headings.
+    ITEM_SET_VERDICT_MARKERS = (
+        "qar failed",
+        "qar passed",
+        "pending_qar",
+        "pending qar",
+        "under review",
+        "published",
+    )
+
+    @staticmethod
+    def assert_qar_verdict_rendered(evidence, label):
+        recovered = evidence.get("recovered")
+        markers = (
+            TestQARDuplicateDetection.ITEM_SET_VERDICT_MARKERS
+            if recovered
+            else TestQARDuplicateDetection.WIZARD_VERDICT_MARKERS
+        )
+        view = "item set page" if recovered else "upload wizard"
+        text = evidence["report_text"].casefold()
+        assert any(marker in text for marker in markers), (
+            f"{label} shows no QAR verdict on the {view}; expected one of "
+            f"{list(markers)}. Status summary: {evidence.get('status_summary')}. "
+            f"Page:\n{evidence['report_text']}"
         )
 
     # QAR blocks a duplicate with either wording depending on how strongly
@@ -249,6 +352,17 @@ class TestQARDuplicateDetection:
     def test_qar_duplicate_detection_near_duplicate_content_flagged(
         self, tmp_path, request, record_property, page_evidence
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Upload a first workbook and get every item approved, so the item bank "
+            "now holds those questions.\n"
+            "Upload a second workbook whose questions are near-copies of the first, "
+            "and submit it for QAR.\n"
+            "Expect the QAR report to flag the duplication and block every item in "
+            "the second set, so no duplicate reaches RWG.",
+        )
         run_id = uuid4().hex[:10]
         page = self.login_as_sme()
 
@@ -275,7 +389,6 @@ class TestQARDuplicateDetection:
             marks=self.BASELINE_MARKS,
         )
         _, baseline = self.submit_workbook_for_qar(baseline_workbook, label="IS10 baseline")
-        baseline_text = baseline["report_text"].casefold()
 
         request.node.user_properties.append(("baseline_item_set_id", baseline["item_set_id"]))
         request.node.user_properties.append(("baseline_toast", baseline["toast"]))
@@ -288,7 +401,7 @@ class TestQARDuplicateDetection:
             "validated successfully" in baseline_upload_message
             or "added successfully" in baseline_upload_message
         ), f"Baseline upload did not report success: {baseline['upload_message']!r}"
-        assert "qar completed" in baseline_text or "qar ran" in baseline_text
+        self.assert_qar_verdict_rendered(baseline, "IS10 baseline")
         self.assert_all_items_status(baseline, "Approved")
         self.assert_toast_count_matches_report(baseline)
         page_evidence.checkpoint(
@@ -364,9 +477,21 @@ class TestQARDuplicateDetection:
         assert not re.search(r"\brwg\s*\d+\b|assigned\s+rwg", duplicate_normalized), (
             "IS12 should stay locked at PENDING_QAR and must not be forwarded to RWG."
         )
+        # "QAR Failed" is the set page's spelling of the same state - QAR
+        # blocked the set and it never moved on. It belongs here because this
+        # verdict is read from whichever view reported it, and the set page
+        # never uses the wizard's PENDING_QAR wording. The RWG check above is
+        # what proves the set did not progress; this one only confirms it
+        # carries a blocking verdict rather than a silent pass.
         assert any(
             marker in duplicate_normalized
-            for marker in ("pending_qar", "pending qar", "qar pending", "needs revision")
+            for marker in (
+                "pending_qar",
+                "pending qar",
+                "qar pending",
+                "needs revision",
+                "qar failed",
+            )
         ), f"IS12 set status did not remain PENDING_QAR/Needs Revision: {duplicate_text}"
         page_evidence.checkpoint(
             f"IS12 stayed locked at PENDING_QAR and was never forwarded to RWG — "
@@ -379,10 +504,22 @@ class TestQARDuplicateDetection:
         # card so the assertion is against the score QAR actually rendered for
         # that item rather than against page text that happens to be on screen.
         report = QARReportPage(self.driver)
-        duplicate_item_ids = page.get_qar_result_item_ids() or duplicate["item_ids"]
+        # Prefer the IDs scoped to exactly the rows this workbook uploaded -
+        # the review-step list, or, when the verdict was recovered from the set
+        # page, that set's own numbered rows (the review step assigns no set
+        # number, so its IDs cannot address the rows the report renders). The
+        # unscoped scrape reads whatever table is on screen and can pick up a
+        # stray row from elsewhere on the page (observed: 4 IDs for a 3-row
+        # workbook, all sharing this set's prefix), so it stays a last resort.
+        # Deliberately no fallback to the review-step IDs: they are unnumbered,
+        # so falling back to them does not degrade gracefully, it guarantees
+        # "Could not open QAR result item IS-G1-...-i2" a few lines below.
+        duplicate_item_ids = duplicate["report_item_ids"]
         assert len(duplicate_item_ids) == self.ITEM_COUNT, (
-            f"Expected {self.ITEM_COUNT} duplicate items to inspect, "
-            f"got {duplicate_item_ids}."
+            f"Expected {self.ITEM_COUNT} numbered item IDs to inspect for "
+            f"{duplicate['item_set_id'] or 'an unidentified set'}, got "
+            f"{duplicate_item_ids}. Review-step IDs were {duplicate['item_ids']} "
+            "(these carry no set number and cannot open an item report)."
         )
 
         per_item = {}

@@ -370,6 +370,15 @@ class TestSMEManualItemCreation:
         before a single QAR submit. Each typology gets its own isolated
         create-to-QAR cycle, which also avoids state leaking between items that
         a shared draft was prone to."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "For each question typology in turn, an SME hand-writes one item and "
+            "submits that item on its own for QAR.\n"
+            "Each typology gets its own create-then-submit cycle instead of batching "
+            "them all into one draft, so state cannot leak between items.",
+        )
         page = self.login_as_sme()
         page.open_item_creation_module()
         page.open_manual_item_tab()
@@ -569,6 +578,15 @@ class TestSMEManualItemCreation:
         self, typology, record_property, page_evidence
     ):
         """An empty content payload must not create an item for any typology."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "For each question typology, open the manual item form and try to add an "
+            "item with no content in it.\n"
+            "Expect the form to refuse every time: an empty payload must never create "
+            "an item.",
+        )
         page = self.login_as_sme()
         page.open_item_creation_module()
         page.open_manual_item_tab()

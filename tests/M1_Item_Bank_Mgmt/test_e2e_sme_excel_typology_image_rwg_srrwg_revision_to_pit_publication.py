@@ -35,6 +35,7 @@ from utilities.element_checks import ElementChecks
 from utilities.logger import LogGenerator
 from utilities.page_evidence import checkpoint
 from utilities.qar_recovery import recover_qar_need_improvement_items
+from utilities.item_template_columns import resolve_columns
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
 
@@ -43,8 +44,7 @@ IMAGES_DIR = TEMPLATES_DIR / "images"
 
 # Column indexes match the 24 canonical template columns documented in
 # data/typology_templates/README.md.
-QUESTION_COLUMN = 11
-QUESTION_IMAGE_COLUMN = 12
+
 
 TYPOLOGY_CASES = [
     ("01_MCQ.xlsx", "Multiple Choice Question"),
@@ -273,10 +273,12 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
 
         workbook = load_workbook(workbook_path)
         worksheet = workbook.active
+        columns = resolve_columns(worksheet)
+        assert columns, f"{template_path.name} has no recognisable item-data sheet."
         image_filename = f"typology_{run_token}.png"
-        question_cell = worksheet.cell(row=2, column=QUESTION_COLUMN)
+        question_cell = worksheet.cell(row=2, column=columns["question"])
         question_cell.value = f"{question_cell.value} [{run_token}]"
-        worksheet.cell(row=2, column=QUESTION_IMAGE_COLUMN).value = image_filename
+        worksheet.cell(row=2, column=columns["question_image"]).value = image_filename
         workbook.save(workbook_path)
         workbook.close()
 
@@ -506,6 +508,20 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
     def test_e2e_sme_typology_image_revision_rwg_srrwg_pit_publish(
         self, request, template_name, typology, record_property, page_evidence
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and upload a fresh Excel workbook plus an images ZIP "
+            "for one question typology.\n"
+            "Take it through two revision rounds: RWG sends it back and the SME adds "
+            "an image and text and resubmits, then Senior RWG sends it back and the "
+            "SME does the same again.\n"
+            "Once both reviewers approve, three PIT members approve to reach quorum "
+            "and the set is published.\n"
+            "Check the published set still shows every image and edit the SME added "
+            "along the way.",
+        )
         typology_index = TYPOLOGY_CASES.index((template_name, typology))
         request.node.user_properties.append(
             ("result_checkpoint", f"fresh {typology} Excel + images ZIP upload")
@@ -813,7 +829,7 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
             ("result_checkpoint", "PIT 3/3 quorum and publication")
         )
         completed_pit_approvals = []
-        for pit_username in ReadConfig.get_pit_usernames()[:3]:
+        for pit_username in ReadConfig.get_pit_quorum(lane=0):
             self.login_as(pit_username, upload_page)
             pit_page.approve_item_set_as_pit(item_set_id, item_set_url)
             completed_pit_approvals.append(pit_username)

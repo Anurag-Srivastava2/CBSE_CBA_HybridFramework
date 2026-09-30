@@ -46,6 +46,14 @@ class TestM2AuditTrail:
         self, record_property, page_evidence
     ):
         """Page structure is surveyed softly; immutability stays a hard gate."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Audit Trail as an admin and survey the page structure softly.\n"
+            "Hard-assert immutability: the log must offer no way to edit or delete an "
+            "entry.",
+        )
         audit = self.open_audit()
         checks = self.survey(audit, record_property, "Structure")
 
@@ -97,6 +105,14 @@ class TestM2AuditTrail:
 
         Controls are surveyed softly; the filtering behaviour stays hard.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Audit Trail, type a free-text search, then pick an Event Type.\n"
+            "The controls are recorded softly, but both must actually narrow the "
+            "grid, and that stays hard.",
+        )
         audit = self.open_audit()
         checks = self.survey(audit, record_property, "Search & Filter")
 
@@ -176,6 +192,16 @@ class TestM2AuditTrail:
         The export contents stay a hard gate — a missing column in the CSV is a
         compliance defect, not a rendering gap.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Audit Trail and use Export File.\n"
+            "Check a CSV downloads and its header row matches the audit columns on "
+            "screen.\n"
+            "The contents stay a hard gate, because a missing column in the export is "
+            "a compliance defect rather than a rendering gap.",
+        )
         audit = self.open_audit()
         checks = self.survey(audit, record_property, "Export")
         checks.publish()
@@ -212,6 +238,13 @@ class TestM2AuditTrail:
 
     def test_tc_wpad_audit_04_pagination(self, record_property, page_evidence):
         """Pagination controls are surveyed softly; advancing the grid is hard."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Audit Trail and page through the grid.\n"
+            "The controls are surveyed softly; advancing the grid is a hard assert.",
+        )
         audit = self.open_audit()
         checks = self.survey(audit, record_property, "Pagination")
         checks.publish()

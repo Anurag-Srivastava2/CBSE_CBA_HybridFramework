@@ -1,5 +1,5 @@
 from pathlib import Path
-from time import sleep, time
+from time import monotonic, sleep, time
 
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
@@ -144,6 +144,41 @@ class AuditTrailPage(BasePage):
                 last_error = error
                 sleep(2)
         raise last_error
+
+    # Names Chrome uses while a transfer is still in flight. `.crdownload` is
+    # the familiar one; this download also passes through a UUID-named `.tmp`
+    # before being renamed to the real file, and a listing that accepts it
+    # hands back the placeholder instead of the export. See the same tuple in
+    # export_file_and_wait() below, which has always excluded both.
+    IN_FLIGHT_SUFFIXES = (".crdownload", ".tmp")
+
+    def export_file(self, download_dir, timeout=60):
+        """Click Export File and return the Path of the file that lands.
+
+        Chrome writes a placeholder while the transfer is in flight, so a
+        directory listing alone would hand back a half-written file; this
+        waits for a settled name.
+        """
+        directory = Path(download_dir)
+        before = set(directory.iterdir()) if directory.exists() else set()
+        self.click_resilient(self.EXPORT_BTN)
+        deadline = monotonic() + timeout
+        while monotonic() < deadline:
+            current = set(directory.iterdir()) if directory.exists() else set()
+            fresh = [
+                path
+                for path in current - before
+                if not path.name.endswith(self.IN_FLIGHT_SUFFIXES) and path.stat().st_size > 0
+            ]
+            if fresh:
+                # Deterministic pick: a set has no order, so a run that saw two
+                # new files could return either one.
+                return sorted(fresh, key=lambda path: path.stat().st_mtime)[-1]
+            sleep(1)
+        raise TimeoutException(
+            f"Export File produced no download in {timeout}s. Directory holds: "
+            f"{sorted(path.name for path in (set(directory.iterdir()) if directory.exists() else set()))}"
+        )
 
     def dismiss_overlays(self):
         try:

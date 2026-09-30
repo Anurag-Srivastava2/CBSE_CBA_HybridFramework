@@ -38,6 +38,14 @@ class TestSmokeM2WebPortalAdmin:
         self, record_property, page_evidence
     ):
         """Admin lands on the dashboard and its KPI cards carry real numbers."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an admin and land on the dashboard.\n"
+            "Check the KPI cards carry real numbers rather than blanks or "
+            "placeholders. Read-only, nothing is changed.",
+        )
         self.sign_in_as_admin()
         dashboard = AdminDashboardPage(self.driver)
         dashboard.wait_for_dashboard_ready()
@@ -96,6 +104,14 @@ class TestSmokeM2WebPortalAdmin:
         self, record_property, page_evidence
     ):
         """Item Bank Overview renders its table with the expected columns."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an admin and open Item Bank Overview.\n"
+            "Check the table renders with the columns it is meant to have. Read-only, "
+            "nothing is changed.",
+        )
         self.sign_in_as_admin()
         item_bank = ItemBankPage(self.driver)
         item_bank.open(ReadConfig.get_base_url())
@@ -137,6 +153,14 @@ class TestSmokeM2WebPortalAdmin:
         self, record_property, page_evidence
     ):
         """User Management opens and returns the account listing."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an admin and open User Management.\n"
+            "Check the account listing comes back with rows in it. Read-only, nothing "
+            "is changed.",
+        )
         self.sign_in_as_admin()
         user_management = UserManagementPage(self.driver)
         user_management.open(ReadConfig.get_base_url())

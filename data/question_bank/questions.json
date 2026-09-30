@@ -33,6 +33,11 @@
         "status": "used",
         "used_at": "2026-07-15T06:32:16.983829+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "offline-smoke": {
+        "status": "used",
+        "used_at": "2026-08-28T07:30:25.116265+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -326,6 +331,11 @@
         "status": "used",
         "used_at": "2026-07-15T06:32:16.983829+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "offline-smoke": {
+        "status": "used",
+        "used_at": "2026-08-28T07:30:25.116265+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -557,6 +567,11 @@
         "status": "used",
         "used_at": "2026-07-15T06:32:16.983829+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "offline-smoke": {
+        "status": "used",
+        "used_at": "2026-08-28T07:30:25.116265+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -1884,6 +1899,11 @@
         "status": "used",
         "used_at": "2026-08-12T12:55:15.028928+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T07:43:26.974480+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -1911,6 +1931,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:02:27.648997+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T07:47:06.615700+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -1938,6 +1963,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:08:45.160733+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T07:56:57.806353+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
       }
     }
   },
@@ -1965,6 +1995,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:11:57.823378+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T08:57:18.646550+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -1992,6 +2027,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:18:17.002296+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:00:56.043598+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2019,6 +2059,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:33:51.921099+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:09:20.311854+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2046,6 +2091,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:37:21.725331+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:13:00.490523+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2073,6 +2123,11 @@
         "status": "used",
         "used_at": "2026-08-12T14:08:51.950335+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:17:29.186541+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -2100,6 +2155,11 @@
         "status": "used",
         "used_at": "2026-08-12T14:14:05.522917+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:20:34.068683+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -2127,6 +2187,11 @@
         "status": "used",
         "used_at": "2026-08-12T15:01:15.488138+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:20:57.794946+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2154,6 +2219,11 @@
         "status": "used",
         "used_at": "2026-08-12T15:03:57.284592+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:24:33.793355+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2181,6 +2251,11 @@
         "status": "used",
         "used_at": "2026-08-12T15:10:03.171196+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:28:27.378993+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -2208,6 +2283,11 @@
         "status": "used",
         "used_at": "2026-08-12T15:28:37.118415+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:30:16.113204+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2235,6 +2315,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:03:16.828436+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:33:48.732967+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2262,6 +2347,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:37:42.362360+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:42:15.519778+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2289,6 +2379,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:38:25.479956+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T10:02:38.360842+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2316,6 +2411,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:46:56.723784+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-01T05:35:33.504469+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2343,6 +2443,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:58:22.424442+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-01T06:12:22.284946+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2370,6 +2475,11 @@
         "status": "used",
         "used_at": "2026-08-13T03:36:27.149629+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-04T12:40:33.021980+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2397,6 +2507,11 @@
         "status": "used",
         "used_at": "2026-08-13T05:15:26.429266+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-08T12:20:34.266570+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -2424,6 +2539,11 @@
         "status": "used",
         "used_at": "2026-08-13T05:35:32.892075+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-08T14:36:32.557579+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2451,6 +2571,11 @@
         "status": "used",
         "used_at": "2026-08-13T12:51:31.956042+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-08T14:46:13.328804+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
       }
     }
   },
@@ -2478,6 +2603,11 @@
         "status": "used",
         "used_at": "2026-08-13T12:59:22.118741+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1 (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-15T05:42:53.616354+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2505,6 +2635,11 @@
         "status": "used",
         "used_at": "2026-08-13T13:20:15.598731+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1 (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-15T05:52:26.914540+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
       }
     }
   },
@@ -2531,6 +2666,11 @@
       "cbse-qa-new-akashic-dhira-io": {
         "status": "used",
         "used_at": "2026-08-13T13:39:51.761527+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-16T05:02:17.045719+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
@@ -2559,6 +2699,11 @@
         "status": "used",
         "used_at": "2026-08-13T15:12:05.981334+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-16T05:12:44.147953+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
       }
     }
   },
@@ -2585,6 +2730,11 @@
       "cbse-qa-new-akashic-dhira-io": {
         "status": "used",
         "used_at": "2026-08-13T15:17:35.769829+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-17T04:55:21.414579+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
@@ -2613,6 +2763,11 @@
         "status": "used",
         "used_at": "2026-08-14T05:45:23.054016+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-17T04:59:00.230632+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2640,6 +2795,11 @@
         "status": "used",
         "used_at": "2026-08-14T05:47:27.922242+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-17T05:01:58.100099+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
       }
     }
   },
@@ -2667,6 +2827,11 @@
         "status": "used",
         "used_at": "2026-08-14T06:42:24.986443+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-17T09:14:50.889613+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2694,6 +2859,11 @@
         "status": "used",
         "used_at": "2026-08-14T06:43:06.478654+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T05:20:27.415092+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2721,6 +2891,11 @@
         "status": "used",
         "used_at": "2026-08-14T08:26:07.477990+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T05:23:32.245649+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2748,6 +2923,11 @@
         "status": "used",
         "used_at": "2026-08-14T08:31:53.309341+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T14:28:44.330998+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -2775,6 +2955,11 @@
         "status": "used",
         "used_at": "2026-08-14T08:32:20.101440+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T14:37:27.523342+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
       }
     }
   },
@@ -5470,7 +5655,13 @@
     "explanation": "36 + 18 = 54, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:eabfddf329367e0c299016bdf418371fb0f6671272bd524d40097e01193db5c6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.529686+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000198",
@@ -5491,7 +5682,13 @@
     "explanation": "910 - 787 = 123, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:455570a74b070fe61d820ac210b975f526ba0ec5de8f70232d30c3b0b5f7c21a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000199",
@@ -5512,7 +5709,13 @@
     "explanation": "1814 + 541 = 2355, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:ca6a4c0d714990e257487a8e05337c91b37e7bd78108498cc059ab654b545f0f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000200",
@@ -5533,7 +5736,13 @@
     "explanation": "4833 - 2397 = 2436, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:17d3fb17275794c43f8a10c723b39c477c695e6c5e15c61355851f0b503d1820",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000201",
@@ -5554,7 +5763,13 @@
     "explanation": "86 + 58 = 144, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:aad9f9c9bb6cb418000834df1221ef3c907467adebb82f7fe14ab2702d702d7d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000202",
@@ -5575,7 +5790,13 @@
     "explanation": "669 - 577 = 92, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:2dada78bfabec31ac7816f169f37989d4e0664278e85f3faed7851882cb81456",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T07:10:06.388329+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000203",
@@ -5596,7 +5817,13 @@
     "explanation": "1184 + 672 = 1856, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:3a0ef61a781b278e8395f6160e22900ecc8ebb8f9c76ea872f3ed0685ee58f2d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T07:19:30.775454+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000204",
@@ -5617,7 +5844,13 @@
     "explanation": "3133 - 2679 = 454, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:8d49143706343091238b6514e7baaab217f2f7c707057ebcc56223124e610171",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T12:33:24.404353+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000205",
@@ -5638,7 +5871,13 @@
     "explanation": "39 + 27 = 66, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:daaa239f7c990d8157d9d6855870a554d656c9a52ac06a985d721254bc2a0b9f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T12:43:50.425603+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000206",
@@ -5659,7 +5898,13 @@
     "explanation": "615 - 590 = 25, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:71d28a1933b815c3f09c661b77dadfe882c88220da20291dda34f676deca8a5c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-27T04:08:10.284382+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000207",
@@ -5680,7 +5925,13 @@
     "explanation": "615 + 493 = 1108, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:c6177524e8dc52353f29ceea0e07cb21c612fa16d38fa584c12c5055f666b007",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-27T06:15:19.136031+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000208",
@@ -5701,7 +5952,13 @@
     "explanation": "4918 - 3739 = 1179, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:86fb174d2498537abf2a08fe685ee854b6f82ee6d8b43fc0a8b500e237ddf641",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T04:35:34.185400+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000209",
@@ -5722,7 +5979,13 @@
     "explanation": "94 + 71 = 165, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:b6c62620b2c50ac2c57d3fc8d88a9ec08ab7f7f9f3724937ed9e36e43d046827",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T05:01:13.714048+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000210",
@@ -5743,7 +6006,13 @@
     "explanation": "861 - 224 = 637, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:b95e2cc1e6d7613b727a653c51ebb272b3a4baa1ec8fbde38c100090115607df",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T05:05:03.253276+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000211",
@@ -5764,7 +6033,13 @@
     "explanation": "1490 + 463 = 1953, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:9bd7da7989b4c7acdc29193d142a0601fd79edaf2e380ec4e4c241afff126155",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-01T12:16:08.642411+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000212",
@@ -5785,7 +6060,13 @@
     "explanation": "2779 - 1601 = 1178, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:97ca3e1dd799b18633e2f158f233b26eb237698e122dac00d673971e62bd276c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-01T12:25:53.385264+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000213",
@@ -5806,7 +6087,13 @@
     "explanation": "81 + 59 = 140, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:a9036542e8a9b36ed45b03b2edd4e82586b22cde1b8cb6984596818c2e0767e5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T07:45:51.805034+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000214",
@@ -5827,7 +6114,13 @@
     "explanation": "981 - 580 = 401, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:bd2092c102dcd7acdcd37d52e1a0ea9e85c897a2aae0861fa8eed465fe5dd5e9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T08:24:15.247025+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000215",
@@ -5848,7 +6141,13 @@
     "explanation": "633 + 624 = 1257, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:9e8a0b489b0a9520098fe55c16c8e8af928250e1a98bd05af9091e1eddfe75d8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-29T09:45:15.396499+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000216",
@@ -5869,7 +6168,13 @@
     "explanation": "2223 - 2191 = 32, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:aa1984a52126c3ece97600b27fcbc1e63d6e9c7ff34429e30d4f7d7f802a9953",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-29T09:55:01.265800+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000217",
@@ -5890,7 +6195,13 @@
     "explanation": "48 + 34 = 82, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:56ae5b4fec26759ad7ed85afd9058ffc801b3e7cf4b08fbd8e208b3eb212adea",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-29T09:58:21.705068+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000218",
@@ -5911,7 +6222,13 @@
     "explanation": "426 - 217 = 209, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:14bdf533e5ce9af6ffbbf889c3c4bda1eac47b6c45f48cb84714d70b5dca14f6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-29T13:14:30.463607+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000219",
@@ -5932,7 +6249,13 @@
     "explanation": "689 + 521 = 1210, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:47cfcd81d68441cea91ab943feff3764345e025342407066ba3a1b707d1d52fb",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:11:17.959512+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000220",
@@ -5953,7 +6276,13 @@
     "explanation": "2381 - 2263 = 118, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:df2f4eedab8064a5c60f948665260040eb62af87368d3c9a62d36bd1717844e5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:16:08.923514+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000221",
@@ -5974,7 +6303,13 @@
     "explanation": "93 + 88 = 181, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:5d5fd5c8171bdd05d458b35689e4dad706964dd586b8a0c1b005a9f2ca27f6d7",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:25:10.373404+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000222",
@@ -5995,7 +6330,13 @@
     "explanation": "365 - 254 = 111, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:137268495fc880a93d39d9ec4ce9f6ecf30e0f89718cbde4a6729febf9403d12",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:27:53.646729+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000223",
@@ -6016,7 +6357,13 @@
     "explanation": "1232 + 557 = 1789, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:4104d46111e3b3625a99d325e1639d767543c423259d92af4540197d968250b5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:29:26.158339+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000224",
@@ -6037,7 +6384,13 @@
     "explanation": "2407 - 965 = 1442, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:a8f1e9fdef94af16421ebf0751792e19dc883a01eeacea1591c43a5f936cdba6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:30:46.387878+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000225",
@@ -6058,7 +6411,13 @@
     "explanation": "18 + 10 = 28, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:1f2f745baf22edc77e1d4f31861ac4abcc87faaa99519f3eff2d4015ace52b74",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:32:22.527389+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000226",
@@ -6079,7 +6438,13 @@
     "explanation": "767 - 127 = 640, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:4df4f12c5a95451e2c16c5638758acaa1e326f3e5666a9b4e42ff19de9aa5712",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T14:54:04.600556+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000227",
@@ -6100,7 +6465,13 @@
     "explanation": "1984 + 1627 = 3611, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:3cf79b841bab7a7909cacf3b68ad7a0e47641a2602c0e3664f3d49523f9c45ea",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T15:03:02.413992+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000228",
@@ -6895,6 +7266,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:02:27.648997+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T07:43:26.974480+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -6917,6 +7293,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:08:45.160733+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T07:47:06.615700+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -6939,6 +7320,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:11:57.823378+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T08:57:18.646550+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -6961,6 +7347,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:18:17.002296+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:00:56.044598+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -6983,6 +7374,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:33:51.921099+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:09:20.311854+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7005,6 +7401,11 @@
         "status": "used",
         "used_at": "2026-08-12T13:37:21.725331+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:13:00.491514+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7027,6 +7428,11 @@
         "status": "used",
         "used_at": "2026-08-12T14:08:51.950335+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:17:29.186541+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -7049,6 +7455,11 @@
         "status": "used",
         "used_at": "2026-08-12T14:14:05.524256+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:20:34.068683+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -7071,6 +7482,11 @@
         "status": "used",
         "used_at": "2026-08-12T15:01:15.488138+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:20:57.794946+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7093,6 +7509,11 @@
         "status": "used",
         "used_at": "2026-08-12T15:03:57.285641+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:24:33.793355+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7115,6 +7536,11 @@
         "status": "used",
         "used_at": "2026-08-12T15:10:03.171196+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:28:27.378993+00:00",
+        "used_in_run": "manual"
       }
     }
   },
@@ -7137,6 +7563,11 @@
         "status": "used",
         "used_at": "2026-08-12T15:28:37.118415+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:30:16.113204+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7159,6 +7590,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:03:16.828436+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:33:48.732967+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7181,6 +7617,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:37:42.362360+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T09:42:15.519778+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7203,6 +7644,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:38:25.479956+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T10:02:38.360842+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -7225,6 +7671,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:46:56.723784+00:00",
         "used_in_run": "tests/M5_Teacher_Contribution/test_e2e_teacher_excel_double_revision_to_pit_publication.py::TestE2ETeacherExcelDoubleRevisionToPITPublication::test_e2e_teacher_excel_upload_rwg_double_revision_teacher_resubmit_rwg_pit_publish@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-01T05:35:33.505455+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7247,6 +7698,11 @@
         "status": "used",
         "used_at": "2026-08-12T16:58:22.424442+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication@serial (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-01T06:12:22.284946+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -7269,6 +7725,11 @@
         "status": "used",
         "used_at": "2026-08-13T03:36:27.149629+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_with_image_edit_to_pit_publication.py::TestE2ESMEExcelUploadWithImageEditToPITPublication::test_e2e_sme_excel_upload_with_image_edit_qar_rwg_srrwg_pit_publish (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-04T12:40:33.021980+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7291,6 +7752,11 @@
         "status": "used",
         "used_at": "2026-08-13T05:15:26.429266+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-08T12:20:34.266570+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
       }
     }
   },
@@ -7313,6 +7779,11 @@
         "status": "used",
         "used_at": "2026-08-13T05:35:32.892075+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-08T14:36:32.557579+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -7335,6 +7806,11 @@
         "status": "used",
         "used_at": "2026-08-13T12:51:31.956042+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-15T05:42:53.616354+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -7357,6 +7833,11 @@
         "status": "used",
         "used_at": "2026-08-13T12:59:22.118741+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1 (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-16T05:02:17.045719+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -7379,6 +7860,11 @@
         "status": "used",
         "used_at": "2026-08-13T13:20:15.598731+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1 (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-17T04:55:21.414579+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -7400,6 +7886,11 @@
       "cbse-qa-new-akashic-dhira-io": {
         "status": "used",
         "used_at": "2026-08-13T13:39:51.761527+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-17T04:59:00.230632+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
@@ -7423,6 +7914,11 @@
         "status": "used",
         "used_at": "2026-08-13T15:12:05.981334+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-17T09:14:50.889613+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -7444,6 +7940,11 @@
       "cbse-qa-new-akashic-dhira-io": {
         "status": "used",
         "used_at": "2026-08-13T15:17:35.769829+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T05:20:27.415092+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
@@ -7467,6 +7968,11 @@
         "status": "used",
         "used_at": "2026-08-14T05:45:23.054016+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T05:23:32.245649+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -7489,6 +7995,11 @@
         "status": "used",
         "used_at": "2026-08-14T05:47:27.922242+00:00",
         "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      },
+      "cbse-uat-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T14:28:44.330998+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
       }
     }
   },
@@ -9574,7 +10085,13 @@
     "explanation": "10 x 11 = 110, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:fd6e21fac24718020cdbcedcc9b3e90ba4e35e06bc763c965cae1464869338a1",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000387",
@@ -9590,7 +10107,13 @@
     "explanation": "10 x 12 = 120, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:fb6b0286996e0e100a9ebf1974612996e04c895a0b36873f5a39994f0101dfea",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000388",
@@ -9606,7 +10129,13 @@
     "explanation": "10 x 13 = 130, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:d86af368b3cb3493c41751a7019665b2f251e57da5702ff2faab65499f1c3b1b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000389",
@@ -9622,7 +10151,13 @@
     "explanation": "10 x 14 = 140, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:b78b7e787253eee6370f0874a7ab4cad6341ea5e962504d12565629adcd42332",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000390",
@@ -9638,7 +10173,13 @@
     "explanation": "10 x 15 = 150, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:9be59584afedd907473b9949f62f8caef04074156266237e7af3f286c14c2926",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000391",
@@ -9654,7 +10195,13 @@
     "explanation": "10 x 16 = 160, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:c794ab574639b43ae00e7f480ef0dad33f3e4a664b48e95b5e6f451d7fc9f89f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T07:10:06.388329+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000392",
@@ -9670,7 +10217,13 @@
     "explanation": "10 x 17 = 170, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:a6a0a4d2676bcc42b3ebf51a4a2b0d32be5abbf2be4624b2f70fc31f1085044d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T12:33:24.404353+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000393",
@@ -9686,7 +10239,13 @@
     "explanation": "10 x 18 = 180, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:5bd007703870ed5ee4c58d7b1149b6e9e5ee82438cd00de5104538c01c0be970",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T12:43:50.425603+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000394",
@@ -9702,7 +10261,13 @@
     "explanation": "10 x 19 = 190, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:94d7b5528264aee42fbeded6bde4c89c4d435af9a87a714c576fdde7a6cae54d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-27T04:08:10.284382+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000395",
@@ -9718,7 +10283,13 @@
     "explanation": "10 x 20 = 200, recalled from the multiplication table of 10.",
     "marks": 1,
     "content_hash": "sha256:137282905685343eb63837d96b6b378f62291077c4e0fb894e5607636480aed6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T04:35:34.185400+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000396",
@@ -9734,7 +10305,13 @@
     "explanation": "11 x 11 = 121, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:3fe95aae07ff50ac4a744379cb5f719f54fc3add36d100be51b1a8a90e1d5e3e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T05:01:13.714048+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000397",
@@ -9750,7 +10327,13 @@
     "explanation": "11 x 12 = 132, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:52a0b4ea4532666522704931bacc3c30b377e0c7dde5c8ebab78ffbb4dc67128",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-01T12:16:08.642411+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000398",
@@ -9766,7 +10349,13 @@
     "explanation": "11 x 13 = 143, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:f3f9e64cedb4d9bf20a02a9b4b553b2ec21d1cab61a5ff3531c571e9cad9f766",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-24T07:45:51.805034+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000399",
@@ -9782,7 +10371,13 @@
     "explanation": "11 x 14 = 154, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:6a1a33d4a028b3d1025f1478b35b078e5114834df221bcec82cfd8f109e5538a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-29T09:45:15.396499+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000400",
@@ -9798,7 +10393,13 @@
     "explanation": "11 x 15 = 165, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:b08ec378c437d2f578d3d064316d8aad4fe447149a1be32b11c513859f588971",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:11:17.959512+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000401",
@@ -9814,7 +10415,13 @@
     "explanation": "11 x 16 = 176, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:0aca4714522f0c2254dec339c66d056ae15c28deb6bb31058bbe7a04d40cc7ec",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:16:08.923514+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000402",
@@ -9830,7 +10437,13 @@
     "explanation": "11 x 17 = 187, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:3b6116e67f308aa39ec5f56b8228837474266c32e0b055a072cfea90684aa35c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:25:10.373404+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000403",
@@ -9846,7 +10459,13 @@
     "explanation": "11 x 18 = 198, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:d740b2defec65335bba2e0f913a1fa5d4db9e63193b3fe016e5de0ccfd9e79ac",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:27:53.646729+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000404",
@@ -9862,7 +10481,13 @@
     "explanation": "11 x 19 = 209, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:9449b0528bdcb8c75137b51792e9d3637eebe04034224a5cc12da373b7f8be2b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:29:26.158339+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000405",
@@ -9878,7 +10503,13 @@
     "explanation": "11 x 20 = 220, recalled from the multiplication table of 11.",
     "marks": 1,
     "content_hash": "sha256:045a71c7ebfc8e38bfbbdb85383d5449075d9b63018a0e94d7ce88dbb4b232e2",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:30:46.387878+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000406",
@@ -9894,7 +10525,13 @@
     "explanation": "12 x 12 = 144, recalled from the multiplication table of 12.",
     "marks": 1,
     "content_hash": "sha256:7d297fc8a9b3da576c4382ae4277f8d7da8c85ec47c09466bd50ba8fd7308734",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:32:22.527389+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000407",
@@ -9910,7 +10547,13 @@
     "explanation": "12 x 13 = 156, recalled from the multiplication table of 12.",
     "marks": 1,
     "content_hash": "sha256:1ad7db34cf01ec598fe13da716830e339b558f79dedb14edae4571a29f77cf2f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T14:54:04.600556+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000408",
@@ -12907,7 +13550,13 @@
     "explanation": "207 is not greater than 325; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:2f26175e437fbc4fcba2a6f373e94392907e58db81b036d94cf52f87456606f4",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000556",
@@ -12923,7 +13572,13 @@
     "explanation": "57 is not greater than 105; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:f8f3d8b0666ce6e2bb75e45fb197ff36b70abdc263734565722b1ef53ce6dd4b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000557",
@@ -12939,7 +13594,13 @@
     "explanation": "259 is not greater than 272; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:8eef0ccf99d32b85dd564ef9b4eeda356aa0d542a2ccf4ccc61d0cdc9329846f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000558",
@@ -12955,7 +13616,13 @@
     "explanation": "154 is not greater than 210; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:c16c4de71b3736d0bbb26f92978a3123bf919b68d6d6d723aa2de5577706326f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000559",
@@ -12971,7 +13638,13 @@
     "explanation": "299 is not greater than 482; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:828243a59f697f2457bde68f4be166ed2da0720623511721f27793d34693d106",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000560",
@@ -12987,7 +13660,13 @@
     "explanation": "32 is not greater than 279; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:a7567d0ceb968a2f9eb5afb9f9969aa13ef7c2206b90e3fc93ff0b0370572e28",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T12:33:24.404353+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000561",
@@ -13003,7 +13682,13 @@
     "explanation": "200 is not greater than 384; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:e4d519a121eeac04442b6d148959dcffbd41040b70351cb71debd36cafb20d03",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T12:43:50.425603+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000562",
@@ -13019,7 +13704,13 @@
     "explanation": "346 is indeed greater than 137, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:56ed4fd3565840f2814117f5a79bccc035dee7053c91089070422d576b06a218",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-31T04:35:34.185400+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000563",
@@ -13035,7 +13726,13 @@
     "explanation": "255 is not greater than 451; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:fdc676c228f3f8629cfbab8710f53be6597f0fab912386c16f67353d0da53620",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:11:17.959512+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000564",
@@ -13051,7 +13748,13 @@
     "explanation": "471 is indeed greater than 213, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:de21dea8c16d0f2a22c8fd1097c23ed8f65bee4daff28fefce88dd6e9bcb354f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:16:08.923514+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000565",
@@ -13067,7 +13770,13 @@
     "explanation": "67 is not greater than 116; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:0856651837302907bd14b04749dd5cc74847ccc2d1bdfa2c920e720f158564ea",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:25:10.373404+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000566",
@@ -13083,7 +13792,13 @@
     "explanation": "438 is indeed greater than 415, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:11b5892d7299bb4281dc0c13694d6d1a3c0f82b17974bf78bdc5260e87d8eb01",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:27:53.646729+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000567",
@@ -13099,7 +13814,13 @@
     "explanation": "185 is indeed greater than 158, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:5dd6bb0b3e98d27d59cc6ad02fa6b6dd4e1470d015b2910e57584056499e4ada",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:29:26.158339+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000568",
@@ -13115,7 +13836,13 @@
     "explanation": "65 is not greater than 117; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:396af484402d13f28a48a810cc63d4affdc49f0cd7c4b11bb5cd1407071c3a8f",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:30:46.387878+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000569",
@@ -13131,7 +13858,13 @@
     "explanation": "119 is not greater than 175; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:00fc384e704c7c8516a2affd4374ce644cabaf9926963b9ebe8d262a6adf0834",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:32:22.527389+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000570",
@@ -14132,7 +14865,13 @@
     "explanation": "1 hours = 60 minutes, so 43 hours = 43 x 60 = 2580 minutes.",
     "marks": 1,
     "content_hash": "sha256:506a0c50de251f11e9ac9971493fbb4c5002eb88509e18bc13140f6372d7c8e9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000624",
@@ -14148,7 +14887,13 @@
     "explanation": "1 litres = 1000 millilitres, so 43 litres = 43 x 1000 = 43000 millilitres.",
     "marks": 1,
     "content_hash": "sha256:d56d9751a90c3c1cf25f017063e1fde5d8d5c72072d784289173edede8eb8e98",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000625",
@@ -14164,7 +14909,13 @@
     "explanation": "1 kilograms = 1000 grams, so 38 kilograms = 38 x 1000 = 38000 grams.",
     "marks": 1,
     "content_hash": "sha256:2615c79a0ac00c223933679a8f9860008f1a221c6f0cd6a6384bf1676c52e81d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000626",
@@ -14180,7 +14931,13 @@
     "explanation": "1 minutes = 60 seconds, so 20 minutes = 20 x 60 = 1200 seconds.",
     "marks": 1,
     "content_hash": "sha256:67d0f56fa4a82e7854806ca9c8292f285b398d4e17b3d6c75c88d0a47450359d",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000627",
@@ -14196,7 +14953,13 @@
     "explanation": "1 hours = 60 minutes, so 41 hours = 41 x 60 = 2460 minutes.",
     "marks": 1,
     "content_hash": "sha256:702818ca5dcbaef32227892eefecb092a2f16975218a38f0eec731e1a4fab1ec",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000628",
@@ -14212,7 +14975,13 @@
     "explanation": "1 litres = 1000 millilitres, so 37 litres = 37 x 1000 = 37000 millilitres.",
     "marks": 1,
     "content_hash": "sha256:0deff92ff62b7227ea77df873ac050412c5b77f90011f871827117088e3f1c70",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T12:33:24.404353+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000629",
@@ -14228,7 +14997,13 @@
     "explanation": "1 minutes = 60 seconds, so 24 minutes = 24 x 60 = 1440 seconds.",
     "marks": 1,
     "content_hash": "sha256:f034944d6a09f8522f82225dc97bffd4001b9284a950060ff62cf128f9c1f03e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T12:43:50.425603+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000630",
@@ -14244,7 +15019,13 @@
     "explanation": "1 kilometres = 1000 metres, so 25 kilometres = 25 x 1000 = 25000 metres.",
     "marks": 1,
     "content_hash": "sha256:48ee01e24b09d24e582c23f041870061201cee8cf721212b01c96177dcaf2430",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:25:10.373404+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000631",
@@ -14260,7 +15041,13 @@
     "explanation": "1 kilograms = 1000 grams, so 19 kilograms = 19 x 1000 = 19000 grams.",
     "marks": 1,
     "content_hash": "sha256:20a0ba433d3781f41e1971ff65439ca2ec0bf979ad15d04808215b15c282deae",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-09-30T07:27:53.646729+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_sme_excel_upload_to_pit_publication.py::TestE2ESMEExcelUploadToPITPublication::test_e2e_sme_excel_upload_qar_rwg_srrwg_pit_publish (call)"
+      }
+    }
   },
   {
     "id": "QB-000632",
@@ -15490,7 +16277,13 @@
     "explanation": "SI = (P x R x T)/100 = (9400 x 12 x 2)/100 = 2256.",
     "marks": 2,
     "content_hash": "sha256:f45a19f1fe38136a02a732f4598e511859abaf966eb76ed9d337115d540325d9",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000707",
@@ -15506,7 +16299,13 @@
     "explanation": "SI = (P x R x T)/100 = (1000 x 7 x 3)/100 = 210.",
     "marks": 2,
     "content_hash": "sha256:2b3204da96f4ac13540a2078f64b68a358d57083c1f64e65375d7fa552737eb6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000708",
@@ -15522,7 +16321,13 @@
     "explanation": "SI = (P x R x T)/100 = (4000 x 6 x 1)/100 = 240.",
     "marks": 2,
     "content_hash": "sha256:4a125f397a58a684d07df04bfc169e7c417eb8220acb282ae14dec949743906c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000709",
@@ -15538,7 +16343,13 @@
     "explanation": "SI = (P x R x T)/100 = (5100 x 3 x 5)/100 = 765.",
     "marks": 2,
     "content_hash": "sha256:85b0a15687a804df33cb1273803f70570655e5a59a903e74efc6ea34af6ed982",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000710",
@@ -15554,7 +16365,13 @@
     "explanation": "SI = (P x R x T)/100 = (1400 x 7 x 1)/100 = 98.",
     "marks": 2,
     "content_hash": "sha256:b83834ca33c4aa2b1ac53521dda74c13b26eaffdb1c3ba727d24f4c889c35376",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000711",
@@ -17120,7 +17937,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(39+38) = 154 m; Area = length x breadth = 39 x 38 = 1482 sq. m.",
     "marks": 3,
     "content_hash": "sha256:7b8901fcee7a0baadce879a10396a2ae0b4dbd5db50dc34a157e4cc5bec8aed5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000807",
@@ -17136,7 +17959,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(59+41) = 200 m; Area = length x breadth = 59 x 41 = 2419 sq. m.",
     "marks": 3,
     "content_hash": "sha256:6d20b81097b45a7d6198b1e2d098c23436c4477d3f5fccbec12b33c56829295b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000808",
@@ -17152,7 +17981,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(49+32) = 162 m; Area = length x breadth = 49 x 32 = 1568 sq. m.",
     "marks": 3,
     "content_hash": "sha256:fd75033adcafbb1d55d82d14d7500c2e9721e326378cf35a7f66210f14a69434",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000809",
@@ -17168,7 +18003,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(23+22) = 90 m; Area = length x breadth = 23 x 22 = 506 sq. m.",
     "marks": 3,
     "content_hash": "sha256:d5c11ed98ada4401f314dff1c617477576bdacd1267944f0929a9ce300bf32c8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000810",
@@ -17184,7 +18025,13 @@
     "explanation": "Perimeter = 2(length+breadth) = 2(58+27) = 170 m; Area = length x breadth = 58 x 27 = 1566 sq. m.",
     "marks": 3,
     "content_hash": "sha256:a4a9064462712469c25e91564d909c349add170c5ff1733ccbf5b3e4671c2bd6",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000811",
@@ -18140,7 +18987,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:3bb67d994d45960e5f82c5cb1e2cbebb72cda5b468d5017baa6492b995427ec5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000867",
@@ -18161,7 +19014,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:4b4ddf9a54dcd270472b345d468643bc622b3908b2f733b7f19dc8c286d9842b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000868",
@@ -18182,7 +19041,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:cbaa72a9da17a62ad72bc43e6ac01e1a0b0354504b6abe7c0811ee49dfe512c5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000869",
@@ -18203,7 +19068,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:46145120c32056afabe929613bb344f79c8d4cec7a3a9dd44a0350579e345427",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000870",
@@ -18224,7 +19095,13 @@
     "explanation": "Each numeral is matched to its correct English number name.",
     "marks": 2,
     "content_hash": "sha256:089833d0e15937435e4e1c90b99cb35841ca2cb8c9735c5415eeb7a72480bfb5",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000871",
@@ -19430,7 +20307,13 @@
     "explanation": "5 plus 10 equals 15, so Arjun has 15 shells.",
     "marks": 2,
     "content_hash": "sha256:438aa6f05d4eddb8444fa01f5520f83333a90ee0010cd2a6f3886d6d6c6b31c7",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000927",
@@ -19451,7 +20334,13 @@
     "explanation": "7 plus 14 equals 21, so Simran has 21 shells.",
     "marks": 2,
     "content_hash": "sha256:9b021c922be5dab0e112188d12aac48bfcd89109854edfe18d524f561e0a0807",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000928",
@@ -19472,7 +20361,13 @@
     "explanation": "35 plus 36 equals 71, so Lakshmi has 71 shells.",
     "marks": 2,
     "content_hash": "sha256:4982d7103518decd404a579f87a427048c1512a4088c9311208a554c5b7de439",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000929",
@@ -19493,7 +20388,13 @@
     "explanation": "37 plus 30 equals 67, so Karan has 67 buttons.",
     "marks": 2,
     "content_hash": "sha256:26d8862cde30a53979bfda9079c64f8979d7449a8a144a3eb396ab876ba269c0",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000930",
@@ -19514,7 +20415,13 @@
     "explanation": "14 plus 11 equals 25, so Riya has 25 stickers.",
     "marks": 2,
     "content_hash": "sha256:5adf302f488259dd51db217240947ad321d4843ee2c9cf88df6560e086a4b21a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000931",
@@ -20720,7 +21627,13 @@
     "explanation": "32 plus 12 equals 44, so Meera collected 44 balloons in total.",
     "marks": 2,
     "content_hash": "sha256:cc4c538e7a974343cacb3e50cee9a3ce46fb9a07bcbef5b331a08b32efbcd249",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000987",
@@ -20741,7 +21654,13 @@
     "explanation": "40 plus 33 equals 73, so Tara collected 73 books in total.",
     "marks": 2,
     "content_hash": "sha256:19197be9d4b5eb6f1ff7183337abc7cf5ec574c14876e8f65950211db80d6af3",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000988",
@@ -20762,7 +21681,13 @@
     "explanation": "11 plus 40 equals 51, so Simran collected 51 coins in total.",
     "marks": 2,
     "content_hash": "sha256:54f66560575f9b59f4811e338d6b491d0b805e4cd0ccb9cdb76f440f420da213",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000989",
@@ -20783,7 +21708,13 @@
     "explanation": "15 plus 9 equals 24, so Priya collected 24 coins in total.",
     "marks": 2,
     "content_hash": "sha256:22870db700db084aab196ea70650167fb91d9fce09107034ecb34fb4433c06da",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000990",
@@ -20804,7 +21735,13 @@
     "explanation": "19 plus 6 equals 25, so Farhan collected 25 books in total.",
     "marks": 2,
     "content_hash": "sha256:73ca77ed6fc186e303657cede2eb49925362108d8a658939d348725c3332d12a",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-000991",
@@ -21980,7 +22917,13 @@
     "explanation": "Since 122 comes after 70 when counting upward, 122 is greater than 70; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:c8f17237e290d3fa763b862d9ef195af990ad21024cb0165c4a1cd646a8fbbfd",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001047",
@@ -21996,7 +22939,13 @@
     "explanation": "Since 52 comes after 16 when counting upward, 52 is greater than 16; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:13dd1cf3f5b31e6f475a73db3de12b581b65810d5ea96ebe118d691143a4d271",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001048",
@@ -22012,7 +22961,13 @@
     "explanation": "Since 89 comes after 30 when counting upward, 89 is greater than 30; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:89fae17406e51cdfdd8af7ab6dccbf2d9e85d7c87ee0414c31b2c3be910fac87",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001049",
@@ -22028,7 +22983,13 @@
     "explanation": "Since 131 comes after 70 when counting upward, 131 is greater than 70; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:b1e5c06c5279a079926c62ce2cbfe3d923407aec029394ce86db1ae83a8d0899",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001050",
@@ -22044,7 +23005,13 @@
     "explanation": "Since 151 comes after 42 when counting upward, 151 is greater than 42; the reason correctly explains the assertion.",
     "marks": 2,
     "content_hash": "sha256:6f1054dfbcf26d84677687bbf74aa81bced260b15027f654b7e0e61a239679c1",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-08-26T06:49:47.530689+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_qar_performance_50_item_budget.py::TestQAR50ItemPerformanceBudget::test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget (call)"
+      }
+    }
   },
   {
     "id": "QB-001051",

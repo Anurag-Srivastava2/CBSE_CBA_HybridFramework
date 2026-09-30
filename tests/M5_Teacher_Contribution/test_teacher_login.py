@@ -28,6 +28,14 @@ class TestTeacherLogin:
     logger = LogGenerator.loggen()
 
     def test_teacher_valid_login(self, record_property, page_evidence):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in with valid teacher credentials.\n"
+            "Check the sign-in is accepted and the teacher reaches their landing "
+            "page.",
+        )
         self.logger.info("Starting teacher valid login test")
 
         self.driver.get(ReadConfig.get_base_url())
@@ -142,6 +150,16 @@ class TestTeacherLoginPageBranding:
 
     def test_login_page_visual_branding_survey(self, record_property, page_evidence):
         """Logo, colours, background artwork, fonts and chrome on the login screen."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the sign-in screen and inventory its branding: logos, colours, "
+            "background artwork, fonts and page chrome.\n"
+            "Every branding expectation is a soft check, so a logo that stops loading "
+            "is recorded as a failed row rather than stopping the run at the first "
+            "gap.",
+        )
         login_page = self.open_login_page()
         checks = ElementChecks(login_page, record_property, page_name="Teacher Login — Branding")
 
@@ -384,6 +402,14 @@ class TestTeacherLoginPageBranding:
 
     def test_login_page_theme_switcher(self, record_property, page_evidence):
         """The palette menu offers each theme and repaints the page when used."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the palette menu on the sign-in screen.\n"
+            "Check it offers each theme, and that picking one actually repaints the "
+            "page.",
+        )
         login_page = self.open_login_page()
         checks = ElementChecks(login_page, record_property, page_name="Teacher Login — Theme Switcher")
 

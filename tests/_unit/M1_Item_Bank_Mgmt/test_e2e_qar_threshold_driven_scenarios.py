@@ -1,7 +1,6 @@
 """Admin-configured QAR thresholds drive every downstream SME assertion."""
 
 import json
-from copy import copy as copy_cell_style
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copy2
@@ -19,6 +18,12 @@ from pages.sme.upload_item_file_page import UploadItemFilePage
 from utilities.item_bank_workbook_builder import build_item_workbook
 from utilities.qar_artifact_fixture import QARArtifactFixtureBuilder
 from utilities.qar_retry_flow import run_qar_need_improvement_retry_loop
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    last_item_column,
+    resolve_columns,
+)
 from utilities.read_config import ReadConfig
 
 
@@ -170,28 +175,24 @@ class TestE2EQARThresholdDrivenScenarios:
         copy2(source, target)
         workbook = load_workbook(target)
         worksheet = workbook.active
+        columns = resolve_columns(worksheet)
+        assert columns, "Upload template has no recognisable item-data sheet."
+        max_data_column = last_item_column(worksheet)
         for offset in range(total_count):
             row = offset + 2
             if row > 2:
-                for column in range(1, 25):
-                    source_cell = worksheet.cell(2, column)
-                    target_cell = worksheet.cell(row, column)
-                    target_cell.value = source_cell.value
-                    if source_cell.has_style:
-                        target_cell._style = copy_cell_style(source_cell._style)
-            worksheet.cell(row, 5).value = offset + 1
-            worksheet.cell(row, 10).value = "True or False"
+                copy_item_row(worksheet, 2, row, max_data_column)
+            worksheet.cell(row, columns["sequence"]).value = offset + 1
+            worksheet.cell(row, columns["typology"]).value = "True or False"
             if offset < failed_count:
                 question = f"{prefix} ambiguous {offset + 1}: What does it mean there?"
             else:
                 question = f"{prefix} valid {offset + 1}: Is {20 + offset} greater than 2?"
-            worksheet.cell(row, 11).value = question
-            worksheet.cell(row, 21).value = "True"
-            worksheet.cell(row, 23).value = f"{prefix} explanation {offset + 1}."
-            worksheet.cell(row, 24).value = "1"
-        for row in range(total_count + 2, worksheet.max_row + 1):
-            for column in range(1, 25):
-                worksheet.cell(row, column).value = None
+            worksheet.cell(row, columns["question"]).value = question
+            worksheet.cell(row, columns["answer"]).value = "True"
+            worksheet.cell(row, columns["explanation"]).value = f"{prefix} explanation {offset + 1}."
+            worksheet.cell(row, columns["marks"]).value = "1"
+        clear_rows_from(worksheet, total_count + 2, max_data_column)
         workbook.save(target)
         workbook.close()
         return target
@@ -283,9 +284,19 @@ class TestE2EQARThresholdDrivenScenarios:
         )
 
     def test_e2e_admin_thresholds_drive_qar_scenarios(
-        self, request, tmp_path, page_evidence
+        self, request, tmp_path, page_evidence, record_property
     ):
         # Phase 1: fail fast on missing/disabled/malformed Admin configuration.
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "First read the QAR thresholds an admin has configured, failing fast if "
+            "any are missing, disabled or malformed.\n"
+            "Then run SME scenarios built to land either side of those thresholds.\n"
+            "Check every QAR verdict matches what the configured thresholds say it "
+            "should be.",
+        )
         thresholds = self.read_and_validate_admin_thresholds()
         request.node.user_properties.append(
             ("qar_threshold_snapshot", json.dumps(thresholds, sort_keys=True))

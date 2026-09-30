@@ -87,6 +87,19 @@ class TestSmokeM1ReviewerQueues:
         holding work. The check passes as soon as any account of this role can
         open an assigned set.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a reviewer, land on the dashboard and open that role's review "
+            "queue.\n"
+            "Open one item set assigned to them and confirm it renders with items in "
+            "it.\n"
+            "Try every account configured for the role, because review work is "
+            "allotted per reviewer and any single account may be holding none.\n"
+            "Nothing is voted on and no review is submitted, since reviewer votes are "
+            "one-time actions that would consume real review capacity.",
+        )
         username = self.reviewer_usernames(role_key)[0]
         page = page_class(self.driver)
 

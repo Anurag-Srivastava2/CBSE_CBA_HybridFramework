@@ -41,6 +41,15 @@ class TestM2UserLifecycle:
     def test_tc_wpad_user_05_create_login_deactivate_and_block(
         self, record_property, page_evidence
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "An admin creates a new user filling in every required field.\n"
+            "That new user signs in successfully while their account is still Active.\n"
+            "The admin deactivates the account, and the very same credentials are "
+            "then refused at sign-in.",
+        )
         run_id = uuid4().hex[:6]
         first_name = "Lifecycle"
         last_name = f"Auto{run_id}"

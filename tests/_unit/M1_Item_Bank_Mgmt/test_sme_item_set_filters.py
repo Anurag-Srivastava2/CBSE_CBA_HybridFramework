@@ -27,8 +27,17 @@ class TestSMEItemSetFilters:
     def test_grade_subject_chapter_and_status_filters_apply_validate_and_clear(
         self,
         request,
-        page_evidence,
+        page_evidence, record_property,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open My Item Sets as an SME and note the unfiltered rows.\n"
+            "Apply the grade, subject, chapter and status filters in turn, checking "
+            "each one narrows the list correctly.\n"
+            "Clear them again and check the list returns to what it was at the start.",
+        )
         page = self.login_and_open_item_sets()
         baseline_rows = page.get_item_set_list_rows()
         page_evidence.checkpoint(

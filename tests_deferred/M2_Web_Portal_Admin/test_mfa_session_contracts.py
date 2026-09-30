@@ -82,55 +82,143 @@ class TestM2MFASessionContracts:
         return page
 
     def test_tc_wpad_03_p01_welcome_email_is_sent_within_60_seconds(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "A newly created user should receive a welcome email within 60 seconds.\n"
+            "Checking it needs mailbox and SMS integration access this environment "
+            "cannot give a browser test, so it is filed as known issue KI-M2-MFA-001 "
+            "instead of asserted.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-MFA-001")
         pytest.xfail(
             "KI-M2-MFA-001 [M2 Onboarding] Welcome-email delivery requires mailbox/SMS integration access."
         )
 
     def test_tc_wpad_03_p02_onboarding_link_is_single_use(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "An onboarding link should work once and be dead on the second use.\n"
+            "Checking it needs a real onboarding email captured first, so it is filed "
+            "as known issue KI-M2-MFA-002 instead of asserted.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-MFA-002")
         pytest.xfail(
             "KI-M2-MFA-002 [M2 Onboarding] Single-use onboarding-link verification requires a captured onboarding email link."
         )
 
     def test_tc_wpad_03_n01_onboarding_link_expires_after_24_hours(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "An onboarding link should stop working 24 hours after it is issued.\n"
+            "Checking it needs time-controlled email fixture data, so it is filed as "
+            "known issue KI-M2-MFA-003 instead of asserted.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-MFA-003")
         pytest.xfail(
             "KI-M2-MFA-003 [M2 Onboarding] 24-hour onboarding-link expiry requires time-controlled email fixture data."
         )
 
     def test_tc_wpad_04_p01_otp_is_delivered_by_email_and_sms_within_60_seconds(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "A sign-in OTP should arrive by both email and SMS within 60 seconds.\n"
+            "Checking it needs access to an external notification inbox, so it is "
+            "filed as known issue KI-M2-MFA-004 instead of asserted.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-MFA-004")
         pytest.xfail(
             "KI-M2-MFA-004 [M2 MFA] OTP email/SMS delivery requires external notification inbox access."
         )
 
     def test_tc_wpad_04_p02_otp_expires_after_5_minutes(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "An OTP should stop being accepted 5 minutes after it is issued.\n"
+            "Checking it means waiting 300 seconds and reading a real OTP channel, so "
+            "it is filed as known issue KI-M2-MFA-005 instead of asserted.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-MFA-005")
         pytest.xfail(
             "KI-M2-MFA-005 [M2 MFA] OTP 5-minute expiry requires waiting 300 seconds and reading a real OTP channel."
         )
 
     def test_tc_wpad_04_n01_account_locks_after_three_invalid_otp_attempts(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Three wrong OTP entries in a row should lock the account.\n"
+            "Checking it needs a safe MFA-enrolled throwaway account, so it is filed "
+            "as known issue KI-M2-MFA-006 instead of asserted.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-MFA-006")
         pytest.xfail(
             "KI-M2-MFA-006 [M2 MFA] Invalid OTP lockout requires a safe MFA-enrolled throwaway account."
         )
 
     def test_tc_wpad_05_p01_idle_session_expires_after_10_minutes(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "A session left idle for 10 minutes should expire and require signing in "
+            "again.\n"
+            "Measured on UAT 2026-09-07: an admin session left idle for 11 minutes "
+            "never expired, so there is no expiry here to assert. Filed as known "
+            "issue KI-M2-SESSION-001.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-SESSION-001", session_scope=True)
         pytest.xfail(
-            "KI-M2-SESSION-001 [M2 Session] 10-minute idle expiry is a long-running timing test and should run in a dedicated session suite."
+            "KI-M2-SESSION-001 [M2 Session] No idle expiry occurs. Measured on UAT "
+            "2026-09-07: signed in, idled 11 minutes sampling every 30s with timer "
+            "throttling disabled - the session never expired and the login form never "
+            "returned. This is a product gap at the specified 10-minute timing, not a "
+            "test that merely takes too long to run."
         )
 
     def test_tc_wpad_05_p02_idle_warning_appears_at_8_minutes(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "A warning should appear after 8 minutes of inactivity, before the "
+            "session expires.\n"
+            "Measured on UAT 2026-09-07: no warning appeared at any point during 11 "
+            "minutes of idling, so there is no warning here to assert. Filed as known "
+            "issue KI-M2-SESSION-002.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-SESSION-002", session_scope=True)
         pytest.xfail(
-            "KI-M2-SESSION-002 [M2 Session] 8-minute idle warning is a long-running timing test and should run in a dedicated session suite."
+            "KI-M2-SESSION-002 [M2 Session] No idle warning appears. Measured on UAT "
+            "2026-09-07: idled 11 minutes sampling every 30s with timer throttling "
+            "disabled - the session-expiry warning never rendered. This is a product "
+            "gap at the specified 8-minute timing, not a slow test."
         )
 
     def test_tc_wpad_05_p03_stay_active_resets_idle_timer(self, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Clicking Stay Active on the idle warning should reset the timer and keep "
+            "the session alive.\n"
+            "Measured on UAT 2026-09-07: the idle warning that carries the Stay Active "
+            "control never appears, so the control cannot be reached. Filed as known "
+            "issue KI-M2-SESSION-003.",
+        )
         self.survey_mfa_affordances(record_property, "KI-M2-SESSION-003", session_scope=True)
         pytest.xfail(
-            "KI-M2-SESSION-003 [M2 Session] Stay Active timer reset requires long-running browser idle control."
+            "KI-M2-SESSION-003 [M2 Session] Stay Active is unreachable: it lives on the "
+            "idle warning, and that warning never appears (see KI-M2-SESSION-002). "
+            "Blocked by the missing warning, not by idle-time control."
         )

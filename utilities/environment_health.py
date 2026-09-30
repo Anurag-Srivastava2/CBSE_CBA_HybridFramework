@@ -41,7 +41,11 @@ INFRA_ERROR_MARKERS = (
     "err_tunnel_connection_failed",
     # The SPA loaded but its bootstrap API never answered, so login never
     # rendered. Raised by LoginPage.wait_for_login_form_or_authenticated_page.
-    "remained on its global loading screen",
+    # Two spellings reach here: LoginPage says "remained on its global Loading
+    # screen", while ManualItemPage and UploadItemFilePage say "remained on the
+    # global Loading screen after refresh". Matching the shared phrase catches
+    # both - keying on "its" filed the latter two as product defects.
+    "global loading screen",
     # The portal's sign-in rate limit locked a shared test account. This is an
     # environment state, not a product defect: the credentials are correct and
     # the only cure is time. Naming it here stops pytest-rerunfailures from
@@ -52,6 +56,11 @@ INFRA_ERROR_MARKERS = (
     "repeated tries",
     # The browser or its driver died underneath the test.
     "chrome not reachable",
+    # chromedriver lost a node reference because the SPA repainted between
+    # locating an element and reading it. A driver bookkeeping failure, not a
+    # product defect - it says nothing about what the page rendered.
+    "node with given id does not belong to the document",
+    "unhandled inspector error",
     "disconnected: not connected to devtools",
     "invalid session id",
     "session deleted because of page crash",

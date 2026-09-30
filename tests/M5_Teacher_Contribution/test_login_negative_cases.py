@@ -131,6 +131,15 @@ class TestLoginNegativeCases:
         """Password-policy rejection. The rejection itself is a security
         contract, so the error-text assertions stay hard; only the form
         furniture around them is recorded softly."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Try to sign in with a password that breaks the password policy.\n"
+            "Check the portal refuses it and says why. The rejection is a security "
+            "contract, so the error-text assertions stay hard; only the form "
+            "furniture around them is recorded softly.",
+        )
         self.logger.info(
             "Starting negative login password compliance test: user=%s pwd=%s",
             username,
@@ -187,6 +196,15 @@ class TestLoginNegativeCases:
         before the assertions were reached.  The test now drives the form
         directly (enter → submit) and then checks for the error state.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Enter a real username with a well-formed but wrong password, and submit "
+            "the form directly.\n"
+            "Check the user is left on the login page with an error message rather "
+            "than being let through.",
+        )
         self.logger.info("Starting invalid password negative login test")
 
         self.driver.get(ReadConfig.get_base_url())
@@ -247,6 +265,13 @@ class TestLoginNegativeCases:
         self, record_property, page_evidence
     ):
         """Valid credentials should land the user on the teacher dashboard."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in with valid teacher credentials.\n"
+            "Check it lands on the teacher dashboard.",
+        )
         self.logger.info("Starting positive login test")
 
         self.driver.get(ReadConfig.get_base_url())

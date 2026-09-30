@@ -185,7 +185,52 @@ def pytest_collection_modifyitems(items):
             # all in one xdist group keeps them on a single worker (under
             # `--dist loadgroup`), which is what "must not run in parallel
             # with other tests" needs to actually mean.
-            item.add_marker(pytest.mark.xdist_group("serial"))
+            item.add_marker(pytest.mark.xdist_group(heavy_lane(item) or "serial"))
+
+    hoist_heavy_lanes(items)
+
+
+# The M1 critical path is two ~27-minute E2E suites that were both `serial`,
+# so they queued back to back on one worker while every other worker sat idle.
+# They do not actually conflict with each other - they drive different author
+# accounts - except at the PIT 3/3 quorum, where both took the same first three
+# PIT logins and signed each other out.
+#
+# Given enough PIT accounts each takes its own quorum lane (see
+# ReadConfig.get_pit_quorum) and can therefore have its own xdist group, which
+# under `--dist loadgroup` means its own worker. That turns ~54 minutes of
+# sequential critical path into ~27 of concurrent.
+HEAVY_LANES = {
+    "test_e2e_teacher_third_rwg_iteration_rejects_items_then_pit_publishes_approved_only":
+        "heavy-teacher-triple-revision",
+}
+
+
+def heavy_lane(item):
+    """This item's dedicated group, or None to leave it in `serial`.
+
+    Returns None when the environment cannot give every lane a disjoint PIT
+    quorum: splitting the groups without splitting the accounts would put two
+    suites on the same three PIT logins concurrently, which is exactly the
+    collision `serial` exists to prevent.
+    """
+    if ReadConfig.pit_quorum_lanes_available() < 2:
+        return None
+    return HEAVY_LANES.get(item.name.split("[")[0])
+
+
+def hoist_heavy_lanes(items):
+    """Start the long poles first.
+
+    `--dist loadgroup` hands whole groups out in collection order, so a heavy
+    group collected last is dispatched last and becomes the tail of the run
+    with nothing left to overlap it. Moving those groups to the front lets the
+    short tests fill in alongside them instead.
+    """
+    heavy = [item for item in items if heavy_lane(item)]
+    if heavy:
+        rest = [item for item in items if not heavy_lane(item)]
+        items[:] = heavy + rest
 
 
 def pytest_collection_finish(session):
@@ -526,6 +571,47 @@ def parse_element_checks(user_properties):
         return []
 
 
+def parse_test_summary(user_properties):
+    """Read the optional 'test_summary' property: a short plain-English note
+    saying what the test actually does.
+
+    The report already carries outcomes, IDs and element tables, all of which
+    assume you know the test. This is the one field written for someone who
+    does not - so it is kept to a few lines and never truncated to one.
+    """
+    raw = user_properties.get("test_summary") if hasattr(user_properties, "get") else None
+    if not raw:
+        return []
+    return [line.strip() for line in str(raw).strip().splitlines() if line.strip()]
+
+
+def build_test_summary_html(lines):
+    """Render the summary as a collapsible, numbered list.
+
+    Collapsed by default like the other sections on the card, so a run with
+    many tests still scans as a list of outcomes; the steps are numbered
+    because they describe an order, and a wall of prose is what this block
+    exists to replace.
+    """
+    if not lines:
+        return ""
+    items = "".join(f"<li>{html.escape(line)}</li>" for line in lines)
+    return (
+        "<details class='details-block test-summary'>"
+        f"<summary>What this test does &mdash; {len(lines)} step"
+        f"{'s' if len(lines) != 1 else ''}</summary>"
+        f"<ol>{items}</ol>"
+        "</details>"
+    )
+
+
+def build_test_summary_text(lines):
+    if not lines:
+        return ""
+    numbered = [f"  {index}. {line}" for index, line in enumerate(lines, start=1)]
+    return "\n".join(["What this test does:"] + numbered)
+
+
 def build_element_checks_html(checks):
     if not checks:
         return ""
@@ -743,6 +829,7 @@ def build_extent_report():
             f"<p><strong>Module:</strong> {html.escape(result.get('module') or 'Other')}</p>"
             f"{logged_in_user_html}"
             f"<h2>{html.escape(result['name'])}</h2>"
+            f"{result.get('test_summary_html') or ''}"
             f"<p><strong>Message:</strong> {render_message_html(result.get('message'), result.get('status'))}</p>"
             + (
                 "<details class='details-block'>"
@@ -814,6 +901,13 @@ def build_extent_report():
             box-shadow: 0 1px 4px rgba(20,40,70,0.06);
         }}
         .test-card h2 {{ margin: 10px 0 8px; font-size: 16px; }}
+        .test-summary {{
+            background: #f4f7fc; border: 1px solid var(--border);
+            border-radius: 8px; padding: 4px 14px 6px; margin: 10px 0 12px;
+        }}
+        .test-summary > summary {{ margin-top: 6px; color: var(--ink); }}
+        .test-summary ol {{ margin: 10px 0 6px; padding-left: 22px; }}
+        .test-summary li {{ margin: 0 0 6px; line-height: 1.55; }}
         .card-passed {{ border-left-color: var(--passed); }}
         .card-failed {{ border-left-color: var(--failed); }}
         .card-skipped {{ border-left-color: var(--skipped); }}
@@ -1416,6 +1510,10 @@ def pytest_runtest_makereport(item):
     element_checks = parse_element_checks(user_properties)
     element_checks_html = build_element_checks_html(element_checks)
     element_checks_text = build_element_checks_text(element_checks)
+
+    test_summary = parse_test_summary(user_properties)
+    test_summary_html = build_test_summary_html(test_summary)
+    test_summary_text = build_test_summary_text(test_summary)
     display_name = item.name
     suite_name = item.cls.__name__ if item.cls else Path(str(item.fspath)).stem
     module_name = get_module_name(item)
@@ -1435,6 +1533,8 @@ def pytest_runtest_makereport(item):
         pass_summary = f"PASSED: {passed_detail}"
         pass_screenshot_name = f"PASS — {passed_detail}"
         details_lines = [pass_summary]
+        if test_summary_text:
+            details_lines.append(test_summary_text)
         if is_retry:
             details_lines.append(retry_note)
         if logged_in_user:
@@ -1561,6 +1661,7 @@ def pytest_runtest_makereport(item):
                 "details": details,
                 "screenshot_base64": screenshot_base64,
                 "screenshots": extent_screenshots,
+                "test_summary_html": test_summary_html,
                 "module": module_name,
                 "logged_in_user": logged_in_user,
                 "stage_counts_html": stage_counts_html,
@@ -1644,6 +1745,8 @@ def pytest_runtest_makereport(item):
             context_lines.append(stage_counts_text)
         if element_checks_text:
             context_lines.append(element_checks_text)
+        if test_summary_text:
+            context_lines.insert(0, test_summary_text)
         if stage_counts_html:
             report.extras.append(extras.html(stage_counts_html))
         if element_checks_html:
@@ -1680,6 +1783,7 @@ def pytest_runtest_makereport(item):
                 "details": failure_details,
                 "screenshot_base64": screenshot_base64,
                 "screenshots": extent_screenshots,
+                "test_summary_html": test_summary_html,
                 "module": module_name,
                 "logged_in_user": logged_in_user,
                 "stage_counts_html": stage_counts_html,
@@ -1714,6 +1818,8 @@ def pytest_runtest_makereport(item):
                 else str(longrepr or "")
             )
             skip_message = one_line(skip_details) or "Test was skipped."
+        if test_summary_text:
+            skip_details = (test_summary_text + "\n\n" + skip_details).strip()
         record_extent_result(
             {
                 "name": display_name,
@@ -1721,6 +1827,7 @@ def pytest_runtest_makereport(item):
                 "message": skip_message,
                 "details": skip_details,
                 "screenshot_base64": None,
+                "test_summary_html": test_summary_html,
                 "module": module_name,
                 "logged_in_user": logged_in_user,
             }

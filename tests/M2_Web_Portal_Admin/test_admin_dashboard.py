@@ -33,6 +33,16 @@ class TestM2AdminDashboard:
         Both the card and the value it holds are checked, so the report
         distinguishes "card missing" from "card present but non-numeric".
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an admin and open the landing dashboard.\n"
+            "Record each header element and KPI card as a soft check, and the value "
+            "inside each card as well.\n"
+            "Recording both lets the report tell 'card missing' apart from 'card is "
+            "there but shows something that is not a number'.",
+        )
         dashboard = self.login_as_admin()
         checks = ElementChecks(dashboard, record_property, page_name="Admin Dashboard — KPIs")
 
@@ -77,6 +87,16 @@ class TestM2AdminDashboard:
         self, record_property, page_evidence
     ):
         """User Activity feed: section, audit link, entries and relative timestamps."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the admin dashboard and find the User Activity feed.\n"
+            "Record the section, its link through to the audit trail, its entries and "
+            "their relative timestamps.\n"
+            "All soft checks, so one run inventories the whole feed instead of "
+            "stopping at the first gap.",
+        )
         dashboard = self.login_as_admin()
         checks = ElementChecks(dashboard, record_property, page_name="Admin Dashboard — Activity Feed")
 
@@ -115,6 +135,14 @@ class TestM2AdminDashboard:
         self, record_property, page_evidence
     ):
         """Published Items matrix: section, table, and its expected column headers."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the admin dashboard and find the Published Items matrix.\n"
+            "Record the section, the table itself, and each column header it is meant "
+            "to carry.",
+        )
         dashboard = self.login_as_admin()
         checks = ElementChecks(dashboard, record_property, page_name="Admin Dashboard — Published Items Grid")
 
@@ -159,6 +187,17 @@ class TestM2AdminDashboard:
         single run inventories the whole page instead of stopping at the first
         gap. Only reaching the dashboard is a hard precondition.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an admin; reaching the dashboard at all is the only hard "
+            "requirement here.\n"
+            "Survey every filter control and section on the page, each one a soft "
+            "check.\n"
+            "A missing element becomes a failed row in the checks table rather than a "
+            "failed test, so one run inventories the whole page.",
+        )
         dashboard = self.login_as_admin()
         checks = ElementChecks(dashboard, record_property, page_name="Admin Dashboard")
 

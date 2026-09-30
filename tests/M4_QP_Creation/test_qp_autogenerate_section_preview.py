@@ -13,6 +13,7 @@ from tests.M4_QP_Creation.qp_surveys import (
 )
 from utilities.element_checks import ElementChecks
 from utilities.page_evidence import checkpoint
+from utilities.qp_question_budget import cap_even_section_marks
 from utilities.read_config import ReadConfig
 
 
@@ -45,6 +46,17 @@ class TestQPAutoGenerateSectionPreview:
         generation budget, the published metadata and the section/set counts
         stay hard.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and auto-generate a question paper at section "
+            "level, then publish it.\n"
+            "Preview each generated set, surveying the page structure softly across "
+            "the screens this walks.\n"
+            "The generation budget, the published metadata and the section and set "
+            "counts stay hard.",
+        )
         self.login_as_teacher()
         page = QuestionPaperBuilderPage(self.driver)
 
@@ -80,18 +92,23 @@ class TestQPAutoGenerateSectionPreview:
             "Both mode tabs responded and the Auto Generator form is open"
         )
 
+        # Section Level generates total_marks // sections questions per
+        # section at one mark each, so CBSE_QP_MAX_QUESTIONS - when set -
+        # lowers the marks the paper is generated for.
+        section_count = 2
+        total_marks = cap_even_section_marks(10, section_count)
         selections = page.configure_auto_generator(
-            total_marks=10,
-            number_of_sections=2,
+            total_marks=total_marks,
+            number_of_sections=section_count,
             number_of_sets=4,
             select_all_chapters=True,
         )
         rules = page.configure_auto_section_rules_for_sections(
-            section_count=2, total_marks=10
+            section_count=section_count, total_marks=total_marks
         )
         page_evidence.checkpoint(
-            "Section-level generator configured for 10 marks over 2 section(s) "
-            f"and 4 set(s); section rules: {rules}"
+            f"Section-level generator configured for {total_marks} marks over "
+            f"{section_count} section(s) and 4 set(s); section rules: {rules}"
         )
         try:
             generation_seconds = page.generate_auto_paper()
@@ -152,7 +169,7 @@ class TestQPAutoGenerateSectionPreview:
             f"Configured selections survived generation and publication — "
             f"published summary: {summary}"
         )
-        assert summary.get("Total Marks", "").strip() == "10", summary
+        assert summary.get("Total Marks", "").strip() == str(total_marks), summary
         assert selections["Subject*"].casefold() in summary.get("Subject", "").casefold(), summary
         assert selections["Grade*"].casefold() in summary.get("Class", "").casefold(), summary
         assert selections["Assessment Type*"].casefold() in summary.get(

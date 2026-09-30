@@ -40,6 +40,9 @@ class UserManagementPage(BasePage):
 
     def open(self, base_url):
         self.driver.get(base_url.rstrip("/") + self.PATH)
+        # A fresh load starts with no grid filters applied, so anything this
+        # page object thought it had switched on is gone.
+        self._applied_role_filters = set()
         self.wait_for_ready()
 
     def wait_for_ready(self, timeout=30):
@@ -144,6 +147,78 @@ class UserManagementPage(BasePage):
             pass
         return selected
 
+    def _fill_create_user_form(
+        self,
+        first_name,
+        last_name,
+        email,
+        mobile,
+        password,
+        role="SME role",
+        grades=("Grade 1",),
+        subjects=("Mathematics",),
+    ):
+        """Open the create-user form and fill every field, without submitting."""
+        self.open_create_user_form()
+        self.enter_text(self.FORM_FIRST_NAME, first_name)
+        self.enter_text(self.FORM_LAST_NAME, last_name)
+        self.enter_text(self.FORM_EMAIL, email)
+        self.enter_text(self.FORM_MOBILE, mobile)
+        self.enter_text(self.FORM_PASSWORD, password)
+        self.enter_text(self.FORM_CONFIRM_PASSWORD, password)
+        self.select_role(role)
+        self._select_multi_option("Grades", grades)
+        self._select_multi_option("Subjects", subjects)
+
+    # How the app refuses a create that collides with an existing account.
+    REJECTION_MARKERS = ("already exists", "already registered", "already in use")
+
+    def rejection_text(self):
+        """Return the form's refusal message, or '' when none is on screen."""
+        toast = self.get_toast_message(timeout=2)
+        if any(marker in toast.casefold() for marker in self.REJECTION_MARKERS):
+            return toast
+        for line in self.body_text().splitlines():
+            if any(marker in line.casefold() for marker in self.REJECTION_MARKERS):
+                return line.strip()
+        return ""
+
+    def cancel_create_user_form(self):
+        self.dismiss_open_overlays()
+        self.click_with_js_fallback(self.FORM_CANCEL_BTN)
+        self.wait_utils.until_condition(
+            lambda driver: not self.is_element_visible_quick(self.FORM_FIRST_NAME, timeout=1),
+            timeout=20,
+        )
+
+    def create_user_expecting_rejection(self, **fields):
+        """Submit a create the app should refuse, and return its refusal text.
+
+        create_user() waits for the form to *close*, which a refused submission
+        never does - so a validation test driving it only ever sees a
+        TimeoutException, indistinguishable from the form being unreachable.
+        This waits for the refusal instead, leaves the form closed, and raises
+        if the account was actually created, because a silent success is the
+        one outcome a duplicate-rejection test must never pass on.
+        """
+        self._fill_create_user_form(**fields)
+        self.dismiss_open_overlays()
+        self.click_with_js_fallback(self.FORM_SUBMIT_BTN)
+        self.wait_utils.until_condition(
+            lambda driver: bool(self.rejection_text())
+            or not self.is_element_visible_quick(self.FORM_FIRST_NAME, timeout=1),
+            timeout=30,
+        )
+        message = self.rejection_text()
+        if not message:
+            raise AssertionError(
+                "The create-user form was accepted: it closed without refusing a "
+                f"submission that duplicates an existing account ({fields.get('email')} / "
+                f"{fields.get('mobile')})."
+            )
+        self.cancel_create_user_form()
+        return message
+
     def create_user(
         self,
         first_name,
@@ -157,17 +232,9 @@ class UserManagementPage(BasePage):
     ):
         """Fill and submit the create-user form. Returns the submit duration in
         seconds so the caller can assert the 2 s creation SLA."""
-        self.open_create_user_form()
-        self.enter_text(self.FORM_FIRST_NAME, first_name)
-        self.enter_text(self.FORM_LAST_NAME, last_name)
-        self.enter_text(self.FORM_EMAIL, email)
-        self.enter_text(self.FORM_MOBILE, mobile)
-        self.enter_text(self.FORM_PASSWORD, password)
-        self.enter_text(self.FORM_CONFIRM_PASSWORD, password)
-        self.select_role(role)
-        self._select_multi_option("Grades", grades)
-        self._select_multi_option("Subjects", subjects)
-
+        self._fill_create_user_form(
+            first_name, last_name, email, mobile, password, role, grades, subjects
+        )
         self.dismiss_open_overlays()
         started = monotonic()
         self.click_with_js_fallback(self.FORM_SUBMIT_BTN)
@@ -206,29 +273,42 @@ class UserManagementPage(BasePage):
                 sleep(2)
         raise last_error
 
+    def _row_xpath(self, identifier):
+        """XPath of the row for `identifier`, matched on a whole cell first.
+
+        Display names nest: a contains() lookup for 'RWG Auto2' also matches
+        the 'SrRWG Auto2' row, and since the grid lists SRWG holders above RWG
+        holders the wrong row wins every time. That is silent damage — reading
+        a status, flipping a toggle and asserting the result all agree with
+        each other while acting on somebody else's account.
+
+        Falls back to contains() so callers holding a partial identifier
+        (a code fragment, a name prefix) still resolve.
+        """
+        exact = f"//table//tbody//tr[./td[normalize-space()='{identifier}']]"
+        try:
+            if self.driver.find_elements(By.XPATH, exact):
+                return exact
+        except WebDriverException:
+            pass
+        return f"//table//tbody//tr[.//*[contains(normalize-space(),'{identifier}')]]"
+
     def _row_for(self, identifier):
-        return (
-            By.XPATH,
-            f"//table//tbody//tr[.//*[contains(normalize-space(),'{identifier}')]]",
-        )
+        return (By.XPATH, self._row_xpath(identifier))
 
     def is_user_listed(self, identifier):
         return self.is_element_visible_quick(self._row_for(identifier), timeout=10)
 
     def get_user_code(self, identifier):
         """Read the USER-### code from the first cell of the matching row."""
-        cell = (
-            By.XPATH,
-            f"//table//tbody//tr[.//*[contains(normalize-space(),'{identifier}')]]/td[1]",
-        )
-        return self.get_text(cell).strip()
+        return self.get_text((By.XPATH, self._row_xpath(identifier) + "/td[1]")).strip()
 
     def get_user_status(self, identifier):
         """Return 'Active' / 'Inactive' from the row's status badge."""
         badge = (
             By.XPATH,
-            f"//table//tbody//tr[.//*[contains(normalize-space(),'{identifier}')]]"
-            "//span[normalize-space()='Active' or normalize-space()='Inactive']",
+            self._row_xpath(identifier)
+            + "//span[normalize-space()='Active' or normalize-space()='Inactive']",
         )
         return self.get_text(badge).strip()
 
@@ -275,20 +355,103 @@ class UserManagementPage(BasePage):
 
     def filter_by_role(self, role_label):
         """Use the grid's Roles filter — searching by name misses role holders
-        whose display name does not contain the role (e.g. 'SocSci SME')."""
-        self.click_with_js_fallback(self._filter_trigger("Roles"))
+        whose display name does not contain the role (e.g. 'SocSci SME').
+
+        The menu entry is a *toggle*, not a radio: clicking 'RWG role' a second
+        time clears the filter and drops the grid back to the unfiltered first
+        page. The menu item publishes no aria-checked/data-state to read that
+        back from, so the applied set is tracked here and re-applying is a
+        no-op. Without this, a caller that enumerates a role twice (a survey
+        check followed by the real read) silently gets an unfiltered page and
+        concludes nobody holds the role.
+        """
+        if role_label in self.applied_role_filters:
+            return
+        self._open_roles_menu_and_pick(role_label)
+        self.applied_role_filters.add(role_label)
+
+    def _open_roles_menu_and_pick(self, role_label):
+        """Open the Roles menu and click one entry.
+
+        The trigger click is retried: a toast or a leftover popover can sit
+        over it, and click_with_js_fallback reports success either way. A menu
+        that never opened would otherwise surface much later as an unfiltered
+        grid — i.e. as "no user holds this role".
+        """
         option = (By.XPATH, f"//*[@role='menuitem'][normalize-space()='{role_label}']")
-        self.wait_utils.until_visible(option, timeout=15)
+        last_error = None
+        for _ in range(3):
+            self.dismiss_open_overlays()
+            self.click_with_js_fallback(self._filter_trigger("Roles"))
+            try:
+                self.wait_utils.until_visible(option, timeout=10)
+                break
+            except TimeoutException as error:
+                last_error = error
+        else:
+            raise TimeoutException(
+                f"Roles filter menu did not open for {role_label!r}."
+            ) from last_error
         self.click_with_js_fallback(option)
         self.dismiss_open_overlays()
         sleep(2)
 
+    @property
+    def applied_role_filters(self):
+        """Role filters this page object has switched on since the last load."""
+        if not hasattr(self, "_applied_role_filters"):
+            self._applied_role_filters = set()
+        return self._applied_role_filters
+
+    def clear_role_filter(self, role_label):
+        """Switch a role filter back off (the menu entry toggles)."""
+        if role_label not in self.applied_role_filters:
+            return
+        self.applied_role_filters.discard(role_label)
+        self._open_roles_menu_and_pick(role_label)
+
+    ROWS_PER_PAGE_TRIGGER = (
+        By.XPATH,
+        "//*[contains(normalize-space(),'Rows per page')]/following::button[@role='combobox'][1]",
+    )
+
+    def set_rows_per_page(self, size):
+        """Best-effort: show `size` rows so a listing fits on one page.
+
+        Returns True when the control accepted the size. The grid defaults to
+        10 rows and its 'Page N of M' indicator is unreliable — it reads
+        'Page 2 of 1' once you step past the data — so paging through a listing
+        is not a dependable way to enumerate it. Asking for a bigger page is.
+        """
+        if not self.is_element_visible_quick(self.ROWS_PER_PAGE_TRIGGER, timeout=5):
+            return False
+        try:
+            self.click_with_js_fallback(self.ROWS_PER_PAGE_TRIGGER)
+            option = (By.XPATH, f"//*[@role='option'][normalize-space()='{size}']")
+            if not self.is_element_visible_quick(option, timeout=5):
+                self.dismiss_open_overlays()
+                return False
+            self.click_with_js_fallback(option)
+            self.dismiss_open_overlays()
+            sleep(2)
+            return True
+        except WebDriverException:
+            self.dismiss_open_overlays()
+            return False
+
     def find_users_by_role(self, role_label, search_term=None):
-        """All users holding role_label, enumerated via the Roles filter."""
+        """All users holding role_label, enumerated via the Roles filter.
+
+        The page size is widened first: the grid shows 10 rows by default and
+        get_listed_users() only sees the rows in view, so on a role with more
+        holders than that the tail is silently dropped — and a caller acting on
+        "every holder of this role" would act on part of it.
+        """
         if search_term is not None:
             self.search_user(search_term)
         else:
             self.filter_by_role(role_label)
+            self.set_rows_per_page(100)
         return [user for user in self.get_listed_users() if self.has_role(user, role_label)]
 
     # ------------------------------------------------------------- activation
@@ -296,8 +459,8 @@ class UserManagementPage(BasePage):
     def _status_toggle(self, identifier):
         return (
             By.XPATH,
-            f"//table//tbody//tr[.//*[contains(normalize-space(),'{identifier}')]]"
-            "//button[starts-with(@aria-label,'Deactivate') or starts-with(@aria-label,'Activate')]",
+            self._row_xpath(identifier)
+            + "//button[starts-with(@aria-label,'Deactivate') or starts-with(@aria-label,'Activate')]",
         )
 
     # Deactivation opens a native <dialog>, not a role="dialog" div, and the

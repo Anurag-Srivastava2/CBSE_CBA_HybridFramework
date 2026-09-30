@@ -3,8 +3,9 @@
     Runs the M1 Item Bank suite as four headless groups, one SME account each.
 
 .DESCRIPTION
-    All 47 collectible M1 tests are split into four groups of roughly equal
-    wall-clock time (~1 h 52 m each, against ~7 h 29 m serial). Group N drives
+    All 57 collectible M1 tests are split into four groups (~1 h 52 m each,
+    except group 3 at ~2 h 06 m since it also carries the ten Book/Unit
+    metadata tests, against ~7 h 43 m serial). Group N drives
     sme<N>@dev.com and nothing else, so the four groups can run at the same time
     without sharing an SME session or a server-side "Added Items" draft.
 
@@ -61,6 +62,7 @@ $Typology = "$M1/test_e2e_sme_excel_typology_image_rwg_srrwg_revision_to_pit_pub
 $Creation = "$M1/test_sme_manual_item_creation.py::TestSMEManualItemCreation"
 $Smoke = "$M1/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank"
 $Queues = "$M1/test_smoke_m1_reviewer_queues.py::TestSmokeM1ReviewerQueues::test_smoke_m1_05_reviewer_opens_queue_and_assigned_item_set"
+$BookUnit = "$M1/test_book_unit_metadata.py::TestBookAndUnitMetadata"
 
 # Longest test first inside each group: a group that overruns its estimate then
 # overruns on a cheap tail rather than on a 27-minute typology E2E.
@@ -112,7 +114,7 @@ $groups = @{
     }
     3 = @{
         Account = 'sme3@dev.com'
-        Estimate = '1h52m'
+        Estimate = '2h06m'
         Tests = @(
             "$Typology[11_CABA.xlsx-Case Based Question]"
             "$Typology[03_MTF.xlsx-Match the Following]"
@@ -120,6 +122,10 @@ $groups = @{
             "$Queues[RWG]"
             "$Smoke::test_smoke_m1_03_bulk_upload_screen_accepts_a_file"
             "$M1/test_sme_bulk_upload_rbac.py::TestSMEBulkUploadRBAC::test_tc_ibmm_01a_p03_sme_sees_only_assigned_grade_subject_items"
+            # Book/Unit lives here because it already drives CBSE_SME2_USERNAME,
+            # which this group pins to sme3 - the account it was written and
+            # verified against. ~14m for the ten tests.
+            "$BookUnit"
         )
     }
     4 = @{
@@ -139,7 +145,7 @@ $groups = @{
 if ($All) {
     foreach ($number in 1..4) {
         $spec = $groups[$number]
-        Write-Host "Launching group $number ($($spec.Account), est. $($spec.Estimate), $($spec.Tests.Count) tests)"
+        Write-Host "Launching group $number ($($spec.Account), est. $($spec.Estimate), $($spec.Tests.Count) spec(s))"
         Start-Process -FilePath 'powershell.exe' -ArgumentList @(
             '-NoExit', '-ExecutionPolicy', 'Bypass',
             '-File', $PSCommandPath, '-Group', $number
@@ -165,7 +171,10 @@ $env:CBSE_HEADLESS = '1'
 $env:CBSE_SME_USERNAME = $spec.Account
 $env:CBSE_SME2_USERNAME = $spec.Account
 
-Write-Host "M1 group $Group | $($spec.Account) | $($spec.Tests.Count) tests | est. $($spec.Estimate)"
+# Specs, not tests: most entries are a single nodeid, but a class-level entry
+# (Book/Unit) expands to all its tests, so the two counts differ. pytest prints
+# the real collected count immediately below this line.
+Write-Host "M1 group $Group | $($spec.Account) | $($spec.Tests.Count) spec(s) | est. $($spec.Estimate)"
 
 $arguments = @('-m', 'pytest') + $spec.Tests + @(
     '--html', (Join-Path $reportDir 'report.html'),

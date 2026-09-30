@@ -203,8 +203,16 @@ class TestSMEUploadValidationErrorFlow:
         self,
         tmp_path,
         request,
-        page_evidence,
+        page_evidence, record_property,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Build a workbook whose Marks column is left blank, and upload it as an "
+            "SME.\n"
+            "Check the upload is refused with an error the author can actually see.",
+        )
         blank_marks_file = tmp_path / "blank_marks_column_items.xlsx"
         self.build_blank_marks_column_file(blank_marks_file)
         page_evidence.checkpoint(
@@ -231,8 +239,15 @@ class TestSMEUploadValidationErrorFlow:
         self,
         tmp_path,
         request,
-        page_evidence,
+        page_evidence, record_property,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Build a workbook holding an item already in the bank, and upload it.\n"
+            "Check the upload is refused with a visible error.",
+        )
         duplicate_file = tmp_path / "duplicate_item_content_items.xlsx"
         self.build_known_duplicate_item_file(duplicate_file)
         page_evidence.checkpoint(

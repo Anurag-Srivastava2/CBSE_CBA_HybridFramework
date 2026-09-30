@@ -64,6 +64,19 @@ def survey_manual_form(checks, page):
     for label in page.METADATA_FIELD_LABELS:
         checks.check_condition(f"Field — {label}", label not in missing_metadata)
 
+    # Unit is checked as a condition rather than as a required field: it is
+    # optional, and the form only reveals it once a Book is picked. (It is not
+    # gated on the subject having unit data — a subject without any still gets
+    # the field, opened on an empty list.) On an untouched form it is correctly
+    # absent, so this records the state of the gate rather than demanding the
+    # field.
+    unit_visible = checks.safe_call(lambda: page.has_unit_field(timeout=1), False)
+    checks.check_condition(
+        f"Field — {page.UNIT_FIELD_LABEL} (optional, appears after Book)",
+        not unit_visible,
+        detail="not offered until a book is chosen",
+    )
+
     missing_content = checks.safe_call(page.missing_content_fields)
     for label in page.CONTENT_FIELD_LABELS:
         checks.check_condition(f"Field — {label}", label not in missing_content)

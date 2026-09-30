@@ -1,8 +1,12 @@
 import re
-from time import monotonic
+from time import monotonic, sleep
 from urllib.parse import urljoin
 
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import (
+    StaleElementReferenceException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
@@ -25,8 +29,26 @@ class AdminPortalPage(BasePage):
         (By.XPATH, "//button[normalize-space()='Confirm' or normalize-space()='Yes']"),
     ]
 
-    def body_text(self):
-        return self.driver.find_element(By.TAG_NAME, "body").text
+    def body_text(self, attempts=3):
+        """The page's visible text, re-read if the SPA repaints underneath it.
+
+        `find_element(...).text` is two round trips: the node is located, then
+        its text is fetched. When the SPA swaps the tree between the two - which
+        it does right after a login, exactly where the sidebar RBAC sweep reads
+        it - chromedriver fails the second call with a stale node, surfacing as
+        `unhandled inspector error: Node with given id does not belong to the
+        document`. That is the driver losing a reference, never the product, so
+        it is re-read rather than allowed to fail a test.
+        """
+        last_error = None
+        for attempt in range(attempts):
+            try:
+                return self.driver.find_element(By.TAG_NAME, "body").text
+            except (StaleElementReferenceException, WebDriverException) as error:
+                last_error = error
+                if attempt < attempts - 1:
+                    sleep(0.5)
+        raise last_error
 
     def normalized_body_text(self):
         return self.body_text().casefold()
@@ -36,10 +58,17 @@ class AdminPortalPage(BasePage):
         self.wait_for_application_ready()
 
     def wait_for_application_ready(self, timeout=30):
-        self.wait_utils.until_condition(
-            lambda driver: "loading" not in driver.find_element(By.TAG_NAME, "body").text.casefold(),
-            timeout=timeout,
-        )
+        def painted(driver):
+            # WebDriverWait only ignores NoSuchElementException, so a tree swap
+            # mid-poll would otherwise escape as a stale-node error and fail the
+            # test. A repaint is exactly what this is waiting for: treat an
+            # unreadable body as "not ready yet" and poll again.
+            try:
+                return "loading" not in self.body_text(attempts=1).casefold()
+            except WebDriverException:
+                return False
+
+        self.wait_utils.until_condition(painted, timeout=timeout)
 
     def open_named_section(self, *names):
         """Open a sidebar/top-nav section by visible label, falling back to a likely URL."""

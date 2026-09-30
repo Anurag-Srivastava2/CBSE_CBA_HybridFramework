@@ -57,12 +57,20 @@ class TestVersionRejectionContracts:
     # Tests
     # ------------------------------------------------------------------
 
-    def test_tc_ibmm_16_p01_full_revision_history_is_visible(self, page_evidence):
+    def test_tc_ibmm_16_p01_full_revision_history_is_visible(self, page_evidence, record_property):
         """IBMM-16-P01: The SME Sets module must surface iteration/version history
         with feedback for any item-set that has undergone at least one revision cycle.
         Asserts that history markers, feedback text, and a version number are all
         present simultaneously on the page.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open an item set that has been through at least one revision cycle.\n"
+            "Check the SME Sets module shows its iteration history, the feedback "
+            "given, and a version number.",
+        )
         self.step(1, "Login as SME2 to inspect the Sets module")
         self.login(ReadConfig.get_sme2_username())
 
@@ -99,11 +107,19 @@ class TestVersionRejectionContracts:
         self.passed("Revision history, feedback, and version number all visible on Sets page")
         self.logger.info("IBMM-16-P01 passed")
 
-    def test_tc_ibmm_16_p02_reviewer_history_is_read_only(self, page_evidence):
+    def test_tc_ibmm_16_p02_reviewer_history_is_read_only(self, page_evidence, record_property):
         """IBMM-16-P02: RWG, SR-RWG, and PIT reviewers must be able to *view*
         item history (history/iteration/timeline/version visible) but must NOT see
         edit-history or delete-version controls (read-only enforcement).
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as each reviewer role in turn and open an item's history.\n"
+            "Check they can see the history, iteration and version, but are offered "
+            "no control to edit or delete a version.",
+        )
         roles = ("rwg", "sr_rwg", "pit")
         page_classes = {
             "rwg": RWGReviewQueuePage,
@@ -159,11 +175,19 @@ class TestVersionRejectionContracts:
 
         self.logger.info("IBMM-16-P02 passed for all reviewer roles: %s", roles)
 
-    def test_tc_ibmm_16_n01_item_id_is_preserved_across_versions(self, page_evidence):
+    def test_tc_ibmm_16_n01_item_id_is_preserved_across_versions(self, page_evidence, record_property):
         """IBMM-16-N01: Item IDs (IS\\d+-i\\d+) must remain stable across revision
         versions — no new IDs should be minted when an item is revised.
         A duplicate in the found IDs means a revision created a second ID.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Revise an item and read its ID across the versions.\n"
+            "Check the ID stays the same: a duplicate would mean a revision minted a "
+            "second ID.",
+        )
         self.step(1, "Login as SME2")
         self.login(ReadConfig.get_sme2_username())
 
@@ -194,11 +218,20 @@ class TestVersionRejectionContracts:
         self.passed(f"All {len(set(item_ids))} item IDs are unique — IDs stable across versions")
         self.logger.info("IBMM-16-N01 passed — %d unique IDs", len(set(item_ids)))
 
-    def test_tc_ibmm_17_p01_admin_receives_three_strike_notification(self, page_evidence):
+    def test_tc_ibmm_17_p01_admin_receives_three_strike_notification(self, page_evidence, record_property):
         """IBMM-17-P01: When an item-set has been rejected 3 times, the Admin
         dashboard must show a three-strike notification alongside a 'disabled' status
         and an item reference.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Look at the admin dashboard for a set that has been rejected three "
+            "times.\n"
+            "Check it shows a three-strike notification, a disabled status, and a "
+            "reference to the item.",
+        )
         username = ReadConfig.get_role_usernames("admin")[0]
         self.step(1, f"Login as Admin: {username}")
         self.login(username)
@@ -232,10 +265,18 @@ class TestVersionRejectionContracts:
         self.passed("Three-strike notification with disabled item found on Admin dashboard")
         self.logger.info("IBMM-17-P01 passed")
 
-    def test_tc_ibmm_17_p02_admin_can_view_rejection_history(self, page_evidence):
+    def test_tc_ibmm_17_p02_admin_can_view_rejection_history(self, page_evidence, record_property):
         """IBMM-17-P02: The Admin must be able to view a rejection history panel
         that includes the reason for each rejection and the associated item-set ID.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the rejection history panel as an admin.\n"
+            "Check it lists the reason for each rejection and the item set it belongs "
+            "to.",
+        )
         username = ReadConfig.get_role_usernames("admin")[0]
         self.step(1, f"Login as Admin: {username}")
         self.login(username)
@@ -270,11 +311,19 @@ class TestVersionRejectionContracts:
         self.passed("Rejection history panel with reason and item-set ID visible to Admin")
         self.logger.info("IBMM-17-P02 passed")
 
-    def test_tc_ibmm_17_n01_second_rejection_has_no_three_strike_alert(self, page_evidence):
+    def test_tc_ibmm_17_n01_second_rejection_has_no_three_strike_alert(self, page_evidence, record_property):
         """IBMM-17-N01: A second rejection must NOT trigger a three-strike alert.
         The three-strike rule fires only on the third (final) rejection.
         Any line on the page that says 'second rejection … three-strike' is a bug.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Look at a set that has been rejected twice, not three times.\n"
+            "Check no three-strike alert is shown, since that rule fires only on the "
+            "third and final rejection.",
+        )
         username = ReadConfig.get_role_usernames("admin")[0]
         self.step(1, f"Login as Admin: {username}")
         self.login(username)

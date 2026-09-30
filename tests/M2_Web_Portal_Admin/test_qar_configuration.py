@@ -49,6 +49,15 @@ class TestM2QARConfiguration:
     ):
         """Every check is recorded individually, so a partial screen names which
         check is missing or misclassified rather than only the first."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open QAR Configuration as an admin.\n"
+            "Check all seven QAR checks are listed, each at its proper layer.\n"
+            "Every check is recorded individually, so a partial screen names which "
+            "check is missing or misclassified rather than only the first one.",
+        )
         page = self.open_qar_config()
         checks = ElementChecks(page, record_property, page_name="QAR Configuration — Checks")
 
@@ -84,6 +93,14 @@ class TestM2QARConfiguration:
         self, record_property, page_evidence
     ):
         """Tab presence and its rendered controls, both recorded softly."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open each tab on QAR Configuration in turn.\n"
+            "Record that the tab is there and that it renders its controls, both as "
+            "soft checks.",
+        )
         page = self.open_qar_config()
         checks = ElementChecks(page, record_property, page_name="QAR Configuration — Tabs")
 
@@ -108,6 +125,15 @@ class TestM2QARConfiguration:
         self, record_property, page_evidence
     ):
         """Pill presence is soft; a blocker check switched OFF stays a hard gate."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Read the QAR Configuration status bar and record the state pill for "
+            "every check.\n"
+            "Pill presence is soft, but a blocker check found switched OFF stays a "
+            "hard failure.",
+        )
         page = self.open_qar_config()
         checks = ElementChecks(page, record_property, page_name="QAR Configuration — Status Bar")
 
@@ -140,6 +166,14 @@ class TestM2QARConfiguration:
         self, record_property, page_evidence
     ):
         """Pill presence is soft; the threshold agreeing with Global Settings is hard."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Read the pass pill on the QAR Configuration status bar.\n"
+            "Its threshold must agree with the one in Global Settings: the pill being "
+            "present is soft, the two agreeing is hard.",
+        )
         page = self.open_qar_config()
         checks = ElementChecks(page, record_property, page_name="QAR Configuration — Pass Threshold")
 
@@ -175,8 +209,17 @@ class TestM2QARConfiguration:
 
     @pytest.mark.serial
     def test_m2_qar_config_05_global_settings_edits_persist_after_reload(
-        self, page_evidence
+        self, page_evidence, record_property
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Edit a value in QAR Global Settings, reload the page and check the edit "
+            "stuck.\n"
+            "This build exposes no Global Settings value to edit, so the gap is filed "
+            "as known issue KI-M2-QARCFG-002 rather than asserted.",
+        )
         page = self.open_qar_config()
 
         originals = page.read_global_settings()
@@ -233,8 +276,17 @@ class TestM2QARConfiguration:
 
     @pytest.mark.serial
     def test_m2_qar_config_06_out_of_range_pass_threshold_is_rejected(
-        self, page_evidence
+        self, page_evidence, record_property
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Enter a pass threshold outside the allowed range and expect the form to "
+            "refuse it.\n"
+            "This build exposes no Pass Threshold control, so the gap is filed as "
+            "known issue KI-M2-QARCFG-002 rather than asserted.",
+        )
         page = self.open_qar_config()
 
         originals = page.read_global_settings()
@@ -262,8 +314,16 @@ class TestM2QARConfiguration:
             self.restore_global_settings(page, originals, {"pass_threshold": "150"})
 
     def test_m2_qar_config_07_non_admin_cannot_reach_qar_configuration(
-        self, page_evidence
+        self, page_evidence, record_property
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher rather than an admin.\n"
+            "Check QAR Configuration is not reachable for them, neither offered in "
+            "navigation nor served on direct access.",
+        )
         page = self.login_as(ReadConfig.get_role_usernames("teacher")[0])
 
         page_evidence.checkpoint(

@@ -1,7 +1,7 @@
 import base64
 from pathlib import Path
 import re
-from time import sleep
+from time import monotonic, sleep
 
 from selenium.common.exceptions import (
     StaleElementReferenceException,
@@ -143,11 +143,19 @@ class UploadItemFilePage(BasePage):
         "//*[contains(normalize-space(), 'All files uploaded and validated successfully') "
         "and contains(normalize-space(), 'Status: PASSED')]",
     )
+    # .docx/.doc and .zip are listed alongside the spreadsheet extensions
+    # because the Word ingestion path stages the document and its companion
+    # image .zip through this same uploader. Without them the staged-file
+    # assertion in upload_item_file_and_validate() cannot see a Word upload at
+    # all and reports a missing element rather than the upload's real outcome.
     UPLOADED_FILE_NAME = (
         By.XPATH,
         "//*[contains(normalize-space(), '.xlsx') "
         "or contains(normalize-space(), '.xls') "
-        "or contains(normalize-space(), '.csv')]",
+        "or contains(normalize-space(), '.csv') "
+        "or contains(normalize-space(), '.docx') "
+        "or contains(normalize-space(), '.doc') "
+        "or contains(normalize-space(), '.zip')]",
     )
     UPLOAD_DOCUMENTS_HEADING = (
         By.XPATH,
@@ -158,6 +166,19 @@ class UploadItemFilePage(BasePage):
         (By.XPATH, "//a[contains(normalize-space(),'Download Template')]"),
         (By.XPATH, "//*[contains(normalize-space(),'Download') and contains(normalize-space(),'Template')]"),
     ]
+    # Download Template is a dropdown: clicking the trigger above only opens a
+    # menu, and the download starts only once a format is chosen. Keyed by the
+    # extension the option produces.
+    TEMPLATE_FORMAT_OPTION_LOCATORS = {
+        "xlsx": (
+            By.XPATH,
+            "//*[contains(normalize-space(),'Excel') and contains(normalize-space(),'.xlsx')]",
+        ),
+        "docx": (
+            By.XPATH,
+            "//*[contains(normalize-space(),'Word') and contains(normalize-space(),'.docx')]",
+        ),
+    }
     UPLOAD_HISTORY_ROWS = (
         By.XPATH,
         "//table[.//th[contains(translate(normalize-space(), "
@@ -315,6 +336,71 @@ class UploadItemFilePage(BasePage):
             if not self.count_visible(self.tab_locator(label))
         ]
 
+    def get_required_column_rules(self):
+        """The Required Columns rail as {column name: the rule beside it}.
+
+        This panel is the app stating its own upload contract on screen -
+        "Book: The book within the grade-subject - required", "Unit/Theme:
+        Unit / Theme (optional)" - so it is worth reading rather than only
+        inferring the contract from a downloaded file.
+
+        Read by walking the rail's rendered text rather than through per-chip
+        locators: the chips carry no stable hook, and a layout tweak that
+        renamed a class would otherwise report the whole contract as missing.
+        Returns {} when the rail is not on screen, which the caller reports
+        instead of mistaking for an empty contract.
+        """
+        return self.driver.execute_script(
+            # Raw: the JS below needs its own backslashes ( \n , \. ) to survive
+            # into the browser rather than being interpreted by Python first.
+            r"""
+            const heading = Array.from(document.querySelectorAll('*')).find(
+                el => el.children.length === 0
+                    && (el.textContent || '').trim() === 'Upload Prerequisites'
+            );
+            if (!heading) return {};
+            // The rail is the nearest ancestor that also holds the chip list.
+            let rail = heading.parentElement;
+            while (rail && !/Chapter No\._Name/.test(rail.innerText || '')) {
+                rail = rail.parentElement;
+            }
+            if (!rail) return {};
+            const lines = (rail.innerText || '')
+                .split('\n')
+                .map(line => line.trim())
+                .filter(Boolean);
+            // Each column renders as a chip line followed by its rule; the rule
+            // itself can wrap onto further lines, so text is accumulated until
+            // the next known chip starts.
+            const chips = new Set(lines.filter(line => /^[A-Z][A-Za-z0-9 ._\/']{0,40}$/.test(line)));
+            const rules = {};
+            let current = null;
+            for (const line of lines) {
+                if (chips.has(line) && line !== current) {
+                    current = line;
+                    if (!(current in rules)) rules[current] = '';
+                } else if (current) {
+                    rules[current] = (rules[current] + ' ' + line).trim();
+                }
+            }
+            return rules;
+            """
+        ) or {}
+
+    def get_required_column_rule(self, column):
+        """The rule text for one Required Columns entry, matched loosely.
+
+        The rail spells the fourth column "Unit/Theme" while the workbook header
+        says "Unit", so callers name either and this resolves it.
+        """
+        rules = self.get_required_column_rules()
+        wanted = "".join(ch for ch in column.casefold() if ch.isalnum())
+        for name, rule in rules.items():
+            normalized = "".join(ch for ch in name.casefold() if ch.isalnum())
+            if normalized == wanted or normalized.startswith(wanted):
+                return rule
+        return ""
+
     def is_tab_active(self, label):
         try:
             state = self.driver.find_element(*self.tab_locator(label)).get_attribute(
@@ -378,7 +464,90 @@ class UploadItemFilePage(BasePage):
     def open_upload_item_file_tab(self):
         self.click_any_element(self.UPLOAD_ITEM_FILE_TAB_LOCATORS)
 
-    def download_latest_template(self, download_directory, timeout=30):
+    UPLOAD_FORMAT_TRIGGER = (
+        By.XPATH,
+        "//*[contains(normalize-space(),'Upload format')]"
+        "//button[normalize-space()='Excel' or normalize-space()='Word']"
+        " | //button[normalize-space()='Excel' or normalize-space()='Word']",
+    )
+
+    def get_selected_upload_format(self):
+        """The format the Upload format selector currently shows."""
+        for element in self.driver.find_elements(*self.UPLOAD_FORMAT_TRIGGER):
+            if element.is_displayed():
+                return element.text.strip()
+        return ""
+
+    def select_upload_format(self, upload_format, timeout=10):
+        """Switch the upload step between Excel and Word.
+
+        The step carries an "Upload format" listbox that defaults to Excel, and
+        it is what drives the file input's `accept`: Excel advertises
+        .xlsx/.xls/.csv and Word advertises .docx. A Word document therefore
+        cannot be staged until this is switched -- Selenium's send_keys bypasses
+        `accept`, so skipping this looks like the app silently dropping the
+        file rather than the form being in the wrong mode.
+
+        No-op when the wanted format is already selected. Returns True once the
+        file input advertises the matching extension.
+        """
+        wanted = upload_format.strip().casefold()
+        extension = {"word": ".docx", "excel": ".xlsx"}[wanted]
+        if self.get_selected_upload_format().casefold() == wanted:
+            if extension in (self.get_accepted_upload_extensions() or []):
+                return True
+
+        trigger = self.wait_utils.until_visible(self.UPLOAD_FORMAT_TRIGGER, timeout=timeout)
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", trigger
+        )
+        # A JS click does not open this listbox -- it needs a real click.
+        trigger.click()
+        option = (
+            By.XPATH,
+            f"//*[@role='option'][normalize-space()='{upload_format.strip().title()}']",
+        )
+        self.wait_utils.until_visible(option, timeout=timeout).click()
+
+        for _ in range(timeout * 2):
+            if extension in (self.get_accepted_upload_extensions() or []):
+                return True
+            sleep(0.5)
+        raise AssertionError(
+            f"Upload format did not switch to {upload_format!r}: the file input still "
+            f"advertises {self.get_accepted_upload_extensions()}."
+        )
+
+    def choose_template_format(self, file_format="xlsx", timeout=5):
+        """Pick a format from the open Download Template menu.
+
+        Returns False when no option ever appears, which is the older build
+        where Download Template was a plain button that downloaded straight
+        away -- the caller then just waits for the file as before.
+        """
+        locator = self.TEMPLATE_FORMAT_OPTION_LOCATORS[file_format]
+        for _ in range(timeout * 4):
+            options = [
+                element
+                for element in self.driver.find_elements(*locator)
+                if element.is_displayed()
+            ]
+            if options:
+                # The XPath matches every ancestor that contains the menu text
+                # too; the option itself is the innermost, so the shortest text.
+                min(options, key=lambda element: len(element.text)).click()
+                return True
+            sleep(0.25)
+        return False
+
+    def download_latest_template(self, download_directory, timeout=30, file_format="xlsx"):
+        """Download the item template and return the saved file.
+
+        Download Template is a dropdown offering Excel (.xlsx) and Word
+        (.docx). Clicking the trigger alone only opens the menu, so a format
+        must be chosen or no download is ever requested -- which presents as a
+        silent timeout with the button sitting there enabled.
+        """
         download_directory = Path(download_directory).resolve()
         download_directory.mkdir(parents=True, exist_ok=True)
         self.driver.execute_cdp_cmd(
@@ -387,15 +556,20 @@ class UploadItemFilePage(BasePage):
         )
         before = set(download_directory.glob("*"))
         self.click_any_element(self.DOWNLOAD_TEMPLATE_LOCATORS)
+        self.choose_template_format(file_format)
         for _ in range(timeout * 2):
             candidates = [
-                path for path in download_directory.glob("*.xlsx")
+                path for path in download_directory.glob(f"*.{file_format}")
                 if path not in before and not path.name.endswith(".crdownload")
             ]
             if candidates:
                 return max(candidates, key=lambda path: path.stat().st_mtime)
             sleep(0.5)
-        raise TimeoutException("Latest item-upload template was not downloaded.")
+        raise TimeoutException(
+            f"Latest item-upload template was not downloaded as .{file_format}. "
+            "If the Download Template menu opened but no format was picked, the "
+            "option locator no longer matches."
+        )
 
     def get_upload_history_statuses(self, timeout=30):
         """Return the statuses shown in the Previously Uploaded Files table."""
@@ -453,7 +627,25 @@ class UploadItemFilePage(BasePage):
                     continue
         return None, ""
 
-    def get_upload_history_row(self, status, action_text=None, timeout=30):
+    @staticmethod
+    def row_has_file_suffix(row_lines, file_suffix):
+        """Whether a row's File Name ends in `file_suffix` (e.g. ".xlsx").
+
+        Word uploads are accepted alongside Excel, and a row's download comes
+        back in the format it was uploaded in, so a caller that needs a workbook
+        has to pick an Excel row rather than whichever row comes first.
+
+        The File Name and Uploaded On cells share one line of row text
+        ("x.xlsx 24 Sept 2026, 3:19 pm"), so the suffix is matched per word.
+        """
+        suffix = file_suffix.casefold()
+        return any(
+            word.casefold().endswith(suffix)
+            for line in row_lines
+            for word in line.split()
+        )
+
+    def get_upload_history_row(self, status, action_text=None, timeout=30, file_suffix=None):
         normalized_status = str(status).strip().upper()
         if normalized_status not in ("PASSED", "FAILED"):
             raise ValueError(f"Unsupported upload-history status: {status!r}")
@@ -473,6 +665,8 @@ class UploadItemFilePage(BasePage):
                     }
                     if normalized_status not in row_lines:
                         continue
+                    if file_suffix and not self.row_has_file_suffix(row_lines, file_suffix):
+                        continue
                     if action_texts and not self.find_row_action(row, action_texts)[0]:
                         continue
                     return row
@@ -482,16 +676,60 @@ class UploadItemFilePage(BasePage):
 
         return self.wait_utils.until_condition(matching_row, timeout=timeout)
 
-    def get_upload_history_download_label(self, status, timeout=30):
+    def get_upload_history_download_label(self, status, timeout=30, file_suffix=None):
         """Which download action the first `status` row actually offers."""
         row = self.get_upload_history_row(
             status,
             action_text=self.UPLOAD_HISTORY_DOWNLOAD_LABELS,
             timeout=timeout,
+            file_suffix=file_suffix,
         )
         return self.find_row_action(row, self.UPLOAD_HISTORY_DOWNLOAD_LABELS)[1]
 
-    def has_downloadable_upload_history_row(self, status, timeout=5):
+    # The history table pages at 20 rows, newest first, and its pager is the
+    # only one on the upload step. A heavily exercised account runs to a dozen
+    # pages or more, and a run's worth of passing uploads pushes its older
+    # FAILED rows off page 1 entirely — sme2@dev.com's first FAILED row sits on
+    # page 3 of 15. A caller looking for a particular status therefore pages
+    # forward instead of concluding from page 1 that the status does not exist.
+    UPLOAD_HISTORY_NEXT_PAGE = (By.CSS_SELECTOR, "button[aria-label='next page' i]")
+    UPLOAD_HISTORY_PAGE_LABEL = (
+        By.XPATH,
+        "//*[starts-with(normalize-space(), 'Page ') and contains(normalize-space(), ' of ')]",
+    )
+
+    def get_upload_history_page_label(self):
+        """The pager's "Page 3 of 15", or "" when the table does not page."""
+        elements = self.driver.find_elements(*self.UPLOAD_HISTORY_PAGE_LABEL)
+        return elements[0].text.strip() if elements else ""
+
+    def go_to_next_upload_history_page(self, timeout=30):
+        """Advance one history page; report whether there was one to go to.
+
+        The rows are replaced in place rather than the table being torn down,
+        so waiting for the table would return immediately and the caller would
+        read the page it just left. This waits for the first row's text to
+        change instead.
+        """
+        buttons = self.driver.find_elements(*self.UPLOAD_HISTORY_NEXT_PAGE)
+        if not buttons or not buttons[0].is_enabled():
+            return False
+        rows = self.driver.find_elements(*self.UPLOAD_HISTORY_ROWS)
+        first_row_before = rows[0].text if rows else ""
+        self.driver.execute_script("arguments[0].click();", buttons[0])
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: bool(
+                    (current := driver.find_elements(*self.UPLOAD_HISTORY_ROWS))
+                    and current[0].text != first_row_before
+                ),
+                timeout=timeout,
+            )
+        except TimeoutException:
+            return False
+        return True
+
+    def has_downloadable_upload_history_row(self, status, timeout=5, file_suffix=None):
         """Whether a `status` row exists that can actually be downloaded.
 
         Used to pick a usable account: an account whose history merely *shows*
@@ -503,6 +741,7 @@ class UploadItemFilePage(BasePage):
                 status,
                 action_text=self.UPLOAD_HISTORY_DOWNLOAD_LABELS,
                 timeout=timeout,
+                file_suffix=file_suffix,
             )
             return True
         except TimeoutException:
@@ -513,15 +752,20 @@ class UploadItemFilePage(BasePage):
         status,
         screenshot_name,
         action_text=None,
+        file_suffix=None,
     ):
-        row = self.get_upload_history_row(status, action_text=action_text)
+        row = self.get_upload_history_row(
+            status, action_text=action_text, file_suffix=file_suffix
+        )
         self.driver.execute_script(
             "arguments[0].scrollIntoView({block: 'center'});",
             row,
         )
         return ScreenshotUtils.capture(self.driver, screenshot_name)
 
-    def download_upload_history_file(self, status, download_directory, timeout=45):
+    def download_upload_history_file(
+        self, status, download_directory, timeout=45, file_suffix=None
+    ):
         """Download the first PASSED or FAILED upload-history workbook."""
         normalized_status = str(status).strip().upper()
         if normalized_status not in ("PASSED", "FAILED"):
@@ -539,6 +783,7 @@ class UploadItemFilePage(BasePage):
             normalized_status,
             action_text=self.UPLOAD_HISTORY_DOWNLOAD_LABELS,
             timeout=timeout,
+            file_suffix=file_suffix,
         )
         download_button, action_text = self.find_row_action(
             row, self.UPLOAD_HISTORY_DOWNLOAD_LABELS
@@ -701,7 +946,83 @@ class UploadItemFilePage(BasePage):
         # Selenium's file-input send_keys operation already emits the native
         # input/change events. Dispatching them again makes the SPA enqueue the
         # same workbook twice and produces duplicated QAR rows (6 -> 12).
+        self.confirm_switch_after_upload()
         return upload_path
+
+    def confirm_switch_after_upload(self, timeout=4):
+        """Confirm "Switch uploaded file?" if the new upload raised it.
+
+        An account still holding an unfinished upload (e.g. the
+        Valid_after_rejections.xlsx that the non-xlsx negative leaves on sme1)
+        guards the new file behind this dialog the moment it is dropped, so
+        nothing downstream ever renders until it is answered.
+        """
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: self.confirm_switch_uploaded_file_if_prompted(),
+                timeout=timeout,
+            )
+        except TimeoutException:
+            pass  # no stale upload, no dialog - the normal case
+
+    def upload_files(self, file_paths):
+        """Stage several files through one uploader interaction.
+
+        The Word ingestion path needs it: a document that references images by
+        filename is only complete alongside its image .zip, and staging them in
+        two separate send_keys calls makes the SPA treat the second as a new
+        upload and drop the first. A single newline-joined send_keys is how a
+        multiple-file input takes a set.
+
+        Falls back to one-at-a-time when the input is not marked `multiple`, so
+        a build that has not enabled multi-file selection still gets a useful
+        failure from the assertion rather than an opaque Selenium error.
+        """
+        upload_paths = []
+        for file_path in file_paths:
+            upload_path = Path(file_path).expanduser().resolve()
+            if not upload_path.exists():
+                raise FileNotFoundError(f"Upload item file not found: {upload_path}")
+            upload_paths.append(upload_path)
+
+        file_input = self.wait_utils.until_present(self.FILE_INPUT, timeout=20)
+        self.driver.execute_script(
+            """
+            const input = arguments[0];
+            input.style.display = 'block';
+            input.style.visibility = 'visible';
+            input.style.opacity = 1;
+            input.style.height = '1px';
+            input.style.width = '1px';
+            """,
+            file_input,
+        )
+
+        if len(upload_paths) > 1 and not file_input.get_attribute("multiple"):
+            for upload_path in upload_paths:
+                file_input.send_keys(str(upload_path))
+            self.confirm_switch_after_upload()
+            return upload_paths
+
+        file_input.send_keys("\n".join(str(path) for path in upload_paths))
+        self.confirm_switch_after_upload()
+        return upload_paths
+
+    def get_accepted_upload_extensions(self):
+        """The extensions the uploader advertises, lower-cased and dot-prefixed.
+
+        Read off the file input's `accept` attribute rather than the visible
+        "Accepted Formats" copy: the attribute is what actually gates the OS
+        file picker, so a build whose wording and behaviour disagree is caught
+        instead of being read as agreement.
+        """
+        file_input = self.wait_utils.until_present(self.FILE_INPUT, timeout=20)
+        raw_accept = file_input.get_attribute("accept") or ""
+        return [
+            token.strip().casefold()
+            for token in raw_accept.split(",")
+            if token.strip()
+        ]
 
     def get_active_upload_delete_button(self):
         return self.driver.execute_script(
@@ -874,6 +1195,10 @@ class UploadItemFilePage(BasePage):
         normalized_name = str(file_name).strip().casefold()
 
         def activate_exact_file(driver):
+            # Clicking our card while a stale upload is "Currently working"
+            # raises the "Switch uploaded file?" guard; unconfirmed, every
+            # later poll clicks behind it and the wait times out.
+            self.confirm_switch_uploaded_file_if_prompted()
             return driver.execute_script(
                 """
                 const expected = arguments[0];
@@ -975,6 +1300,11 @@ class UploadItemFilePage(BasePage):
         self.open_item_creation_module()
         self.open_upload_item_file_tab()
         self.open_upload_step()
+        # The fresh navigation renders the file input before the SPA finishes
+        # wiring its change handler up; send_keys() right after this refresh
+        # path silently drops (input value never registers) unless the input
+        # is given the same settle wait the delete-card path already gets.
+        self.wait_for_upload_slot_ready()
         return True
 
     def wait_for_upload_validation_success(self):
@@ -1006,11 +1336,31 @@ class UploadItemFilePage(BasePage):
             "or contains(normalize-space(),'added successfully') "
             "or contains(normalize-space(),'Validation Passed')]",
         )
+        # The app answers a rejected file on the same line a success would use
+        # ("11_CaseBased.docx: All 1 row(s) failed validation. See the
+        # downloaded file for details."). Watching only for success waited the
+        # full minute on that and then reported "no status message appeared",
+        # which hid a clear rejection inside a page dump.
+        def success_or_rejection(driver):
+            for element in driver.find_elements(*broad_success):
+                try:
+                    if element.is_displayed():
+                        return ("success", element.text)
+                except Exception:
+                    continue
+            for line in driver.find_element(By.TAG_NAME, "body").text.splitlines():
+                if "failed validation" in line.casefold() or line.strip().startswith("Upload failed"):
+                    return ("rejected", line.strip())
+            return False
+
         try:
-            element = self.wait_utils.until_visible(broad_success, timeout=60)
-            return self.extract_upload_status_message(element.text)
+            outcome, text = self.wait_utils.until_condition(success_or_rejection, timeout=60)
         except TimeoutException:
             pass
+        else:
+            if outcome == "success":
+                return self.extract_upload_status_message(text)
+            raise AssertionError(f"Upload was rejected by validation: {text}")
 
         # Nothing on screen reports success. This used to return a hardcoded
         # "All files uploaded and validated successfully Status: PASSED", which
@@ -1441,14 +1791,48 @@ class UploadItemFilePage(BasePage):
         except TimeoutException:
             return False
 
-    def click_submit_for_qar_and_wait_for_results(self, analysis_timeout=180):
+    # Which view the QAR verdict was finally read from. The two are not
+    # interchangeable for evidence-gathering - the wizard shows a completion
+    # toast and an inline results table, the item set's own page shows neither
+    # - so callers are told which one they have been left on.
+    QAR_OUTCOME_IN_PLACE = "in_place"
+    QAR_OUTCOME_ITEM_SET_DETAIL = "item_set_detail"
+
+    def click_submit_for_qar_and_wait_for_results(
+        self,
+        analysis_timeout=180,
+        item_ids=(),
+        item_set_id="",
+        uploaded_file_name="",
+        recovery_timeout=420,
+    ):
         """Click Submit Set for QAR and wait for analysis to finish.
 
         analysis_timeout controls only the final "is QAR analysis complete"
         wait. Larger item sets (e.g. many real images going through Image
         Moderation) can legitimately take longer than the 180s default used
         by lighter-weight text-only item sets.
+
+        Pass uploaded_file_name (the workbook just uploaded) to let a stalled
+        wizard fall back to the item set's own page. item_ids alone is not
+        enough: the review step numbers nothing, so IDs read there are
+        "IS-G1-Mathematics-Ch29-i1" and name no set to look up - the set
+        number is assigned only when QAR completes. The grid's "Uploaded File"
+        column is what links an upload to the set it became. QAR runs asynchronously
+        server-side and the wizard does not reliably follow it there: it can
+        sit on "Analysis in progress" until the client stops polling, or drop
+        straight back to Confirm & Submit with the button live again. Both
+        leave the script nothing to wait on *while the run itself completes
+        normally*, so the wizard going quiet is not evidence that QAR failed -
+        on 2026-09-29/30 twelve sets reported this and every one that could
+        still be read had completed correctly. Reading the verdict off the set
+        record instead is purely read-only; the submit is never sent twice.
+
+        Returns QAR_OUTCOME_IN_PLACE when the wizard rendered the results
+        itself, or QAR_OUTCOME_ITEM_SET_DETAIL when they had to be recovered.
         """
+        item_ids = tuple(item_ids or ())
+        item_set_id = item_set_id or self.get_item_set_id_from_item_ids(item_ids)
         last_error = None
         for attempt in range(3):
             clicked = self.click_submit_for_qar()
@@ -1462,15 +1846,78 @@ class UploadItemFilePage(BasePage):
                     self.recover_active_upload_submit_step()
                 continue
             try:
-                self.wait_utils.until_condition(
-                    lambda driver: self.has_qar_results_or_progress(driver),
-                    timeout=90,
+                # Each branch below records *what the wizard did* and then
+                # defers the verdict to the item set itself. None of them is a
+                # result in its own right: the wizard is only one of the places
+                # a finished QAR run shows up, and it is the unreliable one.
+                stall = None
+                try:
+                    self.wait_utils.until_condition(
+                        lambda driver: self.has_qar_results_or_progress(driver),
+                        timeout=90,
+                    )
+                except TimeoutException:
+                    stall = (
+                        "QAR submission produced no results, progress indicator, "
+                        "or bounce within 90s"
+                    )
+                if stall is None:
+                    try:
+                        outcome = self.wait_utils.until_condition(
+                            lambda driver: (
+                                "complete" if self.is_qar_analysis_complete(driver)
+                                else "bounced" if self.has_visible_submit_for_qar_button(driver)
+                                else False
+                            ),
+                            timeout=analysis_timeout,
+                        )
+                    except TimeoutException:
+                        # The wizard sat on "Analysis in progress" and never
+                        # moved. Its client-side polling stops well before QAR
+                        # does, so raising analysis_timeout does not help -
+                        # only re-reading the set does.
+                        stall = (
+                            "QAR analysis started but never completed or bounced "
+                            f"back within {analysis_timeout}s"
+                        )
+                    else:
+                        if outcome == "bounced":
+                            # Seen on QA 2026-09-29: the SPA drops back to
+                            # Confirm & Submit with the button live again and
+                            # no error shown, while the run carries on.
+                            stall = (
+                                "QAR analysis started but the app returned to "
+                                "Confirm & Submit without results or an error message"
+                            )
+                if stall is None:
+                    return self.QAR_OUTCOME_IN_PLACE
+                if self.resolve_qar_outcome_from_item_set(
+                    item_set_id,
+                    item_ids,
+                    timeout=recovery_timeout,
+                    uploaded_file_name=uploaded_file_name,
+                ):
+                    return self.QAR_OUTCOME_ITEM_SET_DETAIL
+                recovery_error = getattr(self, "last_qar_recovery_error", None)
+                target = (
+                    item_set_id
+                    if self.item_set_id_is_numbered(item_set_id)
+                    else Path(str(uploaded_file_name)).name
                 )
-                self.wait_utils.until_condition(
-                    lambda driver: self.is_qar_analysis_complete(driver),
-                    timeout=analysis_timeout,
+                raise AssertionError(
+                    f"{stall}, and "
+                    + (
+                        f"no QAR verdict appeared for {target} on the Sets grid "
+                        f"within {recovery_timeout}s either, so the run genuinely "
+                        "did not produce a result."
+                        if target
+                        else "neither a numbered item set ID nor the uploaded file "
+                        "name was passed in, so the outcome could not be confirmed "
+                        "from the set record - the run may well have completed "
+                        "server-side."
+                    )
+                    + (f" Last lookup error: {recovery_error}" if recovery_error else "")
                 )
-                return
             except Exception as error:
                 last_error = error
                 if clicked:
@@ -1482,6 +1929,145 @@ class UploadItemFilePage(BasePage):
         if blocker:
             raise TimeoutException(f"QAR submission was blocked: {blocker}") from last_error
         raise last_error
+
+    # Text that means QAR is still running *right now*. Deliberately excludes
+    # PENDING_QAR: that is the set's resting state once QAR has blocked every
+    # item, so treating it as "still analysing" would wait out the whole
+    # recovery window on exactly the sets this recovery exists for.
+    QAR_ANALYSIS_IN_FLIGHT_MARKERS = (
+        "analysis in progress",
+        "qar analysis in progress",
+        "processing qar",
+        "running qar",
+        "generating report",
+        "analysing items",
+        "analyzing items",
+    )
+
+    @staticmethod
+    def item_set_id_is_numbered(item_set_id):
+        """True when this ID carries the set number, e.g. "IS1405-G1-...".
+
+        The review step renders item IDs *before* a number is assigned, as
+        "IS-G1-Mathematics-Ch29-i1", so an ID derived from them names no set
+        and cannot be looked one up by.
+        """
+        return bool(re.match(r"\s*IS\d+", str(item_set_id or ""), re.IGNORECASE))
+
+    def find_item_set_id_by_uploaded_file(self, uploaded_file_name):
+        """Which set an upload became, matched on its file name on the Sets grid.
+
+        A set's number is assigned when QAR *completes*, not when the file is
+        uploaded, so a run that loses the wizard before the result appears has
+        no set ID to search for. The grid's "Uploaded File" column still names
+        the workbook, and each run's workbook name is unique, which makes it the
+        link from an upload to the set it became.
+
+        Returns "" when no row names this file yet - the set is not listed until
+        the backend has registered it.
+        """
+        wanted = Path(str(uploaded_file_name)).name.casefold()
+        if not wanted:
+            return ""
+        for row in self.get_item_set_list_rows():
+            if wanted in (row.get("uploaded_file") or "").casefold():
+                candidate = row.get("item_set_id") or ""
+                if self.item_set_id_is_numbered(candidate):
+                    return candidate
+        return ""
+
+    def resolve_qar_outcome_from_item_set(
+        self, item_set_id, item_ids=(), timeout=420, uploaded_file_name=""
+    ):
+        """Read a submitted set's QAR verdict off the set's own page.
+
+        Called when the upload wizard stops reporting on a run it started.
+        Read-only by design: it navigates and waits, and never re-submits.
+
+        item_set_id may be unnumbered ("IS-G1-Mathematics-Ch29"), because the
+        review step hands out item IDs before the set is numbered. Pass
+        uploaded_file_name and the set is found by its workbook name instead.
+
+        Returns True once this set's item rows carry statuses with no analysis
+        still in flight - at which point the driver is left on a view showing
+        the verdict, with the per-item report expanded where one exists.
+        Returns False if that never happens, which is the only state that
+        means the run really did not produce a result. On a False, whatever
+        last went wrong is left on last_qar_recovery_error so the caller can
+        say why rather than only that it gave up.
+        """
+        self.last_qar_recovery_error = None
+        self.recovered_item_set_id = ""
+        if not item_set_id and not uploaded_file_name:
+            return False
+
+        def verdict_rendered(resolved_id):
+            def condition(driver):
+                if self.is_item_set_detail_loading(driver):
+                    return False
+                page_text = driver.find_element(By.TAG_NAME, "body").text.casefold()
+                if any(
+                    marker in page_text
+                    for marker in self.QAR_ANALYSIS_IN_FLIGHT_MARKERS
+                ):
+                    return False
+                # Scoped to this set's own "-i<n>" rows, so a set-level table
+                # left on screen cannot pass as this set's per-item verdict.
+                return bool(self.get_qar_item_statuses(resolved_id))
+
+            return condition
+
+        deadline = monotonic() + timeout
+        while True:
+            # Each pass re-navigates rather than re-reading the page already on
+            # screen. Trusting a view to update itself is what strands the
+            # wizard in the first place, and the same SPA renders this page, so
+            # a fresh fetch is the only thing that reliably reflects the
+            # server. It also covers the set not being listed yet: a set
+            # appears once the backend has registered it, so a miss is "not
+            # yet", not "never".
+            matched_by_file = False
+            try:
+                self.open_sets_module()
+                resolved_id = item_set_id
+                if not self.item_set_id_is_numbered(resolved_id):
+                    # No number yet, so there is nothing to search the grid for.
+                    # The workbook name is the only link back to this upload.
+                    resolved_id = self.find_item_set_id_by_uploaded_file(
+                        uploaded_file_name
+                    )
+                    if not resolved_id:
+                        raise AssertionError(
+                            "No item set on the Sets grid names the uploaded file "
+                            f"{Path(str(uploaded_file_name)).name!r} yet."
+                        )
+                    matched_by_file = True
+                self.open_item_set_from_sets_list(resolved_id)
+                self.wait_utils.until_condition(
+                    verdict_rendered(resolved_id),
+                    timeout=min(30, max(5, int(deadline - monotonic()))),
+                )
+            except Exception as error:
+                # Kept rather than discarded: "the set is not listed yet" and
+                # "the lookup itself is broken" both land here, and only the
+                # error text tells them apart once the window runs out.
+                self.last_qar_recovery_error = error
+                remaining = deadline - monotonic()
+                if remaining <= 0:
+                    return False
+                sleep(min(15, remaining))
+                continue
+            if item_ids and not matched_by_file:
+                # Confirms the rows on screen are this upload's items and not a
+                # same-prefixed set's, before a caller reads evidence off them.
+                # Skipped when the set was matched by workbook name: that name
+                # is unique to this upload, and the caller's item IDs are the
+                # unnumbered review-step ones, which cannot match the numbered
+                # IDs this page renders.
+                self.verify_items_in_opened_item_set(item_ids)
+            self.recovered_item_set_id = resolved_id
+            QARReportPage(self.driver).open_report_if_available()
+            return True
 
     def has_visible_submit_for_qar_button(self, driver):
         for button in driver.find_elements(*self.SUBMIT_FOR_QAR_BUTTON):
@@ -1573,7 +2159,31 @@ class UploadItemFilePage(BasePage):
                 if button.is_displayed() and button.is_enabled():
                     self.driver.execute_script("arguments[0].click();", button)
                     return True
-        return False
+        # The dialog's container is not guaranteed a dialog role or a
+        # modal/Dialog class, so fall back to the text: the enabled
+        # "Continue" button whose nearest ancestor mentions the prompt.
+        return bool(
+            self.driver.execute_script(
+                """
+                const shown = el => {
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && r.height > 0;
+                };
+                for (const button of document.querySelectorAll('button')) {
+                    if ((button.innerText || '').trim() !== 'Continue'
+                        || button.disabled || !shown(button)) continue;
+                    let box = button.parentElement;
+                    for (let hops = 0; box && hops < 6; hops++, box = box.parentElement) {
+                        if ((box.innerText || '').includes('Switch uploaded file')) {
+                            button.click();
+                            return true;
+                        }
+                    }
+                }
+                return false;
+                """
+            )
+        )
 
     def open_upload_step(self):
         self.click_continue()
@@ -2142,11 +2752,86 @@ class UploadItemFilePage(BasePage):
         parts = value.split("'")
         return "concat(" + ", \"'\", ".join(f"'{part}'" for part in parts) + ")"
 
+    # Field name -> the header spellings that mean it on the item-set grid.
+    ITEM_SET_COLUMN_ALIASES = {
+        "item_set_id": ("item set id",),
+        "grade": ("grade",),
+        "book": ("book",),
+        "unit": ("unit",),
+        "subject_chapter": ("subject & chapter", "subject and chapter", "subject"),
+        "item_count": ("item count",),
+        "item_status": ("item status",),
+        "item_set_status": ("item set status",),
+        "review_stage": ("item set review stage", "review stage"),
+        "last_updated": ("last updated",),
+        "uploaded_file": ("uploaded file",),
+    }
+
+    def item_set_column_indexes(self):
+        """Field name -> column index, read from the grid's own header row.
+
+        Read rather than assumed because Book and Unit were inserted at
+        positions 2 and 3, moving Subject & Chapter from index 2 to 4. The old
+        readers took "the cell after Grade" as the subject and so reported every
+        row's subject as "Book 1" - which made the RBAC scope check fail for
+        every set on screen, including ones it had always passed on.
+
+        Returns {} when the header row cannot be read, which callers treat as
+        "fall back" rather than as an empty grid.
+        """
+        headers = [
+            header.text.strip()
+            for header in self.driver.find_elements(*self.ITEM_SET_TABLE_HEADERS)
+        ]
+        resolved = {}
+        for position, header in enumerate(headers):
+            normalized = header.casefold()
+            for field, aliases in self.ITEM_SET_COLUMN_ALIASES.items():
+                if field not in resolved and normalized in aliases:
+                    resolved[field] = position
+        return resolved
+
+    @staticmethod
+    def item_set_numeric_prefix(item_set_id):
+        """The stable 'IS<number>' portion of an item-set ID.
+
+        The chapter segment is not stable between screens: the same set is
+        "IS1158-G1-Mathematics-Ch29" on the QAR results and
+        "IS1158-G1-Mathematics-CH-1" on this listing, so an exact match never
+        fires. Same convention as ReviewQueuePage.item_set_numeric_prefix.
+        """
+        match = re.match(r"(IS\d+)", str(item_set_id), re.IGNORECASE)
+        return match.group(1).upper() if match else str(item_set_id).strip().upper()
+
+    def find_item_set_row(self, item_set_id, timeout=45):
+        """The listing row for one item set, or None.
+
+        Matched on the "IS<number>" prefix rather than the whole ID, for the
+        reason item_set_numeric_prefix explains.
+
+        The grid is ordered newest-first, so a set created moments ago is on the
+        first page; no paging is done here, and a caller that gets None should
+        say the row was not found rather than assume the set does not exist.
+        """
+        wanted = self.item_set_numeric_prefix(item_set_id)
+
+        def matching(_driver):
+            for row in self.get_item_set_list_rows():
+                if self.item_set_numeric_prefix(row["item_set_id"]) == wanted:
+                    return row
+            return None
+
+        try:
+            return self.wait_utils.until_condition(matching, timeout=timeout)
+        except TimeoutException:
+            return None
+
     def get_item_set_list_rows(self):
         rows = self.wait_utils.until_condition(
             lambda driver: driver.find_elements(*self.ITEM_SET_LIST_ROWS) or False,
             timeout=30,
         )
+        columns = self.item_set_column_indexes()
         results = []
         for row in rows:
             try:
@@ -2159,16 +2844,32 @@ class UploadItemFilePage(BasePage):
                     [line.strip() for line in cell.text.splitlines() if line.strip()]
                     for cell in cells
                 ]
-                subject_chapter = cell_lines[2]
+
+                def lines_for(field, default=()):
+                    position = columns.get(field)
+                    if position is None or position >= len(cell_lines):
+                        return list(default)
+                    return cell_lines[position]
+
+                subject_chapter = lines_for("subject_chapter")
+                item_set_id = lines_for("item_set_id")
+                grade = lines_for("grade")
+                book = lines_for("book")
+                unit = lines_for("unit")
                 results.append(
                     {
-                        "item_set_id": cell_lines[0][0] if cell_lines[0] else "",
-                        "grade": cell_lines[1][0] if cell_lines[1] else "",
+                        "item_set_id": item_set_id[0] if item_set_id else "",
+                        "grade": grade[0] if grade else "",
+                        "book": book[0] if book else "",
+                        # The grid prints an em dash for a set with no unit;
+                        # normalised to "" so callers test emptiness, not glyphs.
+                        "unit": unit[0] if unit and unit[0] not in ("-", "—", "–") else "",
                         "subject": subject_chapter[0] if subject_chapter else "",
                         "chapter": subject_chapter[1] if len(subject_chapter) > 1 else "",
-                        "item_status": " ".join(cell_lines[4]),
-                        "item_set_status": " ".join(cell_lines[5]),
-                        "review_stage": " ".join(cell_lines[6]),
+                        "item_status": " ".join(lines_for("item_status")),
+                        "item_set_status": " ".join(lines_for("item_set_status")),
+                        "review_stage": " ".join(lines_for("review_stage")),
+                        "uploaded_file": " ".join(lines_for("uploaded_file")),
                     }
                 )
             except Exception:
@@ -2213,6 +2914,11 @@ class UploadItemFilePage(BasePage):
     ITEM_SET_COLUMNS = (
         "Item Set ID",
         "Grade",
+        # Book and Unit were inserted here, between Grade and Subject & Chapter,
+        # which pushed every later column one to the right. Nothing reads this
+        # grid by position any more - see item_set_column_indexes().
+        "Book",
+        "Unit",
         "Subject & Chapter",
         "Item Count",
         "Item Status",
@@ -2574,16 +3280,55 @@ class UploadItemFilePage(BasePage):
         return True
 
     def get_visible_item_set_scopes(self):
+        """Grade and subject for each item set on screen.
+
+        Reads the Subject & Chapter cell by *header*, not as "the line after
+        Grade". Book and Unit now sit between the two, so the positional read
+        returned the book ("Book 1") as every row's subject, and the RBAC scope
+        check then failed on sets that were perfectly in scope.
+
+        The positional scan is kept only for a grid whose header row cannot be
+        read at all.
+        """
         rows = self.wait_utils.until_condition(
             lambda driver: driver.find_elements(By.XPATH, "//table//tbody/tr[.//td]"),
             timeout=30,
         )
+        columns = self.item_set_column_indexes()
         scopes = []
         for row in rows:
             row_text = row.text
             grade_match = re.search(r"\bGrade\s+\d+\b", row_text, re.IGNORECASE)
             if not grade_match:
                 continue
+
+            if columns.get("subject_chapter") is not None:
+                cells = row.find_elements(By.XPATH, "./td")
+
+                def cell_first_line(field, cells=cells):
+                    position = columns.get(field)
+                    if position is None or position >= len(cells):
+                        return ""
+                    lines = [
+                        line.strip()
+                        for line in cells[position].text.splitlines()
+                        if line.strip()
+                    ]
+                    return lines[0] if lines else ""
+
+                subject = cell_first_line("subject_chapter")
+                if not subject:
+                    continue
+                scopes.append(
+                    {
+                        "item_set_id": cell_first_line("item_set_id"),
+                        "grade": cell_first_line("grade"),
+                        "subject": subject,
+                        "book": cell_first_line("book"),
+                    }
+                )
+                continue
+
             lines = [line.strip() for line in row_text.splitlines() if line.strip()]
             grade_index = next(
                 (
@@ -2604,20 +3349,36 @@ class UploadItemFilePage(BasePage):
             )
         return scopes
 
-    def verify_visible_item_sets_within_scope(self, expected_grade, expected_subject):
+    def verify_visible_item_sets_within_scope(self, allowed_pairs):
+        """Every visible item set is inside the account's own grade-subject scope.
+
+        `allowed_pairs` is an iterable of (grade, subject) the account is
+        entitled to. It used to be a single grade and subject, taken from the
+        sample row of the upload template — which held only as long as every
+        set in the environment happened to be for that one subject. An SME
+        scoped to three subjects who authors in two of them was then reported as
+        a scope violation, so the entitlement is now passed in whole.
+        """
+        allowed = {
+            (str(grade).strip().casefold(), str(subject).strip().casefold())
+            for grade, subject in allowed_pairs
+        }
+        if not allowed:
+            raise AssertionError("No grade-subject scope was supplied to check against.")
+
         scopes = self.get_visible_item_set_scopes()
         if not scopes:
             raise AssertionError("No item-set rows were visible for RBAC verification.")
         outside_scope = [
             scope
             for scope in scopes
-            if scope["grade"].casefold() != expected_grade.casefold()
-            or scope["subject"].casefold() != expected_subject.casefold()
+            if (scope["grade"].strip().casefold(), scope["subject"].strip().casefold())
+            not in allowed
         ]
         if outside_scope:
             raise AssertionError(
-                "SME can see item sets outside the assigned grade-subject scope: "
-                f"{outside_scope}"
+                "SME can see item sets outside the assigned grade-subject scope "
+                f"{sorted(allowed)}: {outside_scope}"
             )
         return scopes
 
@@ -2936,6 +3697,22 @@ class UploadItemFilePage(BasePage):
         """
         self.open_sets_module()
         self.open_item_set_from_sets_list(item_set_id)
+        # The click returns while the list is still painted: on UAT a read
+        # straight after it got the list's own "All 166" and its Book column.
+        # Wait until every table row belongs to this set.
+        prefix = self.item_set_numeric_prefix(item_set_id)
+        self.wait_utils.until_condition(
+            lambda driver: driver.execute_script(
+                """
+                const rows = Array.from(document.querySelectorAll('table tbody tr'));
+                return rows.length > 0 && rows.every(row =>
+                    (row.cells[0]?.innerText || '').trim().toUpperCase()
+                        .startsWith(arguments[0] + '-'));
+                """,
+                prefix,
+            ),
+            timeout=60,
+        )
 
     def verify_item_set_from_sets_module(self, item_set_id, item_ids):
         self.open_sets_module()
@@ -3089,10 +3866,17 @@ class UploadItemFilePage(BasePage):
     def get_visible_item_statuses(self):
         # Read all values in one browser-side snapshot so a React table
         # refresh cannot stale individual WebElements midway through the loop.
+        # The Status column is found by its header: the Book and Unit columns
+        # added on UAT pushed it from 3rd to 5th, and a fixed index then read
+        # "Book 1" as the item's status.
         return self.driver.execute_script(
             """
+            const headers = Array.from(document.querySelectorAll('table thead th'));
+            let index = headers.findIndex(th =>
+                (th.innerText || th.textContent || '').trim().toLowerCase().startsWith('status'));
+            if (index < 0) index = 2;
             const statuses = Array.from(
-                document.querySelectorAll('table tbody tr td:nth-child(3)')
+                document.querySelectorAll(`table tbody tr td:nth-child(${index + 1})`)
             ).map(cell => (cell.innerText || cell.textContent || '').trim())
              .filter(Boolean);
             return Array.from(new Set(statuses));
@@ -3220,6 +4004,17 @@ class UploadItemFilePage(BasePage):
     TEACHER_RESUBMIT_REVIEW_LOCATORS = [
         (By.XPATH, "//button[normalize-space()='Resubmit set for review']"),
         (By.XPATH, "//button[contains(normalize-space(),'Resubmit') and contains(normalize-space(),'review')]"),
+        # Not every build renders this control as a <button>: a live run found
+        # "Resubmit set for review" on screen while both locators above missed
+        # it, and an <a> or a div[role=button] would do exactly that. Matched
+        # last so a real button still wins.
+        (
+            By.XPATH,
+            "//*[self::a or @role='button' or self::div or self::span]"
+            "[contains(normalize-space(),'Resubmit') "
+            "and contains(normalize-space(),'review') "
+            "and not(.//*[contains(normalize-space(),'Resubmit')])]",
+        ),
     ]
     REVISION_NOTE_INPUT_LOCATORS = [
         (
@@ -3841,6 +4636,73 @@ class UploadItemFilePage(BasePage):
             return False
         return True
 
+    BLANK_MARKER = re.compile(r"_{3,}")
+    # The Fill in the Blank editor counts a blank only as exactly four
+    # underscores ("Use ____ (four underscores) to indicate each blank").
+    EDITOR_BLANK = "____"
+    REVISION_PREFIX = re.compile(r"^\s*Updated revision for [^:]+:\s*", re.IGNORECASE)
+
+    FITB_TYPOLOGY_MARKERS = ("fill in the blank", "fill in blank", "fitb", "fib")
+
+    def open_item_is_fill_in_the_blank(self):
+        """True when the open item's Typology reads Fill in the Blank.
+
+        Read from the labelled Typology field rather than from the page text:
+        the item list renders a typology chip for every item, so a page-wide
+        match would report the open item as FITB whenever any sibling was.
+        """
+        try:
+            typology = (self.get_item_detail_metadata(["Typology"]) or {}).get(
+                "Typology", ""
+            )
+        except Exception:
+            return False
+        return any(
+            marker in str(typology).casefold() for marker in self.FITB_TYPOLOGY_MARKERS
+        )
+
+    def default_revision_question(self, item_id):
+        """The question text a revision writes when the caller gives none.
+
+        Normally a fixed comparison question. A Fill in the Blank item must
+        keep a blank, written as exactly four underscores. Items uploaded from
+        Excel carry three ("___"), which the upload accepts but the editor
+        counts as zero blanks; against its one Blank Answer the item is then
+        invalid and Save does nothing, with no message. On 2026-09-29/30 that
+        left the FITB item un-revised, the set never went back to RWG, and the
+        run failed as "not visible in any RWG queue".
+
+        The typology is what decides this, not the text read back. Keying it on
+        finding "___" in the current text meant that whenever that read came
+        back empty - the editor locators miss on some builds - a FITB item
+        silently got the fixed comparison question, which has no blank at all
+        and is exactly the invalid state described above. Three live runs
+        (2026-09-30) failed on the same FITB item for that reason, each time
+        leaving its original text on screen.
+
+        The "Updated revision for" prefix is kept either way - the
+        reviewer-side check looks for it.
+        """
+        try:
+            editor = self.wait_utils.until_condition(
+                lambda driver: self.get_visible_element_from_locators(self.ITEM_CONTENT_EDITORS),
+                timeout=20,
+            )
+            current = self.get_editable_element_text(editor).strip()
+        except Exception:
+            current = ""
+        if self.BLANK_MARKER.search(current):
+            text = self.BLANK_MARKER.sub(self.EDITOR_BLANK, self.REVISION_PREFIX.sub("", current))
+            return f"Updated revision for {item_id}: {text}"
+        if self.open_item_is_fill_in_the_blank():
+            # Its own text was unreadable, so write a self-contained blank
+            # rather than a question this typology cannot accept.
+            return (
+                f"Updated revision for {item_id}: A bus leaves at 8:00 and "
+                f"arrives at 10:00. The journey lasts {self.EDITOR_BLANK} hours."
+            )
+        return f"Updated revision for {item_id}: Is 98765 > 12345?"
+
     def edit_open_revision_item(
         self,
         item_id,
@@ -3848,11 +4710,11 @@ class UploadItemFilePage(BasePage):
         revision_note=None,
         image_path=None,
     ):
-        revised_question = revised_question or (
-            f"Updated revision for {item_id}: Is 98765 > 12345?"
-        )
         revised_count_before = self.get_teacher_revised_count()
         self.click_edit_item()
+        # Read after opening the editor: the default depends on the item's
+        # current text (see default_revision_question).
+        revised_question = revised_question or self.default_revision_question(item_id)
         self.set_first_available_editor_text(revised_question)
         if image_path:
             try:
@@ -3873,8 +4735,12 @@ class UploadItemFilePage(BasePage):
             # merely disappears without the edit actually persisting (a
             # validation hiccup for some typologies). Don't fail here - the
             # caller re-checks QAR status and retries with a fresh
-            # correction on the next round if this item is still flagged.
-            pass
+            # correction on the next round if this item is still flagged -
+            # but say so, since a silent miss here once cost a whole run.
+            _safe_print(
+                f"[WARN] Revision save for {item_id} was not confirmed: the "
+                "revised count did not go up within 10s."
+            )
         return revised_question
 
     def revise_qar_need_improvement_items(
@@ -4031,6 +4897,84 @@ class UploadItemFilePage(BasePage):
                 continue
         return False
 
+    REVISED_COUNT_PATTERN = r"(\d+)\s+items?\s+revised"
+
+    def get_revised_item_count(self):
+        """How many items this screen says have been revised, or None.
+
+        The item list on the revision screen shows each item's question text
+        and badges but *not* its ID, so there is no per-item row to look an ID
+        up in - an earlier attempt to confirm revisions that way reported every
+        item as unsaved. The header's "N items revised" counter is what this
+        screen actually renders, so it is what gets read.
+
+        None means the counter is not on screen at all. Callers must treat that
+        as "cannot tell", never as zero.
+        """
+        page_text = self.driver.find_element(By.TAG_NAME, "body").text
+        match = re.search(self.REVISED_COUNT_PATTERN, page_text, re.IGNORECASE)
+        return int(match.group(1)) if match else None
+
+    def revised_count_reached(self, expected_count, timeout=20):
+        """Wait for the revised counter to reach expected_count.
+
+        Returns True when it does, and also when the counter is absent: this
+        check guards a loop that several suites already depend on, so a screen
+        that does not render the counter must keep the old behaviour rather
+        than fail every item on a signal that was never there.
+        """
+        try:
+            return bool(
+                self.wait_utils.until_condition(
+                    lambda driver: (
+                        self.get_revised_item_count() is None
+                        or self.get_revised_item_count() >= expected_count
+                    ),
+                    timeout=timeout,
+                )
+            )
+        except TimeoutException:
+            return False
+
+    def retry_revision_edit(self, item_label, edit_fn, expected_count, attempts=1):
+        """Re-open an item whose edit did not stick and try it once more."""
+        for _ in range(attempts):
+            try:
+                if not self.open_revision_item_by_label(item_label):
+                    continue
+                result = edit_fn(item_label)
+            except Exception:
+                continue
+            self.wait_utils.until_condition(
+                lambda driver: not self.is_item_set_detail_loading(driver),
+                timeout=30,
+            )
+            if self.revised_count_reached(expected_count):
+                return result
+        return None
+
+    def open_revision_item_by_label(self, item_label):
+        """Click the revision target whose label matches item_label."""
+        compact = self.compact_item_id(item_label).casefold()
+        for target_elem, raw_label in self.get_revision_item_targets():
+            candidate = self.compact_item_id(raw_label).casefold()
+            number = re.match(r"\s*(\d+)\b", raw_label)
+            matches = candidate == compact or (
+                number is not None and compact.endswith(f"i{number.group(1)}")
+            )
+            if not matches:
+                continue
+            try:
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});", target_elem
+                )
+                self.pause_before_action()
+                self.driver.execute_script("arguments[0].click();", target_elem)
+                return True
+            except Exception:
+                return False
+        return False
+
     def _revise_items_loop(self, item_set_id, edit_fn):
         """Core revision loop shared by revise_items_in_open_item_set variants.
 
@@ -4040,6 +4984,7 @@ class UploadItemFilePage(BasePage):
         relying on the list to shrink.
         """
         results = []
+        unconfirmed = []
         processed_keys = set()
         self.wait_utils.until_condition(
             lambda driver: not self.is_item_set_detail_loading(driver),
@@ -4099,14 +5044,35 @@ class UploadItemFilePage(BasePage):
                 item_label, item_key = fallback, fb_key
 
             result = edit_fn(item_label)
-            results.append(result)
             processed_keys.add(item_key)
 
             self.wait_utils.until_condition(
                 lambda driver: not self.is_item_set_detail_loading(driver),
                 timeout=30,
             )
+            # Confirm the edit actually landed before counting it. An edit call
+            # returning is not evidence the save persisted - a live run had this
+            # loop report 4 items revised while the page header read "3 items
+            # revised" and one item still carried its Revise badge, which then
+            # surfaced minutes later as an unavailable resubmit control. One
+            # retry per item, because a silently dropped save usually takes on
+            # the second attempt.
+            expected_count = len(results) + 1
+            if self.revised_count_reached(expected_count):
+                results.append(result)
+                continue
+            retried = self.retry_revision_edit(item_label, edit_fn, expected_count)
+            if retried is not None:
+                results.append(retried)
+            else:
+                unconfirmed.append(item_label)
 
+        if unconfirmed:
+            raise AssertionError(
+                f"These items were edited but never showed as revised on "
+                f"{item_set_id}: {unconfirmed}. The save was silently dropped, "
+                "so the set cannot be resubmitted."
+            )
         return results
 
     def revise_items_in_open_item_set(self, item_set_id):
@@ -4123,6 +5089,30 @@ class UploadItemFilePage(BasePage):
             return (label, revised_question)
 
         return self._revise_items_loop(item_set_id, _edit_with_image)
+
+    def is_teacher_resubmit_present_but_disabled(self):
+        """True when "Resubmit set for review" is on screen but not clickable.
+
+        The app disables it until every item the reviewer flagged has actually
+        been revised, so this state means "revisions are incomplete", which is
+        a different problem from the control being missing. Without this the
+        two were indistinguishable: until_clickable() simply fell through and
+        reported the button as unavailable.
+        """
+        for locator in self.TEACHER_RESUBMIT_REVIEW_LOCATORS:
+            for element in self.driver.find_elements(*locator):
+                try:
+                    if not element.is_displayed():
+                        continue
+                    if (
+                        not element.is_enabled()
+                        or element.get_attribute("disabled")
+                        or element.get_attribute("aria-disabled") == "true"
+                    ):
+                        return True
+                except Exception:
+                    continue
+        return False
 
     def rerun_qar_if_enabled(self):
         for locator in self.TEACHER_RESUBMIT_REVIEW_LOCATORS:
@@ -4164,6 +5154,11 @@ class UploadItemFilePage(BasePage):
                 continue
         if disabled_found:
             return "Re-run QAR button found but disabled."
+        if self.is_teacher_resubmit_present_but_disabled():
+            return (
+                "Resubmit set for review is on screen but disabled - the set "
+                "still has items awaiting revision."
+            )
         return "Re-run QAR button not available."
 
     def resubmit_revised_item_set_for_review(self):

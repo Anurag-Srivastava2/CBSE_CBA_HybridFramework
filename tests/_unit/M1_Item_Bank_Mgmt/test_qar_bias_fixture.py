@@ -6,10 +6,19 @@ from utilities.qar_bias_fixture import (
     assert_bias_score_contract,
     build_qar_bias_workbook,
 )
+from utilities.item_template_columns import resolve_columns
 from utilities.read_config import ReadConfig
 
 
-def test_bias_fixture_builds_six_unique_ordered_items(tmp_path):
+def test_bias_fixture_builds_six_unique_ordered_items(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Build the bias fixture workbook.\n"
+        "Check it holds six unique items in the intended severity order, ready "
+        "for QAR to score.",
+    )
     prefix = "QAR_AUTO_BIAS_UNIT_123456"
     output, specs = build_qar_bias_workbook(
         ReadConfig.get_upload_item_file_path(),
@@ -22,18 +31,29 @@ def test_bias_fixture_builds_six_unique_ordered_items(tmp_path):
 
     workbook = load_workbook(output, data_only=True)
     worksheet = workbook.active
+    columns = resolve_columns(worksheet)
+    assert columns, "Built workbook has no recognisable item-data sheet."
     assert worksheet.max_row >= 7
     for row, spec in enumerate(BIAS_QUESTION_SPECS, start=2):
-        assert worksheet.cell(row, 10).value == "True or False"
-        assert worksheet.cell(row, 11).value == spec.question
-        assert worksheet.cell(row, 21).value == "False"
-        assert worksheet.cell(row, 23).value.startswith(prefix)
-        assert spec.explanation in worksheet.cell(row, 23).value
-        assert worksheet.cell(row, 24).value in (1, "1")
+        assert worksheet.cell(row, columns["typology"]).value == "True or False"
+        assert worksheet.cell(row, columns["question"]).value == spec.question
+        assert worksheet.cell(row, columns["answer"]).value == "False"
+        assert worksheet.cell(row, columns["explanation"]).value.startswith(prefix)
+        assert spec.explanation in worksheet.cell(row, columns["explanation"]).value
+        assert worksheet.cell(row, columns["marks"]).value in (1, "1")
     workbook.close()
 
 
-def test_bias_score_contract_allows_equal_flagged_scores():
+def test_bias_score_contract_allows_equal_flagged_scores(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Feed the score contract a set of results where two flagged items share "
+        "the same score.\n"
+        "Check equal scores are accepted, since severity ranking does not require "
+        "every score to differ.",
+    )
     evidence = [
         {"severity_rank": 1, "score": 70, "threshold": 60},
         {"severity_rank": 2, "score": 55, "threshold": 60},
@@ -54,7 +74,16 @@ def test_bias_score_contract_allows_equal_flagged_scores():
         ((10, 20, 30, 40, 50, 50), (60, 60, 60, 60, 101, 60)),
     ),
 )
-def test_bias_score_contract_rejects_invalid_or_missed_results(scores, thresholds):
+def test_bias_score_contract_rejects_invalid_or_missed_results(scores, thresholds, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Feed the score contract results that are invalid, or that miss a bias "
+        "the fixture was built to trigger.\n"
+        "Check it raises rather than letting a missed detection pass as a "
+        "success.",
+    )
     evidence = [
         {"severity_rank": rank, "score": score, "threshold": threshold}
         for rank, (score, threshold) in enumerate(zip(scores, thresholds), start=1)

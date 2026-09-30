@@ -1,4 +1,3 @@
-from copy import copy as copy_cell_style
 from pathlib import Path
 from shutil import copy2
 from time import monotonic
@@ -15,6 +14,12 @@ from pages.sme.upload_item_file_page import UploadItemFilePage
 from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_upload_step
 from utilities.element_checks import ElementChecks
 from utilities.item_bank_workbook_builder import build_item_workbook
+from utilities.item_template_columns import (
+    copy_item_row,
+    last_item_column,
+    resolve_columns,
+    write_row_fields,
+)
 from utilities.read_config import ReadConfig
 
 
@@ -49,23 +54,29 @@ class TestUploadFileSizeLimit:
         # Write large content to cells to quickly blow up file size
         # 12 MB is roughly 12 * 1024 * 1024 bytes. To exceed 10 MB after compression,
         # we write 520 rows, each with a unique 32,700 character random string in column 11 (Question Content).
+        columns = resolve_columns(worksheet)
+        assert columns, f"{source} has no recognisable item-data sheet."
+        max_data_column = last_item_column(worksheet)
+
         for offset in range(1, 520):
             row = offset + 2
             if row != 2:
-                for column in range(1, 25):
-                    source_cell = worksheet.cell(2, column)
-                    target_cell = worksheet.cell(row, column)
-                    target_cell.value = source_cell.value
-                    if source_cell.has_style:
-                        target_cell._style = copy_cell_style(source_cell._style)
+                copy_item_row(worksheet, 2, row, max_data_column)
             # Generate highly unique random string to prevent zip compression
             random_string = "".join(random.choices(chars, k=32700))
-            worksheet.cell(row, 5).value = offset + 1
-            worksheet.cell(row, 10).value = "True or False"
-            worksheet.cell(row, 11).value = random_string
-            worksheet.cell(row, 21).value = "True"
-            worksheet.cell(row, 23).value = "Large file automation description."
-            worksheet.cell(row, 24).value = "1"
+            write_row_fields(
+                worksheet,
+                row,
+                columns,
+                {
+                    "sequence": offset + 1,
+                    "typology": "True or False",
+                    "question": random_string,
+                    "answer": "True",
+                    "explanation": "Large file automation description.",
+                    "marks": "1",
+                },
+            )
             
         workbook.save(target)
         workbook.close()
@@ -103,6 +114,19 @@ class TestUploadFileSizeLimit:
         6. POST /upload with 12 MB file via requests -> assert 413 Payload Too Large.
         7. Verify smaller valid file is accepted immediately after (no stuck state).
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and build a valid Excel workbook that is deliberately "
+            "12 MB, over the 10 MB limit.\n"
+            "Upload it in the browser and expect the file-size error, with no Upload "
+            "ID generated.\n"
+            "Post the same 12 MB file straight to the API and expect 413 Payload Too "
+            "Large.\n"
+            "Upload a smaller valid file right afterwards and expect it to work, "
+            "proving the oversized attempt left nothing stuck.",
+        )
         # Step 1: Login as SME2
         self.step(1, "Logging in as SME2")
         self.driver.get(ReadConfig.get_base_url())

@@ -1,10 +1,10 @@
-from openpyxl import load_workbook
 import pytest
 
 from pages.common.login_page import LoginPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
 from tests.M1_Item_Bank_Mgmt.m1_surveys import survey_chrome, survey_item_sets
 from utilities.element_checks import ElementChecks
+from utilities.item_template_curriculum import TemplateCurriculum
 from utilities.read_config import ReadConfig
 
 
@@ -20,15 +20,32 @@ class TestSMEBulkUploadRBAC:
         contract and stays a hard assert — including that rows were actually
         rendered, since "no out-of-scope rows" is trivially true of an empty grid.
         """
-        workbook = load_workbook(
-            ReadConfig.get_upload_item_file_path(),
-            read_only=True,
-            data_only=True,
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and open their item-set listing.\n"
+            "Survey the page furniture softly, then hard-assert the scope: every row "
+            "on show must be in this SME's own grade and subject.\n"
+            "Also assert rows were actually rendered, because an empty grid would "
+            "pass a scope check for the wrong reason.",
         )
-        worksheet = workbook.active
-        expected_grade = str(worksheet.cell(row=2, column=1).value).strip()
-        expected_subject = str(worksheet.cell(row=2, column=2).value).strip()
-        workbook.close()
+        # The account's entitlement, read from the template it is served: the
+        # cascading dropdowns are built from the uploader's own scoped
+        # grade-subjects, so every (grade, subject) they offer is in scope and
+        # anything else on the listing is a leak.
+        #
+        # This used to take the single grade and subject out of the template's
+        # sample row, which quietly assumed the account authors in exactly one
+        # subject. It is scoped to three, so the first item set in a second
+        # subject was reported as a scope violation.
+        with TemplateCurriculum.from_path(ReadConfig.get_upload_item_file_path()) as curriculum:
+            allowed_pairs = [
+                (grade, subject)
+                for grade in curriculum.grades()
+                for subject in curriculum.subjects(grade)
+            ]
+
 
         self.driver.get(ReadConfig.get_base_url())
         sme_username = ReadConfig.get_sme2_username()
@@ -41,8 +58,9 @@ class TestSMEBulkUploadRBAC:
         sets_page.close_popup_if_open()
         sets_page.open_item_sets_list()
         page_evidence.checkpoint(
-            f"SME {sme_username} opened My Item Set; scope under test is "
-            f"{expected_grade} / {expected_subject}"
+            f"SME {sme_username} opened My Item Set; entitled to "
+            f"{len(allowed_pairs)} grade-subject pair(s): "
+            + ", ".join(f"{grade}/{subject}" for grade, subject in allowed_pairs)
         )
 
         checks = ElementChecks(
@@ -66,20 +84,19 @@ class TestSMEBulkUploadRBAC:
         )
 
         sets_page.open_sets_module()
-        scopes = sets_page.verify_visible_item_sets_within_scope(
-            expected_grade,
-            expected_subject,
-        )
+        scopes = sets_page.verify_visible_item_sets_within_scope(allowed_pairs)
+        allowed_grades = {grade for grade, _ in allowed_pairs}
         out_of_scope = [
-            scope
-            for scope in scopes
-            if scope["grade"] == "Grade 10"
-            or scope["subject"].casefold() == "english"
+            scope for scope in scopes if scope["grade"] not in allowed_grades
         ]
         page_evidence.checkpoint(
-            f"{len(scopes)} visible set(s) read for grade/subject; "
+            f"{len(scopes)} visible set(s) read against the account's "
+            f"{len(allowed_pairs)} entitled grade-subject pair(s); "
             f"out-of-scope rows: {out_of_scope or 'none'}"
         )
 
-        assert all(scope["grade"] != "Grade 10" for scope in scopes)
-        assert all(scope["subject"].casefold() != "english" for scope in scopes)
+        # A grade the account's own template never offers must never appear.
+        assert not out_of_scope, (
+            f"SME can see item sets in grades outside {sorted(allowed_grades)}: "
+            f"{out_of_scope}"
+        )

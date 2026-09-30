@@ -79,8 +79,19 @@ class TestE2EQARImageModeration:
         source_filename,
         request,
         worker_id,
-        page_evidence,
+        page_evidence, record_property,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Upload one curated image whose filename encodes the result it is meant "
+            "to get.\n"
+            "An image marked bad must be rejected at the upload-moderation boundary, "
+            "and one marked ok must be accepted.\n"
+            "Each of the 22 curated images gets its own run, so one bad image cannot "
+            "mask the rest.",
+        )
         prefix = f"QAR_AUTO_IMG_ONE_{uuid4().hex[:10]}"
         source_case = next(
             case

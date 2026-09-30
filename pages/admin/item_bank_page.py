@@ -24,6 +24,14 @@ class ItemBankPage(BasePage):
 
     PATH = "/admin/itembank"
 
+    # The grid renders one page of rows at a time, so anything that has to
+    # answer for the whole bank pages through it. The QA bank held 164 items on
+    # 2026-08-26 - 17 pages at the default ten rows - and a limit short of that
+    # does not just scan less, it silently changes the answer: a caller looking
+    # for the most preferred of several markers settles for whatever it found
+    # inside the limit. Sized to cover the bank with room to grow.
+    DEFAULT_PAGE_SCAN_LIMIT = 25
+
     COLUMN_SELECT = 1
     COLUMN_ITEM_ID = 2
     COLUMN_ITEM = 3
@@ -598,3 +606,96 @@ class ItemBankPage(BasePage):
         except TimeoutException:
             pass
         return self.get_page_indicator()
+
+    def go_to_previous_page(self):
+        before = self.get_page_indicator()
+        self.click_resilient(self.PREV_PAGE_BTN)
+        try:
+            self.wait_utils.until_condition(
+                lambda driver: self.get_page_indicator() != before, timeout=20
+            )
+        except TimeoutException:
+            pass
+        return self.get_page_indicator()
+
+    def get_page_position(self):
+        """(page, total pages) read off 'Page 3 of 7'; (-1, -1) when the
+        indicator does not carry both numbers."""
+        match = re.search(r"Page\s+(\d+)\s+of\s+(\d+)", self.get_page_indicator())
+        return (int(match.group(1)), int(match.group(2))) if match else (-1, -1)
+
+    def _advance_page(self):
+        """True only when the grid actually moved on. Next is disabled on the
+        last page, which surfaces as a timeout waiting for it to be clickable."""
+        before = self.get_page_indicator()
+        try:
+            return self.go_to_next_page() != before
+        except WebDriverException:
+            return False
+
+    def _each_page(self, page_limit):
+        """Yield each page number in turn, advancing the grid between them.
+
+        Stops at the indicator's own total, at a Next that no longer moves the
+        grid, or at page_limit — whichever comes first. The grid is left on
+        whichever page the caller stopped reading.
+        """
+        page_number = 1
+        while True:
+            yield page_number
+            page, total = self.get_page_position()
+            if 0 < total <= page or page_number >= page_limit or not self._advance_page():
+                return
+            page_number += 1
+
+    def find_item_across_pages(self, item_id, page_limit=DEFAULT_PAGE_SCAN_LIMIT):
+        """(page holding item_id, pages scanned) — page 0 when none of them do.
+
+        The grid only ever renders one page of rows, so is_item_present_in_table
+        answers for the current page alone; presence in the *bank* needs this.
+        """
+        pages_scanned = 0
+        for page_number in self._each_page(page_limit):
+            pages_scanned = page_number
+            if self.is_item_present_in_table(item_id):
+                return page_number, pages_scanned
+        return 0, pages_scanned
+
+    def find_best_item_on_page(self, markers):
+        """(item_id, marker) for the most preferred marker present on the
+        current page, or ('', '') when none of them are."""
+        for marker in markers:
+            matches = self.find_items_matching((marker,))
+            if matches:
+                return matches[0], marker
+        return "", ""
+
+    def find_best_item_matching_across_pages(self, markers, page_limit=DEFAULT_PAGE_SCAN_LIMIT):
+        """Most preferred marker match in the paged grid, as
+        (item_id, marker, pages scanned); item_id is '' when nothing matched.
+
+        `markers` is in preference order, so a page-1 match on the last marker
+        must not win over a page-3 match on the first: pages keep being scanned
+        until the first marker turns up — nothing can beat that — or the scan
+        runs out. The grid is left on the page holding the returned item, ready
+        for the caller to act on it.
+        """
+        markers = tuple(markers)
+        best_index, best_page, best_item, best_marker = len(markers), 0, "", ""
+        pages_scanned = 0
+        for page_number in self._each_page(page_limit):
+            pages_scanned = page_number
+            # Only markers more disposable than the best match so far are still
+            # worth looking for.
+            item_id, marker = self.find_best_item_on_page(markers[:best_index])
+            if item_id:
+                best_index = markers.index(marker)
+                best_page, best_item, best_marker = page_number, item_id, marker
+            if best_index == 0:
+                break
+
+        current_page = pages_scanned
+        while best_item and current_page > best_page:
+            self.go_to_previous_page()
+            current_page -= 1
+        return best_item, best_marker, pages_scanned

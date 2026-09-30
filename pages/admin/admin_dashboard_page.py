@@ -1,4 +1,5 @@
 import re
+from time import monotonic
 
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
@@ -148,6 +149,33 @@ class AdminDashboardPage(BasePage):
         r"(just now|\d+\s*(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d)\s*ago)",
         re.IGNORECASE,
     )
+
+    REPORT_TABS = {
+        "Platform Overview": TAB_PLATFORM_OVERVIEW,
+        "User Performances": TAB_USER_PERFORMANCES,
+        "QAR Reports": TAB_QAR_REPORTS,
+    }
+
+    def open_report_tab(self, label, timeout=60):
+        """Switch to one of the admin home report tabs, returning how long the
+        report took to render in seconds.
+
+        Reporting in this build is these three tabs rather than a separate
+        Reports page, so "generating a report" is selecting one and waiting for
+        its panels to paint.
+        """
+        locator = self.REPORT_TABS[label]
+        started = monotonic()
+        self.click_element(locator)
+        self.wait_for_dashboard_ready(timeout=timeout)
+        return monotonic() - started
+
+    def apply_filters(self, timeout=60):
+        """Re-run the current report through its filter bar, timing the rerun."""
+        started = monotonic()
+        self.click_element(self.FILTER_APPLY_BTN)
+        self.wait_for_dashboard_ready(timeout=timeout)
+        return monotonic() - started
 
     def wait_for_dashboard_ready(self, timeout=30):
         self.wait_utils.until_condition(

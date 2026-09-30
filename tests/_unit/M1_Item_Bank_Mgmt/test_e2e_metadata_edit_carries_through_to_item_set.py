@@ -115,8 +115,19 @@ class TestE2EMetadataEditCarriesThroughToItemSet:
         )
 
     def test_review_step_metadata_edits_reach_confirm_step_and_created_item_set(
-        self, request, page_evidence
+        self, request, page_evidence, record_property
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Upload a workbook as an SME, then retag an item's metadata on the Review "
+            "and Tag Metadata step.\n"
+            "Carry on to the confirm step and check the edited tags are the ones "
+            "shown there.\n"
+            "Check the item set that gets created stores the corrected tags, not the "
+            "ones the workbook arrived with.",
+        )
         run_id = f"metadata_edit_{uuid4().hex[:10]}"
         self.shots = []
         workbook_path = self.build_workbook(run_id)

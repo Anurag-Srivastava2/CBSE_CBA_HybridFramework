@@ -55,6 +55,16 @@ class TestQAR50ItemPerformanceBudget:
     def test_tc_ibmm_08_p01_qar_completes_50_item_set_within_budget(
         self, tmp_path, record_property, page_evidence
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and upload a generated 50-row workbook.\n"
+            "Start timing at Submit for QAR, so the upload wizard is deliberately "
+            "outside the measurement, and wait for QAR to finish.\n"
+            "Check QAR completed inside the time budget, recording how long it took "
+            "per item.",
+        )
         page = self.login_as_sme()
         page_evidence.checkpoint(
             f"SME signed in to measure QAR against a {self.BUDGET_SECONDS}s "

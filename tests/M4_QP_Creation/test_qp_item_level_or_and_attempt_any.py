@@ -16,13 +16,19 @@ from tests.M4_QP_Creation.qp_surveys import (
 )
 from utilities.element_checks import ElementChecks
 from utilities.page_evidence import checkpoint
+from utilities.qp_question_budget import cap_item_counts
 from utilities.read_config import ReadConfig
+
+# Both section sizes shrink to fit CBSE_QP_MAX_QUESTIONS when it is set. The
+# choice rules keep their shape at any size: Section A always leaves at least
+# one question unattempted, Section B always keeps at least one mandatory slot
+# and one OR pair, so what this suite proves does not change with the cap.
+ATTEMPT_ANY_ITEMS, OR_BASED_ITEMS = cap_item_counts([12, 6])
 
 # Section A - 12 generated questions of 1 mark, of which the student attempts
 # any 10. The builder costs "Attempt Any" at attempt x marks, not items x
 # marks, so this section is worth 10 marks and not 12.
-ATTEMPT_ANY_ITEMS = 12
-ATTEMPT_ANY_TO_ATTEMPT = 10
+ATTEMPT_ANY_TO_ATTEMPT = max(1, min(ATTEMPT_ANY_ITEMS - 1, round(ATTEMPT_ANY_ITEMS * 10 / 12)))
 ATTEMPT_ANY_MARKS_PER_ITEM = 1
 SECTION_A_MARKS = ATTEMPT_ANY_TO_ATTEMPT * ATTEMPT_ANY_MARKS_PER_ITEM
 
@@ -30,8 +36,7 @@ SECTION_A_MARKS = ATTEMPT_ANY_TO_ATTEMPT * ATTEMPT_ANY_MARKS_PER_ITEM
 # mandatory and turns the remaining 3 into OR pairs, so the paper renders 3
 # plain questions plus 3 pairs (9 question bodies across 6 numbered slots).
 # Every slot is costed, so the section is worth items x marks.
-OR_BASED_ITEMS = 6
-OR_BASED_MANDATORY = 3
+OR_BASED_MANDATORY = max(1, OR_BASED_ITEMS // 2)
 OR_BASED_MARKS_PER_ITEM = 2
 OR_PAIR_COUNT = OR_BASED_ITEMS - OR_BASED_MANDATORY
 SECTION_B_MARKS = OR_BASED_ITEMS * OR_BASED_MARKS_PER_ITEM
@@ -87,6 +92,19 @@ class TestQPItemLevelOrAndAttemptAny:
         paper was configured with. Page furniture stays a soft survey, as in
         the sibling M4 suites.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Generate a paper using the item-level question-selection rules, as four "
+            "sets sharing one pool of questions.\n"
+            "Check Attempt Any prints its 'Attempt any X out of Y' rubric, and OR "
+            "Based prints the choice rubric pairing its questions as Q1a / OR / Q1b.\n"
+            "Check the rules survive into every set, not just the one shown first, "
+            "since a rule kept in Set 01 and dropped from Set 03 would otherwise go "
+            "unnoticed.\n"
+            "Check the sets still hold the same questions in a different order.",
+        )
         self.login_as_teacher()
         page = QuestionPaperBuilderPage(self.driver)
 

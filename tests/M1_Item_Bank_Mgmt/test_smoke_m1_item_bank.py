@@ -51,8 +51,9 @@ class TestSmokeM1ItemBank:
     # without the per-typology form handling the E2E suites exercise.
     TRUE_FALSE_TYPOLOGY = "True or False"
 
-    # The formats the upload screen advertises as accepted.
-    WORKBOOK_SUFFIXES = (".xlsx", ".xls", ".csv")
+    # The formats the upload screen advertises as accepted. Word (.docx)
+    # joined them once Word upload shipped, and its sets list their .docx.
+    WORKBOOK_SUFFIXES = (".xlsx", ".xls", ".csv", ".docx")
 
     # Text-based tab locators only. The positional fallbacks the page objects
     # carry for resilient clicking would satisfy a visibility assertion
@@ -90,6 +91,14 @@ class TestSmokeM1ItemBank:
         self, record_property, page_evidence
     ):
         """SME signs in and the item-creation workspace offers both authoring routes."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and open the item-creation workspace.\n"
+            "Check both authoring routes are offered, manual and bulk upload. "
+            "Read-only, nothing is created.",
+        )
         page = self.open_item_creation_workspace(slot=0)
         page_evidence.checkpoint(
             f"SME {self.sme_username(0)} signed in and the item-creation "
@@ -137,6 +146,17 @@ class TestSmokeM1ItemBank:
         afterwards. The item is never submitted for QAR, so nothing reaches
         the review workflow and the account is left as it was found.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and clear any staged draft first, so the check starts "
+            "from a known baseline.\n"
+            "Author one complete True/False item: every metadata dropdown, the "
+            "rich-text question and explanation, the answer, then Add Item.\n"
+            "Confirm it staged, then clear the draft again so the account is left as "
+            "it was found. Nothing is submitted for QAR.",
+        )
         question_text = (
             f"{ReadConfig.get_manual_item_question()} (smoke {uuid4().hex[:8]})"
         )
@@ -196,6 +216,14 @@ class TestSmokeM1ItemBank:
         self, record_property, page_evidence
     ):
         """The bulk Excel upload screen reaches its Upload Documents step."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and open the bulk Excel upload screen.\n"
+            "Check it reaches the Upload Documents step. Read-only, nothing is "
+            "ingested.",
+        )
         upload_page = self.open_item_creation_workspace(slot=2, page_class=UploadItemFilePage)
         upload_page.open_upload_item_file_tab()
         upload_page.open_upload_step()
@@ -238,6 +266,18 @@ class TestSmokeM1ItemBank:
         Consequently nothing is submitted and the staged upload is discarded at
         the end, so this check no longer leaves workflow data behind.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and upload a generated Excel workbook.\n"
+            "Let it validate and stop at the review step, where the app has already "
+            "assigned item IDs and the item set ID: that is the ingestion result "
+            "worth gating on.\n"
+            "Deliberately do not submit for QAR, because that is slow and would push "
+            "a set into the RWG queue on every run. The staged upload is discarded at "
+            "the end.",
+        )
         template_path = Path(ReadConfig.get_upload_item_file_path())
         assert template_path.exists(), (
             f"SME upload template not found at {template_path}. Set CBSE_UPLOAD_ITEM_FILE "
@@ -314,6 +354,17 @@ class TestSmokeM1ItemBank:
         counts recorded as evidence, rather than gating the build on whatever
         this account happens to hold — the same reasoning as check 05.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as an SME and open the My Item Set list.\n"
+            "Assert the Uploaded File column is there, since that is a property of "
+            "the build rather than of the data.\n"
+            "Check whatever file names are shown are well-formed workbooks, and "
+            "record the counts as evidence instead of failing on whatever this "
+            "account happens to hold.",
+        )
         sign_in(self.driver, self.sme_username(0))
         page = UploadItemFilePage(self.driver)
         page.close_popup_if_open()

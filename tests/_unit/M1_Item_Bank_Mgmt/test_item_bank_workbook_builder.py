@@ -4,6 +4,11 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 
 from utilities.item_bank_workbook_builder import build_item_workbook
+from utilities.item_template_columns import (
+    CANONICAL_HEADERS,
+    resolve_columns,
+    write_row_fields,
+)
 from utilities.question_bank_manager import content_hash
 
 
@@ -45,56 +50,40 @@ def _seed_isolated_question_bank(monkeypatch, tmp_path):
     monkeypatch.setenv("CBSE_ENV", "offline-fixture-tests")
 
 
-HEADERS = (
-    "Grade",
-    "Subject",
-    "Unit/Theme",
-    "Chapter No._Name",
-    "S.No.",
-    "Competency",
-    "Learning Outcome",
-    "Blooms Taxonomy",
-    "Explanation of Blooms Taxonomy",
-    "Typology",
-    "Question",
-    "Question Image",
-    "Option 1",
-    "Option 2",
-    "Option 3",
-    "Option 4",
-    "Image 1",
-    "Image 2",
-    "Image 3",
-    "Image 4",
-    "Answer",
-    "Answer Image",
-    "Explanation/Remarks",
-    "Marks",
-)
+# The sheet is built from the shared contract rather than a second copy of
+# the header list, so a column added to the template cannot leave this test
+# passing against a shape the app no longer sends.
+HEADERS = CANONICAL_HEADERS
 
 
 def _add_item_sheet(workbook, title):
     worksheet = workbook.create_sheet(title)
     for column, header in enumerate(HEADERS, start=1):
         worksheet.cell(row=1, column=column).value = header
-    metadata = (
-        "Grade 1",
-        "Mathematics",
-        1,
-        "How do I Spend my Day? (Time)",
-        1,
-        "Uses time in daily life",
-        "Reads time to the hour",
-        "Applying",
-        "Uses a clock to reason about time",
-    )
-    for column, value in enumerate(metadata, start=1):
-        worksheet.cell(row=2, column=column).value = value
-    worksheet["K6"] = "stale item that must be cleared"
+    columns = resolve_columns(worksheet)
+    metadata = {
+        "grade": "Grade 1",
+        "subject": "Mathematics",
+        "book": "Book 1",
+        # Unit is left empty on purpose: it is optional, and the subject this
+        # row names has no unit data behind it — the same shape the checked-in
+        # typology templates carry.
+        "unit": None,
+        "chapter": "How do I Spend my Day? (Time)",
+        "sequence": 1,
+        "competency": "Uses time in daily life",
+        "learning_outcome": "Reads time to the hour",
+        "blooms": "Applying",
+        "blooms_explanation": "Uses a clock to reason about time",
+    }
+    write_row_fields(worksheet, 2, columns, metadata)
+    worksheet.cell(row=6, column=columns["question"]).value = "stale item that must be cleared"
+    # Past the item columns: a helper cell the builder must leave alone.
     worksheet["CA2"] = "True or False"
     validation = DataValidation(type="list", formula1='"True or False,Fill in the Blank"')
     worksheet.add_data_validation(validation)
-    validation.add("J2:J500")
+    validation.add(f"{worksheet.cell(row=1, column=columns['typology']).column_letter}2:"
+                   f"{worksheet.cell(row=1, column=columns['typology']).column_letter}500")
     return worksheet
 
 
@@ -109,7 +98,16 @@ def _create_template(path):
     workbook.close()
 
 
-def test_builder_creates_four_mixed_non_image_items_per_sheet(tmp_path, monkeypatch):
+def test_builder_creates_four_mixed_non_image_items_per_sheet(tmp_path, monkeypatch, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Ask the workbook builder for a sheet of mixed non-image items, against "
+        "an isolated question bank.\n"
+        "Check it writes four items per sheet and reports a summary matching what "
+        "it actually wrote.",
+    )
     _seed_isolated_question_bank(monkeypatch, tmp_path)
     template = tmp_path / "template.xlsx"
     output = tmp_path / "offline-items.xlsx"
@@ -137,24 +135,37 @@ def test_builder_creates_four_mixed_non_image_items_per_sheet(tmp_path, monkeypa
     all_questions = []
     for sheet_name in ("Items", "Items Hindi"):
         worksheet = workbook[sheet_name]
-        questions = [worksheet.cell(row=row, column=11).value for row in range(2, 6)]
+        columns = resolve_columns(worksheet)
+        questions = [
+            worksheet.cell(row=row, column=columns["question"]).value for row in range(2, 6)
+        ]
         all_questions.extend(questions)
         assert all(questions)
-        assert worksheet["K6"].value is None
-        assert [worksheet.cell(row=row, column=10).value for row in range(2, 6)] == (
-            expected_typologies
-        )
+        assert worksheet.cell(row=6, column=columns["question"]).value is None
+        assert [
+            worksheet.cell(row=row, column=columns["typology"]).value for row in range(2, 6)
+        ] == expected_typologies
+        # Book and Unit come from the template row and must be carried onto
+        # every generated row: the importer resolves the curriculum chain per
+        # row, and a row missing its Book fails validation.
+        assert [
+            worksheet.cell(row=row, column=columns["book"]).value for row in range(2, 6)
+        ] == ["Book 1"] * 4
+        assert [
+            worksheet.cell(row=row, column=columns["unit"]).value for row in range(2, 6)
+        ] == [None] * 4
         expected_options = [
             *summaries[sheet_name][1]["options"],
             *([None] * (4 - len(summaries[sheet_name][1]["options"]))),
         ]
         assert [
-            worksheet.cell(row=3, column=column).value for column in range(13, 17)
+            worksheet.cell(row=3, column=columns[f"option_{index}"]).value
+            for index in range(1, 5)
         ] == expected_options
         assert worksheet["CA2"].value == "True or False"
         assert len(worksheet.data_validations.dataValidation) == 1
         assert len(worksheet._images) == 0
-        assert worksheet["L5"].value is None
+        assert worksheet.cell(row=5, column=columns["question_image"]).value is None
 
     assert len(all_questions) == len(set(all_questions))
     assert workbook["Lookups"]["A1"].value == "must remain unchanged"

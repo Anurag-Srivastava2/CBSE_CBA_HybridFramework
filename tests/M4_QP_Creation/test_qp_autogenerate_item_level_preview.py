@@ -13,6 +13,7 @@ from tests.M4_QP_Creation.qp_surveys import (
 )
 from utilities.element_checks import ElementChecks
 from utilities.page_evidence import checkpoint
+from utilities.qp_question_budget import cap_item_counts
 from utilities.read_config import ReadConfig
 
 
@@ -47,6 +48,17 @@ class TestQPAutoGenerateItemLevelPreview:
         metadata surviving publication, the section and set counts — is a
         workflow outcome or data integrity and stays a hard assert.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and auto-generate a question paper at item level, "
+            "then publish it.\n"
+            "Preview each generated set, surveying the page structure softly across "
+            "the three screens this walks.\n"
+            "The generation budget, the metadata surviving publication, and the "
+            "section and set counts are workflow outcomes and stay hard.",
+        )
         self.login_as_teacher()
         page = QuestionPaperBuilderPage(self.driver)
 
@@ -82,9 +94,12 @@ class TestQPAutoGenerateItemLevelPreview:
         page.select_item_level()
         # Section A: 10 questions x 1 mark = 10 marks.
         # Section B: 5 questions x 2 marks = 10 marks. Total = 20 marks.
+        # Both counts shrink to fit CBSE_QP_MAX_QUESTIONS when it is set, and
+        # the marks target below follows from whatever they end up being.
+        item_counts = cap_item_counts([10, 5])
         section_configs = [
-            {"number_of_items": 10, "marks_per_item": 1},
-            {"number_of_items": 5, "marks_per_item": 2},
+            {"number_of_items": item_counts[0], "marks_per_item": 1},
+            {"number_of_items": item_counts[1], "marks_per_item": 2},
         ]
         total_marks = sum(
             config["number_of_items"] * config["marks_per_item"]

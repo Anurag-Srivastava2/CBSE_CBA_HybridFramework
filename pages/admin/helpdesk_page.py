@@ -325,12 +325,26 @@ class HelpdeskPage(BasePage):
     def get_assignees_in_view(self):
         return self._column_values(self.COLUMN_ASSIGNED_TO)
 
+    @staticmethod
+    def _names_agent(cell_value, assignee):
+        """Whitespace- and case-insensitive agent-name match.
+
+        The portal renders one account differently in different places - a
+        queue row shows "L2 S" where the assign picker shows "L 2" - so an
+        exact comparison finds no rows and reads as "no ticket to reassign"
+        rather than as the name mismatch it is.
+        """
+        def normalise(value):
+            return " ".join(str(value).split()).casefold().replace(" ", "")
+
+        return normalise(cell_value) == normalise(assignee)
+
     def find_tickets_assigned_to(self, assignee):
         """Ticket numbers currently sitting with a given agent."""
         return [
             values["ticket_id"]
             for values in (self.get_row_values(row) for row in self.get_rows())
-            if values["assigned_to"] == assignee
+            if self._names_agent(values["assigned_to"], assignee)
         ]
 
     def _row_for_ticket(self, ticket_id):

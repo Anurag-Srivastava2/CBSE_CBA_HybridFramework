@@ -46,7 +46,15 @@ class FakeQARWorkflow:
         )
 
 
-def test_happy_path_routes_to_rwg_without_edit_or_rerun():
+def test_happy_path_routes_to_rwg_without_edit_or_rerun(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Run the QAR retry workflow on a set where nothing is flagged.\n"
+        "Check it routes straight to RWG with no edits, no reruns and a retry "
+        "count of zero.",
+    )
     workflow = FakeQARWorkflow([[]])
 
     result = workflow.run()
@@ -58,7 +66,15 @@ def test_happy_path_routes_to_rwg_without_edit_or_rerun():
     assert workflow.routed_checks == ["IS-QAR-RETRY"]
 
 
-def test_retry_path_asserts_blocked_then_passes_after_one_edit_and_rerun():
+def test_retry_path_asserts_blocked_then_passes_after_one_edit_and_rerun(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Run the workflow on a set where one item is flagged the first time and "
+        "clean the second.\n"
+        "Check it edits that one item, reruns once, and then passes.",
+    )
     workflow = FakeQARWorkflow([["item-1"], []])
 
     result = workflow.run()
@@ -70,7 +86,15 @@ def test_retry_path_asserts_blocked_then_passes_after_one_edit_and_rerun():
     assert workflow.routed_checks == ["IS-QAR-RETRY"]
 
 
-def test_failure_path_stops_after_three_retries_and_reports_remaining_items():
+def test_failure_path_stops_after_three_retries_and_reports_remaining_items(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Run the workflow on a set where the same item stays flagged every time.\n"
+        "Check it gives up after three retries and names the item that is still "
+        "failing, rather than looping forever.",
+    )
     workflow = FakeQARWorkflow(
         [["item-1"], ["item-1"], ["item-1"], ["item-1"]]
     )
@@ -86,7 +110,15 @@ def test_failure_path_stops_after_three_retries_and_reports_remaining_items():
     assert workflow.routed_checks == []
 
 
-def test_retry_loop_fails_before_rerun_when_a_failed_item_was_not_edited():
+def test_retry_loop_fails_before_rerun_when_a_failed_item_was_not_edited(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Have the correction step quietly skip one of the flagged items.\n"
+        "Check the loop fails before rerunning, rather than resubmitting content "
+        "it never actually fixed.",
+    )
     workflow = FakeQARWorkflow([["item-1", "item-2"], []])
     workflow.correct = lambda item_ids, retry_number: ("item-1",)
 
@@ -99,14 +131,29 @@ def test_retry_loop_fails_before_rerun_when_a_failed_item_was_not_edited():
     assert workflow.reruns == []
 
 
-def test_retry_loop_rejects_an_unbounded_zero_retry_configuration():
+def test_retry_loop_rejects_an_unbounded_zero_retry_configuration(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Configure the retry loop with a maximum of zero retries.\n"
+        "Check it refuses the configuration instead of running unbounded.",
+    )
     workflow = FakeQARWorkflow([[]])
 
     with pytest.raises(ValueError, match="max_retries must be at least 1"):
         workflow.run(max_retries=0)
 
 
-def test_retry_loop_deduplicates_item_ids_case_insensitively():
+def test_retry_loop_deduplicates_item_ids_case_insensitively(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Hand the loop the same item ID twice in different casing, plus an empty "
+        "value.\n"
+        "Check it collapses them to one item and drops the empty entry.",
+    )
     workflow = FakeQARWorkflow([["ITEM-1", "item-1", None], []])
 
     result = workflow.run()
@@ -114,7 +161,15 @@ def test_retry_loop_deduplicates_item_ids_case_insensitively():
     assert result.revised_item_ids_by_retry == (("ITEM-1",),)
 
 
-def test_page_status_map_recognizes_need_improvement_aliases():
+def test_page_status_map_recognizes_need_improvement_aliases(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Feed the status map the several wordings the page uses for a flagged "
+        "item, such as Need Improvement, Needs Improvement and Needs Revision.\n"
+        "Check all of them are recognised as the same flagged state.",
+    )
     class StatusDriver:
         @staticmethod
         def execute_script(script):
@@ -141,7 +196,14 @@ def test_page_status_map_recognizes_need_improvement_aliases():
 
 
 @pytest.mark.parametrize("status", ["Need Improvement", "Needs Improvement"])
-def test_qar_report_fallback_extracts_need_improvement_status(status):
+def test_qar_report_fallback_extracts_need_improvement_status(status, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Hide the per-item status so only the report's body text carries it.\n"
+        "Check the fallback still reads the flagged status out of that text.",
+    )
     class Body:
         text = f"IS-RETRY-i1 {status}"
 
@@ -159,7 +221,14 @@ def test_qar_report_fallback_extracts_need_improvement_status(status):
     assert report.get_item_status("IS-RETRY-i1") == status
 
 
-def test_page_revision_adapter_opens_and_corrects_every_flagged_item():
+def test_page_revision_adapter_opens_and_corrects_every_flagged_item(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Give the revision adapter a set with several flagged items.\n"
+        "Check it opens and corrects every one of them, not just the first.",
+    )
     class ImmediateWait:
         @staticmethod
         def until_condition(condition, timeout=None):
@@ -219,8 +288,17 @@ def test_page_revision_adapter_opens_and_corrects_every_flagged_item():
 
 
 def test_page_revision_adapter_passes_qar_report_feedback_to_correction(
-    monkeypatch,
+    monkeypatch, record_property,
 ):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Give the revision adapter an item whose QAR report carries specific "
+        "feedback.\n"
+        "Check that feedback is handed to the correction step, so the rewrite "
+        "addresses what QAR actually objected to.",
+    )
     class ImmediateWait:
         @staticmethod
         def until_condition(condition, timeout=None):

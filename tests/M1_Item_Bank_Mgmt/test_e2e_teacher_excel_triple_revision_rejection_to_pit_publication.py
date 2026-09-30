@@ -17,11 +17,10 @@ reviewer after each round, so an item that reaches PIT proves the edit landed
 rather than merely that the status moved.
 """
 import re
-from copy import copy as copy_cell_style
 from datetime import datetime
 from pathlib import Path
 from shutil import copy2
-from time import sleep
+from time import monotonic, sleep
 from uuid import uuid4
 
 from openpyxl import load_workbook
@@ -43,10 +42,57 @@ from utilities.page_evidence import attach
 from utilities.qar_recovery import recover_qar_need_improvement_items
 from tests.M1_Item_Bank_Mgmt.m1_surveys import enter_screen, survey_opened_item_set
 from utilities.element_checks import ElementChecks
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    last_item_column,
+    resolve_columns,
+    write_row_fields,
+)
 from utilities.read_config import ReadConfig
 from utilities.screenshot_utils import ScreenshotUtils
 
 TEST_IMAGES_FOLDER = Path(__file__).parent.parent.parent / "test_images"
+
+
+# Item IDs render differently depending on the page: "...-Ch29-i3" right after
+# upload (the form every ID in this test is held in), "...-CH-1-i3" on the set
+# and review pages. Matching rows on the full upload-time ID found nothing
+# there, so a status reader returned {} and RWG iteration 3 "approved" nothing
+# - Submit RWG Review then stayed disabled. Rows are matched on the stable
+# "IS<number>" set prefix plus the "-iN" item number instead, and handed back
+# under the upload-time ID so callers can keep comparing like with like.
+_ROW_STATUSES_JS = r"""
+const setNumber = arguments[0];
+const statusPattern = new RegExp('^(' + arguments[1] + ')$', 'i');
+const inRowPattern = new RegExp('\\b(' + arguments[1] + ')\\b', 'i');
+const idPattern = new RegExp('IS' + setNumber + '[\\w-]*?-i(\\d+)\\b', 'i');
+const result = {};
+for (const row of document.querySelectorAll('table tbody tr')) {
+    const rowText = (row.innerText || row.textContent || '').trim();
+    const id = rowText.match(idPattern);
+    if (!id) continue;
+    const cells = Array.from(row.querySelectorAll('td'))
+        .map(cell => (cell.innerText || cell.textContent || '').trim());
+    result[id[1]] = cells.find(value => statusPattern.test(value))
+        || (rowText.match(inRowPattern) || [])[1]
+        || '';
+}
+return result;
+"""
+
+
+def row_statuses(driver, item_set_id, statuses):
+    """{"<item_set_id>-iN": status} for the item table on screen."""
+    set_number = re.match(r"IS(\d+)", item_set_id, re.IGNORECASE).group(1)
+    by_index = driver.execute_script(_ROW_STATUSES_JS, set_number, "|".join(statuses)) or {}
+    return {f"{item_set_id}-i{index}": status for index, status in by_index.items()}
+
+
+def upload_form_item_id(item_set_id, rendered_item_id):
+    """A page-rendered item ID ("...-CH-1-i3") in this test's upload-time form."""
+    index = re.search(r"-i(\d+)\s*$", rendered_item_id or "", re.IGNORECASE)
+    return f"{item_set_id}-i{index.group(1)}" if index else rendered_item_id
 
 
 def _pick_test_image():
@@ -311,27 +357,9 @@ class TripleIterationRWGReviewQueuePage(MajorActionEvidenceMixin, RWGReviewQueue
         return item_id
 
     def get_review_item_statuses(self, item_set_id):
-        return self.driver.execute_script(
-            r"""
-            const itemSetId = arguments[0];
-            const escaped = itemSetId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const itemPattern = new RegExp('(' + escaped + '-i\\d+)', 'i');
-            const statusPattern = /^(Pending|Under Review|Approved|Revise|Revised|Rejected)$/i;
-            const result = {};
-            for (const row of document.querySelectorAll('table tbody tr')) {
-                const rowText = (row.innerText || row.textContent || '').trim();
-                const itemMatch = rowText.match(itemPattern);
-                if (!itemMatch) continue;
-                const cells = Array.from(row.querySelectorAll('td'))
-                    .map(cell => (cell.innerText || cell.textContent || '').trim());
-                const status = cells.find(value => statusPattern.test(value))
-                    || (rowText.match(/\b(Pending|Under Review|Approved|Revise|Revised|Rejected)\b/i) || [])[1]
-                    || '';
-                result[itemMatch[1]] = status;
-            }
-            return result;
-            """,
-            item_set_id,
+        return row_statuses(
+            self.driver, item_set_id,
+            ("Pending", "Under Review", "Approved", "Revise", "Revised", "Rejected"),
         )
 
     def reject_revised_and_approve_remaining_as_rwg(
@@ -377,27 +405,9 @@ class TripleIterationPITReviewQueuePage(MajorActionEvidenceMixin, PITReviewQueue
     """PIT helper that proves rejected rows never enter the actionable loop."""
 
     def get_pit_item_statuses(self, item_set_id):
-        return self.driver.execute_script(
-            r"""
-            const itemSetId = arguments[0];
-            const escaped = itemSetId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const itemPattern = new RegExp('(' + escaped + '-i\\d+)', 'i');
-            const statusPattern = /^(Pending|Under Review|Approved|Rejected|Published)$/i;
-            const result = {};
-            for (const row of document.querySelectorAll('table tbody tr')) {
-                const rowText = (row.innerText || row.textContent || '').trim();
-                const itemMatch = rowText.match(itemPattern);
-                if (!itemMatch) continue;
-                const cells = Array.from(row.querySelectorAll('td'))
-                    .map(cell => (cell.innerText || cell.textContent || '').trim());
-                const status = cells.find(value => statusPattern.test(value))
-                    || (rowText.match(/\b(Pending|Under Review|Approved|Rejected|Published)\b/i) || [])[1]
-                    || '';
-                result[itemMatch[1]] = status;
-            }
-            return result;
-            """,
-            item_set_id,
+        return row_statuses(
+            self.driver, item_set_id,
+            ("Pending", "Under Review", "Approved", "Rejected", "Published"),
         )
 
     def approve_only_expected_items_as_pit(
@@ -409,8 +419,16 @@ class TripleIterationPITReviewQueuePage(MajorActionEvidenceMixin, PITReviewQueue
     ):
         self.open_review_item_set(item_set_id, item_set_url)
         starting_quorum_count = self.get_pit_quorum_approval_count()
-        all_item_ids = self.get_pit_item_ids(item_set_id)
-        pending_item_ids = self.get_pending_pit_item_ids(item_set_id)
+        # The PIT page renders IDs as "...-CH-1-iN"; bring them into the
+        # upload-time form the expected lists use before comparing.
+        all_item_ids = [
+            upload_form_item_id(item_set_id, item_id)
+            for item_id in self.get_pit_item_ids(item_set_id)
+        ]
+        pending_item_ids = [
+            upload_form_item_id(item_set_id, item_id)
+            for item_id in self.get_pending_pit_item_ids(item_set_id)
+        ]
         expected = {item_id.casefold() for item_id in expected_approved_item_ids}
         rejected = {item_id.casefold() for item_id in rejected_item_ids}
         actual_pending = {item_id.casefold() for item_id in pending_item_ids}
@@ -487,24 +505,13 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
     IMAGE_LANE_SIZE = 2
     REJECTION_LANE_SIZE = 2
 
-    @staticmethod
-    def copy_row_format_and_values(worksheet, source_row, target_row, max_column):
-        for column in range(1, max_column + 1):
-            source_cell = worksheet.cell(row=source_row, column=column)
-            target_cell = worksheet.cell(row=target_row, column=column)
-            target_cell.value = source_cell.value
-            if source_cell.has_style:
-                target_cell._style = copy_cell_style(source_cell._style)
-            if source_cell.number_format:
-                target_cell.number_format = source_cell.number_format
-            if source_cell.alignment:
-                target_cell.alignment = copy_cell_style(source_cell.alignment)
-
     @classmethod
     def update_teacher_upload_file_questions(cls, upload_file):
         workbook = load_workbook(upload_file)
         worksheet = workbook.active
-        max_data_column = 24
+        columns = resolve_columns(worksheet)
+        assert columns, f"{upload_file} has no recognisable item-data sheet."
+        max_data_column = last_item_column(worksheet)
         # MAX_MIXED_QUESTION_COUNT (5) pulls in every typology the factory
         # knows about - True or False, Short Answer, Fill in the Blank,
         # Very Short Answer, and MCQ - so this flow proves the triple
@@ -514,18 +521,25 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         for offset, item in enumerate(mixed_items):
             row = 2 + offset
             if row != 2:
-                cls.copy_row_format_and_values(worksheet, 2, row, max_data_column)
-            worksheet.cell(row=row, column=5).value = offset + 1
-            worksheet.cell(row=row, column=10).value = item["typology"]
-            worksheet.cell(row=row, column=11).value = item["question"]
+                copy_item_row(worksheet, 2, row, max_data_column)
+            write_row_fields(
+                worksheet,
+                row,
+                columns,
+                {
+                    "sequence": offset + 1,
+                    "typology": item["typology"],
+                    "question": item["question"],
+                    "answer": item["answer"],
+                    "explanation": item["explanation"],
+                    "marks": item["marks"],
+                },
+            )
             for option_offset, option_text in enumerate(item["options"]):
-                worksheet.cell(row=row, column=13 + option_offset).value = option_text
-            worksheet.cell(row=row, column=21).value = item["answer"]
-            worksheet.cell(row=row, column=23).value = item["explanation"]
-            worksheet.cell(row=row, column=24).value = item["marks"]
-        for row in range(2 + question_count, worksheet.max_row + 1):
-            for column in range(1, max_data_column + 1):
-                worksheet.cell(row=row, column=column).value = None
+                option_column = columns.get(f"option_{option_offset + 1}")
+                if option_column is not None:
+                    worksheet.cell(row=row, column=option_column).value = option_text
+        clear_rows_from(worksheet, 2 + question_count, max_data_column)
         workbook.save(upload_file)
         return question_count
 
@@ -590,52 +604,249 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             f"The application did not become ready while logging in as {username}."
         ) from last_error
 
-    def resolve_rwg_username_for_item_set(
-        self, upload_page, item_set_id, preferred_username, item_set_url=""
-    ):
-        """Log in as whichever configured RWG user actually holds this item set.
+    # Statuses that mean the set is still inside QAR, so RWG cannot hold it yet.
+    QAR_STAGE_MARKERS = ("pending_qar", "pending qar", "qar pending", "qar in progress")
 
-        The teacher-side "Assigned RWG" label can go undetected before the
-        detail page finishes rendering, in which case the caller falls back to
-        the first configured RWG account by default. With 5 RWG accounts
-        configured, that guess is frequently wrong, and the guessed-wrong
-        account's review queue never receives the item set, hanging
-        indefinitely. Probing each configured RWG queue via the same
-        open_review_item_set navigation (which searches for the item set
-        rather than reading only whatever the default queue view happens to
-        render) finds the real assignee instead.
+    # Badges meaning "this item has not been revised yet". "Revised" is
+    # deliberately absent - it is the done state, and substring-matching it
+    # against "Revise" is what would make this read backwards.
+    UNREVISED_ITEM_STATUSES = ("revise", "need improvement", "needs improvement",
+                               "needs revision", "pending")
+
+    @classmethod
+    def unrevised_items(cls, upload_page, item_set_id):
+        """Items the set still shows as awaiting the teacher's revision.
+
+        Read from the set's own badges rather than from what the revision loop
+        reported: that loop records an item as done as soon as its edit call
+        returns, without confirming the badge actually flipped, so its tally
+        can be one ahead of the page (observed live: it claimed 4 revised while
+        the header read "3 items revised" and one item still badged Revise).
         """
-        candidates = list(
-            dict.fromkeys([preferred_username, *ReadConfig.get_role_usernames("rwg")])
+        try:
+            statuses = upload_page.get_qar_item_statuses(item_set_id)
+        except Exception:
+            return {}
+        return {
+            item_id: status
+            for item_id, status in statuses.items()
+            if status.strip().casefold() != "revised"
+            and any(
+                marker in status.casefold() for marker in cls.UNREVISED_ITEM_STATUSES
+            )
+        }
+
+    @classmethod
+    def resubmit_revised_item_set(cls, upload_page, item_set_id, round_number):
+        """Resubmit after a teacher revision, and prove the resubmit took.
+
+        rerun_qar_if_enabled() reports a disabled or missing button by
+        *returning a string*, not by raising, so an unclicked resubmit used to
+        sail straight past this step. The set then sits untouched in the
+        teacher's revision bucket and the run failed minutes later at the RWG
+        lookup with "not visible in any configured RWG queue" - which reads as
+        a product routing defect when in fact nothing was ever sent back.
+        Failing here instead names the real cause at the point it happens.
+        """
+        message = upload_page.rerun_qar_if_enabled()
+        normalized = str(message).casefold()
+        if "disabled" not in normalized and "not available" not in normalized:
+            return message
+
+        # Two very different causes reach here, so say which. An incomplete
+        # revision is the app behaving correctly on a set the *test* left
+        # half-edited; a missing control with everything revised is the app.
+        outstanding = cls.unrevised_items(upload_page, item_set_id)
+        if outstanding:
+            raise AssertionError(
+                f"Teacher revision {round_number} for {item_set_id} could not be "
+                f"resubmitted ({message}) because {len(outstanding)} item(s) are "
+                f"still awaiting revision: {outstanding}. The revision step "
+                "reported them as edited, so the edit did not persist - this is "
+                "the revision save, not the resubmit control and not RWG routing."
+            )
+        raise AssertionError(
+            f"Teacher revision {round_number} for {item_set_id} was never "
+            f"resubmitted: {message} Every item reads as revised, so the set is "
+            "ready to go back and the control itself is the problem. The set "
+            "stays in the teacher's revision bucket; this is not RWG routing."
         )
-        last_error = None
-        max_passes = 3
-        for pass_number in range(1, max_passes + 1):
-            for candidate in candidates:
-                try:
-                    # The login belongs inside the try: a candidate whose
-                    # sign-in strands on the login form is just another
-                    # candidate that did not work, so move to the next account
-                    # instead of abandoning every remaining one and pass.
-                    upload_page.reset_browser_session_to_login()
-                    self.login_as(candidate)
-                    rwg_queue_page = RWGReviewQueuePage(self.driver)
-                    rwg_queue_page.open_review_item_set(
-                        item_set_id, item_set_url
+
+    def wait_for_rwg_handoff(
+        self, upload_page, item_set_id, item_set_url, round_number, timeout=420
+    ):
+        """Wait on the teacher's own view for the resubmitted set to reach RWG.
+
+        A resubmission puts the set back through QAR, and RWG cannot see it
+        until that finishes. The RWG queue sweep below only paused 10s between
+        passes, so it regularly gave up while the handoff was still in flight
+        and reported the set as missing from every queue.
+
+        Returns the detected RWG assignee, or "" when the label never rendered
+        or the set left QAR without one. require_assigned_rwg() turns a blank
+        into a failure that lists the item statuses; the old fallback of trying
+        every RWG account only guessed.
+        """
+        deadline = monotonic() + timeout
+        last_status = ""
+        while True:
+            # Re-fetched each pass rather than polling the view already on
+            # screen: this page does not repaint itself when the backend moves
+            # the set on, which is the whole reason the handoff looked absent.
+            try:
+                upload_page.open_item_set_url_and_wait(item_set_url, item_set_id)
+                assignee = upload_page.get_item_set_assignee("rwg")
+                if assignee:
+                    return assignee
+                last_status = (
+                    UploadItemFilePage.format_status_summary(
+                        upload_page.get_item_set_status_summary()
                     )
-                    self.survey_reviewer_screen(rwg_queue_page, 'RWG')
-                except TimeoutException as error:
-                    last_error = error
-                    continue
-                return candidate
-            if pass_number < max_passes:
-                # None of the configured RWG accounts could see the set yet;
-                # a backend QAR -> RWG handoff lag can outlast one pass over
-                # every candidate, so wait and sweep again before giving up.
-                sleep(10)
+                    or last_status
+                )
+                page_text = self.driver.find_element(By.TAG_NAME, "body").text.casefold()
+                in_qar = any(
+                    marker in page_text for marker in self.QAR_STAGE_MARKERS
+                )
+            except Exception as error:
+                # Logged, not swallowed: a set page that cannot be read at all
+                # otherwise looks identical to one that is simply still in QAR,
+                # and this method is deliberately non-fatal, so an unreadable
+                # page would leave no trace anywhere.
+                self.logger.warning(
+                    "Round %s: could not read %s while waiting for the RWG "
+                    "handoff: %s",
+                    round_number,
+                    item_set_id,
+                    error,
+                )
+                in_qar = True
+            # Bounded against the deadline, not a flat interval: a check placed
+            # before a fixed sleep always overshoots by that interval on the
+            # last pass.
+            remaining = deadline - monotonic()
+            if remaining <= 0:
+                self.logger.warning(
+                    "Round %s: no RWG assignee was detectable for %s within %ss "
+                    "(still showing a QAR stage: %s; statuses: %s).",
+                    round_number,
+                    item_set_id,
+                    timeout,
+                    in_qar,
+                    last_status or "none read",
+                )
+                return ""
+            if not in_qar:
+                # Out of QAR but no assignee shown - the label is simply not
+                # rendered, so stop waiting and let the queue sweep find it.
+                return ""
+            sleep(min(15, remaining))
+
+    def teacher_item_states(self):
+        """{item index: (status, typology)} read from the item set table.
+
+        Keyed by the trailing `-iN` index rather than the full ID, because the
+        page renders the chapter part of the ID ("CH-1") differently from the
+        ID captured at upload ("Ch29").
+        """
+        rows = self.driver.execute_script(
+            r"""
+            const statuses = /^(Pending|Under Review|Approved|Revise|Revised|Needs Revision|Rejected|Published)$/i;
+            const out = [];
+            for (const row of document.querySelectorAll('table tbody tr')) {
+                const cells = Array.from(row.querySelectorAll('td'))
+                    .map(cell => (cell.innerText || cell.textContent || '').trim());
+                if (!cells.length) continue;
+                const id = cells[0].replace(/\s+/g, '').match(/-i(\d+)$/i);
+                if (!id) continue;
+                const status = cells.find(value => statuses.test(value)) || '';
+                const typology = cells[cells.indexOf(status) + 1] || '';
+                out.push([id[1], status, typology]);
+            }
+            return out;
+            """
+        ) or []
+        return {index: (status, typology) for index, status, typology in rows}
+
+    # Still waiting on the teacher. After a resubmit that took, the revised
+    # items read "Pending" (back in the RWG queue); before one, "Revised".
+    UNREVISED_STATUSES = ("revise", "needs revision")
+
+    def assert_revisions_saved(self, item_set_id, expected_item_ids, round_number):
+        """No item the teacher was asked to revise may still await revision.
+
+        A revision whose save did not persist leaves that item on "Needs
+        Revision", and the set then never goes back to RWG. Checking here
+        names the item at the step that broke, instead of failing much later
+        with an RWG queue that "never received" the set.
+        """
+        deadline = monotonic() + 20
+        states = self.teacher_item_states()
+        while not states and monotonic() < deadline:
+            sleep(2)
+            states = self.teacher_item_states()
+        if not states:
+            self.logger.warning(
+                "Round %s: could not read item statuses for %s; skipping the "
+                "revision-saved check.", round_number, item_set_id,
+            )
+            return
+        unsaved = []
+        for item_id in expected_item_ids:
+            index = TripleIterationUploadItemFilePage.item_index_of(item_id)
+            status, typology = states.get(index, ("not listed", ""))
+            if status.casefold() in self.UNREVISED_STATUSES + ("not listed",):
+                unsaved.append(f"{item_id} ({typology or 'unknown typology'}): {status}")
+        assert not unsaved, (
+            f"Teacher revision {round_number} did not save for {len(unsaved)} item(s) - "
+            f"{'; '.join(unsaved)}. An item left un-revised keeps {item_set_id} with "
+            "the teacher, so it can never return to RWG."
+        )
+
+    def require_assigned_rwg(self, upload_page, item_set_id, item_set_url, stage):
+        """The RWG named on the teacher's item set page ("Reviewer: rwg N").
+
+        This is the only way the reviewer is chosen - no trying every RWG
+        account. A sweep across all of them only guessed, cost extra sign-ins
+        against the portal's rate limit, and turned "the set never reached
+        RWG" into a misleading "missing from every queue".
+        """
+        assignee = self.wait_for_rwg_handoff(
+            upload_page, item_set_id, item_set_url, round_number=stage
+        )
+        if not assignee:
+            states = self.teacher_item_states()
+            raise AssertionError(
+                f"{stage}: {item_set_id} shows no \"Reviewer\" on the teacher's item "
+                "set page, so it was not handed to any RWG. Item statuses: "
+                + (", ".join(f"i{i}={s}" for i, (s, _) in sorted(states.items())) or "unreadable")
+            )
+        return ReadConfig.get_all_user_username(assignee)
+
+    def open_set_as_assigned_rwg(self, upload_page, item_set_id, rwg_username, item_set_url=""):
+        """Sign in once as the assigned RWG and find the set in their queue.
+
+        open_review_item_set() searches the queue for the set first and only
+        falls back to its direct URL. The queue can lag the handoff by a few
+        seconds, so the lookup is retried - under the same sign-in.
+        """
+        upload_page.reset_browser_session_to_login()
+        self.login_as(rwg_username)
+        rwg_queue_page = RWGReviewQueuePage(self.driver)
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                rwg_queue_page.open_review_item_set(item_set_id, item_set_url)
+                self.survey_reviewer_screen(rwg_queue_page, "RWG")
+                return rwg_username
+            except TimeoutException as error:
+                last_error = error
+                if attempt < 3:
+                    sleep(20)
         raise TimeoutException(
-            f"Item set {item_set_id} was not visible in any configured RWG queue "
-            f"({candidates}) after {max_passes} passes."
+            f"The teacher's page names {rwg_username} as reviewer of {item_set_id}, "
+            f"but {rwg_username} could not open it from their queue after 3 tries - "
+            "the assignment and the reviewer's queue disagree."
         ) from last_error
 
     def create_fresh_teacher_item_set(
@@ -697,12 +908,9 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                 continue
             break
         item_set_url = self.driver.current_url
-        rwg_username = ReadConfig.get_role_usernames("rwg")[0]
-        try:
-            rwg_assignee = upload_page.require_item_set_assignee("rwg")
-            rwg_username = ReadConfig.get_all_user_username(rwg_assignee)
-        except AssertionError:
-            pass
+        rwg_username = self.require_assigned_rwg(
+            upload_page, item_set_id, item_set_url, "After the first QAR"
+        )
         return {
             "item_set_id": item_set_id,
             "item_ids": item_ids,
@@ -727,24 +935,9 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         )
 
     def get_teacher_item_statuses(self, item_set_id):
-        return self.driver.execute_script(
-            r"""
-            const itemSetId = arguments[0];
-            const escaped = itemSetId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const itemPattern = new RegExp('(' + escaped + '-i\\d+)', 'i');
-            const statusPattern = /^(Pending|Under Review|Approved|Revise|Revised|Rejected|Published)$/i;
-            const result = {};
-            for (const row of document.querySelectorAll('table tbody tr')) {
-                const rowText = (row.innerText || row.textContent || '').trim();
-                const itemMatch = rowText.match(itemPattern);
-                if (!itemMatch) continue;
-                const cells = Array.from(row.querySelectorAll('td'))
-                    .map(cell => (cell.innerText || cell.textContent || '').trim());
-                result[itemMatch[1]] = cells.find(value => statusPattern.test(value)) || '';
-            }
-            return result;
-            """,
-            item_set_id,
+        return row_statuses(
+            self.driver, item_set_id,
+            ("Pending", "Under Review", "Approved", "Revise", "Revised", "Rejected", "Published"),
         )
 
     def get_progress_bar_container(self):
@@ -1064,6 +1257,19 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         self,
         request, record_property,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and upload a fresh Excel workbook holding three "
+            "lanes of items: one left clean, one to be revised, one to be rejected.\n"
+            "Run three rounds of RWG review, with the teacher editing and "
+            "resubmitting between each round.\n"
+            "On the third round RWG approves the twice-revised lane and rejects the "
+            "other lane for good.\n"
+            "Expect PIT to act only on the approved items and publish those, leaving "
+            "the rejected ones out of the published set.",
+        )
         request.node.user_properties.append(
             (
                 "result_checkpoint",
@@ -1182,7 +1388,7 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                 "RWG iteration 1 revises the image and rejection lanes and approves the clean lane",
             )
         )
-        rwg_username = self.resolve_rwg_username_for_item_set(
+        self.open_set_as_assigned_rwg(
             upload_page, item_set_id, rwg_username, item_set_url
         )
         sent_back_round_1, rwg_approved_item_ids = (
@@ -1244,12 +1450,15 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             revision_lane_item_ids,
             "Teacher first revision",
         )
-        first_resubmit_message = upload_page.rerun_qar_if_enabled()
+        first_resubmit_message = self.resubmit_revised_item_set(
+            upload_page, item_set_id, 1
+        )
         upload_page.verify_item_set_from_sets_module(item_set_id, item_ids)
         item_set_url = self.driver.current_url
         evidence_screenshot = upload_page.capture_sets_verification_screenshot(
             f"{request.node.name}_teacher_revision_1_resubmitted"
         )
+        self.assert_revisions_saved(item_set_id, revision_lane_item_ids, 1)
         self.record_checkpoint_evidence(
             request,
             evidence_screenshots,
@@ -1258,12 +1467,12 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             f"{first_resubmit_message} The set moved back to the RWG iteration 2 bucket.",
             evidence_screenshot,
         )
-        try:
-            rwg_username = ReadConfig.get_all_user_username(
-                upload_page.require_item_set_assignee("rwg")
-            )
-        except AssertionError:
-            pass
+        # Wait for the resubmission's own QAR pass to hand the set back to RWG
+        # before going looking for it there. Without this the queue sweep below
+        # raced the handoff and reported the set missing from every queue.
+        rwg_username = self.require_assigned_rwg(
+            upload_page, item_set_id, item_set_url, "After teacher revision 1"
+        )
 
         request.node.user_properties.append(
             (
@@ -1271,7 +1480,7 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                 "RWG iteration 2 sees the round-1 edits and image, then sends both lanes back",
             )
         )
-        rwg_username = self.resolve_rwg_username_for_item_set(
+        self.open_set_as_assigned_rwg(
             upload_page, item_set_id, rwg_username, item_set_url
         )
         rwg_revised_content_round_1 = rwg_page.verify_revised_items_visible_to_reviewer(
@@ -1353,12 +1562,15 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             revision_lane_item_ids,
             "Teacher second revision",
         )
-        second_resubmit_message = upload_page.rerun_qar_if_enabled()
+        second_resubmit_message = self.resubmit_revised_item_set(
+            upload_page, item_set_id, 2
+        )
         upload_page.verify_item_set_from_sets_module(item_set_id, item_ids)
         item_set_url = self.driver.current_url
         evidence_screenshot = upload_page.capture_sets_verification_screenshot(
             f"{request.node.name}_teacher_revision_2_resubmitted"
         )
+        self.assert_revisions_saved(item_set_id, revision_lane_item_ids, 2)
         self.record_checkpoint_evidence(
             request,
             evidence_screenshots,
@@ -1367,12 +1579,9 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             f"{second_resubmit_message} The set moved back to the final RWG review bucket.",
             evidence_screenshot,
         )
-        try:
-            rwg_username = ReadConfig.get_all_user_username(
-                upload_page.require_item_set_assignee("rwg")
-            )
-        except AssertionError:
-            pass
+        rwg_username = self.require_assigned_rwg(
+            upload_page, item_set_id, item_set_url, "After teacher revision 2"
+        )
 
         request.node.user_properties.append(
             (
@@ -1380,7 +1589,7 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                 "RWG iteration 3 approves the twice-revised image lane and rejects the rejection lane",
             )
         )
-        rwg_username = self.resolve_rwg_username_for_item_set(
+        self.open_set_as_assigned_rwg(
             upload_page, item_set_id, rwg_username, item_set_url
         )
         rwg_revised_content_round_2 = rwg_page.verify_revised_items_visible_to_reviewer(
@@ -1498,7 +1707,11 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
         pit_observations = []
         pit_image_visibility = {}
         pit_item_set_status = ""
-        for pit_index, pit_username in enumerate(ReadConfig.get_pit_usernames()[:3], start=1):
+        # Lane 1, so this suite and the typology E2E can hold quorum at the same
+        # time instead of queueing on one worker. See ReadConfig.get_pit_quorum.
+        for pit_index, pit_username in enumerate(
+            ReadConfig.get_pit_quorum(lane=1), start=1
+        ):
             request.node.user_properties.append(
                 (
                     "result_checkpoint",

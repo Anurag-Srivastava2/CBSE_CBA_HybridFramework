@@ -33,6 +33,13 @@ from openpyxl import load_workbook
 from pages.common.login_page import LoginPage
 from pages.qar.qar_report_page import QARReportPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    resolve_columns,
+    trim_helper_columns,
+    write_row_fields,
+)
 from utilities.read_config import ReadConfig
 
 
@@ -100,8 +107,8 @@ class TestQARPlagiarismAndBiasSections:
         """A workbook whose questions are verbatim copies of existing IB1 items.
 
         Mirrors the column handling the duplicate-detection suite proved out:
-        the template carries helper columns past the 24 canonical ones, and
-        leaving them in place makes upload validation reject the file.
+        the template carries helper columns past the canonical item columns,
+        and leaving them in place makes upload validation reject the file.
         """
         tag = uuid4().hex[:6]
         target = tmp_path / f"qar_copied_{tag}.xlsx"
@@ -109,30 +116,32 @@ class TestQARPlagiarismAndBiasSections:
         workbook = load_workbook(target)
         worksheet = workbook.active
 
-        max_data_column = 24
-        if worksheet.max_column > max_data_column:
-            worksheet.delete_cols(
-                max_data_column + 1, worksheet.max_column - max_data_column
-            )
+        max_data_column = trim_helper_columns(worksheet)
+        columns = resolve_columns(worksheet)
+        assert columns, "Upload template has no recognisable item-data sheet."
 
         questions = TestQARPlagiarismAndBiasSections.COPIED_BANK_QUESTIONS
         for offset, (typology, question, answer) in enumerate(questions):
             row = offset + 2
             if row != 2:
-                for column in range(1, max_data_column + 1):
-                    worksheet.cell(row, column).value = worksheet.cell(2, column).value
-            worksheet.cell(row, 5).value = offset + 1
-            worksheet.cell(row, 10).value = typology
-            # Verbatim: the exact sentence as it appears in the Item Bank
-            # Repository, with nothing appended.
-            worksheet.cell(row, 11).value = question
-            worksheet.cell(row, 21).value = answer
-            worksheet.cell(row, 23).value = "Copied verbatim from the item bank."
-            worksheet.cell(row, 24).value = "1"
+                copy_item_row(worksheet, 2, row, max_data_column)
+            write_row_fields(
+                worksheet,
+                row,
+                columns,
+                {
+                    "sequence": offset + 1,
+                    "typology": typology,
+                    # Verbatim: the exact sentence as it appears in the Item
+                    # Bank Repository, with nothing appended.
+                    "question": question,
+                    "answer": answer,
+                    "explanation": "Copied verbatim from the item bank.",
+                    "marks": "1",
+                },
+            )
 
-        for row in range(len(questions) + 2, worksheet.max_row + 1):
-            for column in range(1, max_data_column + 1):
-                worksheet.cell(row, column).value = None
+        clear_rows_from(worksheet, len(questions) + 2, max_data_column)
 
         workbook.save(target)
         workbook.close()
@@ -255,6 +264,16 @@ class TestQARPlagiarismAndBiasSections:
     def test_tc_ibmm_06_plagiarism_check_reports_a_score(
         self, qar_report, record_property, page_evidence
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the QAR report for a submitted item set.\n"
+            "Find the Plagiarism Check card and expect it to show a score or a "
+            "pass/fail colour.\n"
+            "Fail if the card is missing, which would mean the check stopped running "
+            "or stopped reporting.",
+        )
         report, item_ids = qar_report
         assert item_ids, "QAR results listed no items, so there is no report."
 
@@ -279,6 +298,16 @@ class TestQARPlagiarismAndBiasSections:
     def test_tc_ibmm_07_p01_bias_check_reports_a_score(
         self, qar_report, record_property, page_evidence
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the QAR report for a submitted item set.\n"
+            "Find the Bias Check card and expect it to show a score or a pass/fail "
+            "colour.\n"
+            "Fail if the card is missing, which would mean the bias check no longer "
+            "runs on submitted items.",
+        )
         report, item_ids = qar_report
         assert item_ids, "QAR results listed no items, so there is no report."
 
@@ -316,6 +345,16 @@ class TestQARPlagiarismAndBiasSections:
         this becomes XPASS the day the categories appear, which is the signal to
         remove the marker — deleting the test would lose the requirement.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the QAR report and read the Bias Check detail.\n"
+            "Expect it to name every bias category the requirement lists.\n"
+            "This is a known gap, so the test is expected to fail; it turns into an "
+            "unexpected pass the day the categories appear, which is the signal to "
+            "retire the marker.",
+        )
         report, _ = qar_report
         card = (self.read_check(report, self.BIAS_CHECK)["card"] or "").casefold()
         record_property("bias_card_for_categories", card[:300])
@@ -353,6 +392,15 @@ class TestQARPlagiarismAndBiasSections:
         self, qar_report, page_evidence, record_property
     ):
         """Duplicate Check must not score 100% on items copied out of IB1."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the QAR report for a set whose items were copied out of an earlier "
+            "item bank set.\n"
+            "Expect the Duplicate Check to notice: it must not hand those items a "
+            "clean 100%.",
+        )
         report, _ = qar_report
         score = self.assert_check_is_not_clean(
             page_evidence, report, "Duplicate Check", record_property
@@ -367,6 +415,15 @@ class TestQARPlagiarismAndBiasSections:
         self, qar_report, page_evidence, record_property
     ):
         """Plagiarism Check must not score 100% on items copied out of IB1."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the QAR report for a set whose items were copied out of an earlier "
+            "item bank set.\n"
+            "Expect the Plagiarism Check to notice: it must not hand those items a "
+            "clean 100%.",
+        )
         report, _ = qar_report
         score = self.assert_check_is_not_clean(
             page_evidence, report, "Plagiarism Check", record_property
@@ -381,6 +438,14 @@ class TestQARPlagiarismAndBiasSections:
         self, qar_report, record_property, page_evidence
     ):
         """All eight checks render and report something for the set."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the QAR report for a submitted item set.\n"
+            "Walk all eight QAR checks and expect each one to render and report some "
+            "verdict, rather than sitting blank.",
+        )
         report, _ = qar_report
         scores = {
             label: self.read_check(report, label) for label in self.ALL_QAR_CHECKS

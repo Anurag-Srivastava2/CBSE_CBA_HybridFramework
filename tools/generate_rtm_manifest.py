@@ -325,39 +325,39 @@ AUTOMATION_LINKS.update({
         "test": "test_tc_wpad_02_n01_teacher_direct_admin_url_is_denied",
     },
     "TC-WPAD-03-P01": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_03_p01_welcome_email_is_sent_within_60_seconds",
     },
     "TC-WPAD-03-P02": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_03_p02_onboarding_link_is_single_use",
     },
     "TC-WPAD-03-N01": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_03_n01_onboarding_link_expires_after_24_hours",
     },
     "TC-WPAD-04-P01": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_04_p01_otp_is_delivered_by_email_and_sms_within_60_seconds",
     },
     "TC-WPAD-04-P02": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_04_p02_otp_expires_after_5_minutes",
     },
     "TC-WPAD-04-N01": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_04_n01_account_locks_after_three_invalid_otp_attempts",
     },
     "TC-WPAD-05-P01": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_05_p01_idle_session_expires_after_10_minutes",
     },
     "TC-WPAD-05-P02": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_05_p02_idle_warning_appears_at_8_minutes",
     },
     "TC-WPAD-05-P03": {
-        "file": "tests/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_mfa_session_contracts.py",
         "test": "test_tc_wpad_05_p03_stay_active_resets_idle_timer",
     },
     "TC-WPAD-06-P01": {
@@ -409,31 +409,31 @@ AUTOMATION_LINKS.update({
         "test": "test_tc_wpad_11_n01_delete_linked_subject_is_blocked",
     },
     "TC-WPAD-12-P01": {
-        "file": "tests/M2_Web_Portal_Admin/test_notifications_health_performance.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_notifications_health_performance.py",
         "test": "test_tc_wpad_12_p01_otp_notification_email_and_sms_within_60_seconds",
     },
     "TC-WPAD-12-P02": {
-        "file": "tests/M2_Web_Portal_Admin/test_notifications_health_performance.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_notifications_health_performance.py",
         "test": "test_tc_wpad_12_p02_qar_pass_notification_email_sms_and_panel",
     },
     "TC-WPAD-13-P01": {
-        "file": "tests/M2_Web_Portal_Admin/test_notifications_health_performance.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_notifications_health_performance.py",
         "test": "test_tc_wpad_13_p01_system_health_dashboard_shows_core_services",
     },
     "TC-WPAD-13-P02": {
-        "file": "tests/M2_Web_Portal_Admin/test_notifications_health_performance.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_notifications_health_performance.py",
         "test": "test_tc_wpad_13_p02_service_outage_alert_fires_within_5_minutes",
     },
     "TC-WPAD-PERF-01": {
-        "file": "tests/M2_Web_Portal_Admin/test_notifications_health_performance.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_notifications_health_performance.py",
         "test": "test_tc_wpad_perf_01_create_10_users_each_within_2_seconds",
     },
     "TC-WPAD-PERF-02": {
-        "file": "tests/M2_Web_Portal_Admin/test_notifications_health_performance.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_notifications_health_performance.py",
         "test": "test_tc_wpad_perf_02_audit_log_796_entries_filters_within_3_seconds",
     },
     "TC-WPAD-PERF-03": {
-        "file": "tests/M2_Web_Portal_Admin/test_notifications_health_performance.py",
+        "file": "tests_deferred/M2_Web_Portal_Admin/test_notifications_health_performance.py",
         "test": "test_tc_wpad_perf_03_100_user_load_has_no_session_or_rbac_leakage",
     },
 })

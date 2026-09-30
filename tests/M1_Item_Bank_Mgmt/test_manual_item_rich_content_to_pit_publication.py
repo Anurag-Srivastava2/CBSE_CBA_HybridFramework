@@ -142,6 +142,18 @@ class TestE2ESMEManualItemRichContentToPITPublication:
     def test_manual_item_rich_content_survives_to_pit_publication(
         self, request, record_property, page_evidence
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "An SME hand-writes one item using bold, italic, colour, highlight and an "
+            "image, then submits it for QAR.\n"
+            "RWG and then Senior RWG open it, confirm the formatting and image "
+            "survived, and approve.\n"
+            "Three PIT members approve to reach quorum and publish the set.\n"
+            "Check the published item still carries all of that formatting and the "
+            "image.",
+        )
         run_token = uuid4().hex[:10]
         question_text = f"What comes immediately after 24? Rich content PIT run {run_token}"
         explanation_text = "25 comes immediately after 24."

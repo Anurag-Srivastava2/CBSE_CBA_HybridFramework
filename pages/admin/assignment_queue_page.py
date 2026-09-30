@@ -188,12 +188,29 @@ class AssignmentQueuePage(BasePage):
             self.element_utils.js_click(locator)
 
     def apply_filter(self, label, option_text):
-        """Open a filter menu and pick an option (menu items, not a select)."""
+        """Open a filter menu and pick an option (menu items, not a select).
+
+        The trigger click is retried: click_resilient reports success even when
+        a toast or a leftover Radix overlay swallowed the click, so a menu that
+        never opened used to surface here as a bare TimeoutException on the
+        option — which reads like the option is missing rather than like the
+        menu is shut.
+        """
         trigger = self._filter_trigger(label)
-        self.dismiss_overlays()
-        self.click_resilient(trigger)
         option = (By.XPATH, f"//*[@role='menuitem'][normalize-space()='{option_text}']")
-        self.wait_utils.until_visible(option, timeout=15)
+        last_error = None
+        for _ in range(3):
+            self.dismiss_overlays()
+            self.click_resilient(trigger)
+            try:
+                self.wait_utils.until_visible(option, timeout=10)
+                break
+            except TimeoutException as error:
+                last_error = error
+        else:
+            raise TimeoutException(
+                f"{label} filter menu did not open for {option_text!r}."
+            ) from last_error
         self.click_resilient(option)
         # Wait for the menu to actually close before the next interaction.
         try:

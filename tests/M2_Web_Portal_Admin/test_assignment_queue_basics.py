@@ -54,6 +54,14 @@ class TestM2AssignmentQueueBasics:
         self, record_property, page_evidence
     ):
         """Page furniture, columns and filters, all recorded softly."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Assignment Queue as an admin.\n"
+            "Record the page furniture, the grid columns and each filter control as "
+            "soft checks.",
+        )
         queue = self.open_queue()
         checks = self.survey(queue, record_property, "Page Load")
 
@@ -74,6 +82,14 @@ class TestM2AssignmentQueueBasics:
         self, record_property, page_evidence
     ):
         """Search behaviour stays hard; the control's responsiveness is recorded."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Assignment Queue and type into its search box.\n"
+            "Record how the control responds, but hard-assert that searching actually "
+            "narrows the queue.",
+        )
         queue = self.open_queue()
         checks = self.survey(queue, record_property, "Search")
         baseline = checks.safe_call(queue.get_row_count, 0)
@@ -133,6 +149,14 @@ class TestM2AssignmentQueueBasics:
 
     def test_tc_wpad_item_04_dropdown_filters(self, record_property, page_evidence):
         """Each dropdown is driven and recorded; the filtering contract stays hard."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Assignment Queue and drive each dropdown filter in turn.\n"
+            "Record that every control responds, and hard-assert the grid is "
+            "genuinely filtered by each one.",
+        )
         queue = self.open_queue()
         checks = self.survey(queue, record_property, "Filters")
 
@@ -178,6 +202,15 @@ class TestM2AssignmentQueueBasics:
 
     def test_tc_wpad_item_05_reassign_action(self, record_property, page_evidence):
         """Reassignment mutates real queue state, so it stays a hard gate."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Assignment Queue and reassign a pending set to a different "
+            "reviewer.\n"
+            "Reassignment changes real queue state, so every step of it stays a hard "
+            "assert.",
+        )
         queue = self.open_queue()
         self.survey(queue, record_property, "Reassign").publish()
 
@@ -246,6 +279,14 @@ class TestM2AssignmentQueueBasics:
 
     def test_tc_wpad_item_06_pagination(self, record_property, page_evidence):
         """Controls surveyed softly; advancing the queue stays hard."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Assignment Queue and page through it.\n"
+            "The pagination controls are recorded softly; actually advancing to the "
+            "next page is a hard assert.",
+        )
         queue = self.open_queue()
         self.survey(queue, record_property, "Pagination").publish()
 

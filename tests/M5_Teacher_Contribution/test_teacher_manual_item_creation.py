@@ -189,6 +189,17 @@ class TestTeacherManualItemCreation:
         for label in page.METADATA_FIELD_LABELS:
             checks.check_condition(f"Field — {label}", label not in missing_metadata)
 
+        # Unit is optional and gated on a Book having been picked — not on the
+        # subject having unit data, which leaves the field rendered but empty —
+        # so it is recorded as the state of that gate rather than demanded as a
+        # field.
+        unit_visible = checks.safe_call(lambda: page.has_unit_field(timeout=1), False)
+        checks.check_condition(
+            f"Field — {page.UNIT_FIELD_LABEL} (optional, appears after Book)",
+            not unit_visible,
+            detail="not offered until a book is chosen",
+        )
+
         missing_content = checks.safe_call(page.missing_content_fields)
         for label in page.CONTENT_FIELD_LABELS:
             checks.check_condition(f"Field — {label}", label not in missing_content)
@@ -238,6 +249,17 @@ class TestTeacherManualItemCreation:
         is recorded softly. The hard gate is reaching an authenticated
         dashboard at all — without it there is nothing to survey.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and inventory the contribution dashboard, driving "
+            "its controls.\n"
+            "This test's job is genuinely 'does this page render', so its structure "
+            "is recorded softly.\n"
+            "Reaching an authenticated dashboard at all is the hard gate, since "
+            "without it there is nothing to survey.",
+        )
         self.login_as_teacher()
         dashboard, checks = self.survey(record_property, "Landing")
 
@@ -331,6 +353,16 @@ class TestTeacherManualItemCreation:
         contract this test exists to enforce, so it stays a hard assert — as
         does the arithmetic between them, which is data integrity.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Read every stat card on the teacher contribution dashboard.\n"
+            "Card presence is soft, but the counters being readable numbers is the "
+            "contract this test exists to enforce and stays hard.\n"
+            "The arithmetic between the counters is checked too, because that is data "
+            "integrity.",
+        )
         self.login_as_teacher()
         dashboard, checks = self.survey(record_property, "Stat Counters")
 
@@ -401,6 +433,15 @@ class TestTeacherManualItemCreation:
         The form furniture is surveyed softly; the locking behaviour and the
         item count are workflow outcomes and stay hard.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the teacher item form and check Continue stays locked until one "
+            "complete item has been added.\n"
+            "The form furniture is surveyed softly; the locking behaviour and the "
+            "item count are workflow outcomes and stay hard.",
+        )
         page = self.login_as_teacher()
         page.open_true_false_manual_item_form()
         # Surveys the authoring form rather than the dashboard it arrived
@@ -460,6 +501,15 @@ class TestTeacherManualItemCreation:
         This is a security contract, so every assertion below the survey stays
         hard — a teacher silently gaining Grade 10 is a defect, not a report row.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Sign in as a teacher and check they may only author within their own "
+            "grade and subject scope.\n"
+            "This is a security contract, so every assertion below the survey stays "
+            "hard: a teacher silently gaining Grade 10 is a defect, not a report row.",
+        )
         page = self.login_as_teacher()
         page.open_true_false_manual_item_form()
         record_property(

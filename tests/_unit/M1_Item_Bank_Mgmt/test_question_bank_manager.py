@@ -42,18 +42,40 @@ def _write_bank(path, records):
     return str(path)
 
 
-def test_validate_record_flags_missing_fields():
+def test_validate_record_flags_missing_fields(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Remove a required field from a question record and validate it.\n"
+        "Check the validator names the field that is missing.",
+    )
     incomplete = _record("QB-001")
     del incomplete["explanation"]
     assert "missing required field: explanation" in validate_record(incomplete)
 
 
-def test_validate_record_flags_mcq_without_four_options():
+def test_validate_record_flags_mcq_without_four_options(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Validate a multiple-choice record carrying fewer than four options.\n"
+        "Check the validator objects.",
+    )
     mcq = _record("QB-002", typology="Multiple Choice Question", options=["A", "B"], answer="A")
     assert any("4 non-empty options" in problem for problem in validate_record(mcq))
 
 
-def test_validate_record_flags_mcq_answer_not_in_options():
+def test_validate_record_flags_mcq_answer_not_in_options(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Validate a multiple-choice record whose answer is not among its own "
+        "options.\n"
+        "Check the validator objects.",
+    )
     mcq = _record(
         "QB-003",
         typology="Multiple Choice Question",
@@ -63,12 +85,26 @@ def test_validate_record_flags_mcq_answer_not_in_options():
     assert any("does not match any" in problem for problem in validate_record(mcq))
 
 
-def test_validate_record_flags_true_or_false_with_non_boolean_answer():
+def test_validate_record_flags_true_or_false_with_non_boolean_answer(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Validate a True or False record whose answer is neither true nor false.\n"
+        "Check the validator objects.",
+    )
     tof = _record("QB-004", typology="True or False", answer="Maybe")
     assert any("True or False" in problem for problem in validate_record(tof))
 
 
-def test_load_bank_skips_invalid_records(tmp_path, capsys):
+def test_load_bank_skips_invalid_records(tmp_path, capsys, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Load a bank file holding one valid record and one invalid one.\n"
+        "Check the invalid record is skipped and the valid one still loads.",
+    )
     valid = _record("QB-VALID")
     invalid = _record("QB-INVALID", typology="Not A Real Typology")
     bank_path = _write_bank(tmp_path / "bank.json", [valid, invalid])
@@ -79,7 +115,15 @@ def test_load_bank_skips_invalid_records(tmp_path, capsys):
     assert "QB-INVALID" in capsys.readouterr().out
 
 
-def test_get_questions_marks_records_used_and_never_returns_them_again(tmp_path):
+def test_get_questions_marks_records_used_and_never_returns_them_again(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Draw questions from the bank, then draw again.\n"
+        "Check drawn records are marked used and are never handed out a second "
+        "time.",
+    )
     records = [_record(f"QB-{index:03d}", typology=typology) for index, typology in enumerate(
         ["Multiple Choice Question", "Fill in the Blank", "Match the Following", "True or False"],
         start=1,
@@ -106,7 +150,15 @@ def test_get_questions_marks_records_used_and_never_returns_them_again(tmp_path)
     assert all(record["usage"]["dev"]["used_at"] for record in persisted)
 
 
-def test_get_manual_item_returns_full_metadata_shape(tmp_path):
+def test_get_manual_item_returns_full_metadata_shape(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Request a manual item from the bank.\n"
+        "Check it comes back with the full metadata shape: grade, subject, "
+        "chapter, competency and Bloom's level.",
+    )
     record = _record(
         "QB-100",
         typology="Fill in the Blank",
@@ -128,7 +180,15 @@ def test_get_manual_item_returns_full_metadata_shape(tmp_path):
     assert item["typology"] == "Fill in the Blank"
 
 
-def test_usage_is_scoped_per_environment(tmp_path):
+def test_usage_is_scoped_per_environment(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Draw a question against one environment.\n"
+        "Check the used marker is recorded against that environment only, so "
+        "other environments still see the question as available.",
+    )
     bank_path = _write_bank(tmp_path / "bank.json", [_record("QB-200")])
 
     get_questions(1, env="dev", path=bank_path)
@@ -141,7 +201,15 @@ def test_usage_is_scoped_per_environment(tmp_path):
     assert staging_batch[0]["question"] == "Sample question for QB-200"
 
 
-def test_exhaustion_error_for_typology_with_no_unused_match(tmp_path):
+def test_exhaustion_error_for_typology_with_no_unused_match(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Ask for a typology whose only record has already been used.\n"
+        "Check it raises an exhaustion error rather than handing back a used "
+        "question.",
+    )
     used_record = _record("QB-300", typology="Long Answer Question")
     used_record["usage"] = {"dev": {"status": "used", "used_at": "2026-01-01T00:00:00+00:00", "used_in_run": "prior"}}
     bank_path = _write_bank(tmp_path / "bank.json", [used_record])
@@ -150,7 +218,15 @@ def test_exhaustion_error_for_typology_with_no_unused_match(tmp_path):
         get_replacement_question(typology="Long Answer Question", env="dev", path=bank_path)
 
 
-def test_replacement_question_is_scoped_to_requested_typology(tmp_path):
+def test_replacement_question_is_scoped_to_requested_typology(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Ask for a replacement question of one typology while the bank also holds "
+        "others.\n"
+        "Check the replacement matches the typology that was asked for.",
+    )
     records = [
         _record("QB-400", typology="Long Answer Question", question="LAQ question"),
         _record("QB-401", typology="Short Answer Question", question="SAQ question"),
@@ -163,7 +239,14 @@ def test_replacement_question_is_scoped_to_requested_typology(tmp_path):
     assert replacement["question"] == "SAQ question"
 
 
-def test_reset_environment_usage_flips_used_back_to_unused(tmp_path):
+def test_reset_environment_usage_flips_used_back_to_unused(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Mark a record used, then reset that environment's usage.\n"
+        "Check the record goes back to unused.",
+    )
     record = _record("QB-500")
     record["usage"] = {"dev": {"status": "used", "used_at": "2026-01-01T00:00:00+00:00", "used_in_run": "prior"}}
     bank_path = _write_bank(tmp_path / "bank.json", [record])
@@ -176,7 +259,14 @@ def test_reset_environment_usage_flips_used_back_to_unused(tmp_path):
     assert persisted[0]["usage"]["dev"]["used_at"] is None
 
 
-def test_atomic_write_leaves_no_temp_file_behind(tmp_path):
+def test_atomic_write_leaves_no_temp_file_behind(tmp_path, record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Draw a question, which rewrites the bank file on disk.\n"
+        "Check the write is atomic and leaves no temporary file behind.",
+    )
     bank_path = _write_bank(tmp_path / "bank.json", [_record("QB-600")])
 
     get_questions(1, env="dev", path=bank_path)

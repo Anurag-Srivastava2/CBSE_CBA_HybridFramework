@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from pages.admin.helpdesk_page import HelpdeskPage
@@ -22,7 +24,12 @@ class TestM2HelpdeskManagement:
 
     # Reassignment always moves work off this first-line queue, so a run can
     # never disturb a ticket an L2 agent is already working.
-    SOURCE_ASSIGNEE = "help Desk 1"
+    #
+    # The first-line agent renders under a different name per environment - QA
+    # shows "help Desk 1", UAT shows "L 1" - so a name compiled in here reads
+    # as "no eligible ticket" on the other environment instead of as the
+    # mismatch it is. Same override the L1/L2 e2e suite already uses.
+    SOURCE_ASSIGNEE = os.getenv("CBSE_HELPDESK_L1_DISPLAY_NAME", "").strip() or "L 1"
 
     def open_helpdesk(self):
         username = ReadConfig.get_admin_username()
@@ -67,6 +74,14 @@ class TestM2HelpdeskManagement:
         self, record_property, page_evidence
     ):
         """Phase 1: furniture, KPI cards and ticket data, all recorded softly."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Helpdesk queue as an admin.\n"
+            "Record the page furniture, the KPI cards and the ticket rows, all as "
+            "soft checks.",
+        )
         helpdesk = self.open_helpdesk()
         checks = self.survey(helpdesk, record_property, "Page Load")
 
@@ -102,6 +117,14 @@ class TestM2HelpdeskManagement:
     ):
         """Phase 2: each quick tab scopes the queue to exactly its badge count,
         and status tabs return only tickets carrying that status."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Helpdesk queue and click each quick tab in turn.\n"
+            "Check every tab scopes the queue to exactly the count on its own badge.\n"
+            "Check the status tabs return only tickets actually carrying that status.",
+        )
         helpdesk = self.open_helpdesk()
         checks = self.survey(helpdesk, record_property, "Tab Filters")
         for label in helpdesk.QUEUE_TABS:
@@ -168,6 +191,15 @@ class TestM2HelpdeskManagement:
     ):
         """Phase 3: search narrows the queue by ticket ID, subject and category,
         and yields the empty state for a term that matches nothing."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Search the Helpdesk queue by ticket ID, then by subject, then by "
+            "category.\n"
+            "Check each search narrows the queue, and that a term matching nothing "
+            "shows the empty state.",
+        )
         helpdesk = self.open_helpdesk()
         checks = self.survey(helpdesk, record_property, "Search")
         baseline = checks.safe_call(helpdesk.get_row_count, 0)
@@ -248,6 +280,18 @@ class TestM2HelpdeskManagement:
         submission — priority moves off the submitted value and status moves
         from Open to In Progress once it is assigned.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Find the most recently raised ticket in the queue and read its metadata "
+            "record.\n"
+            "Check every field is present and valid, against the allowed value sets "
+            "rather than fixed expectations.\n"
+            "That matters because the portal auto-triages a ticket shortly after "
+            "submission, moving priority off the submitted value and status from Open "
+            "to In Progress.",
+        )
         helpdesk = self.open_helpdesk()
         self.survey(helpdesk, record_property, "Ingestion").publish()
         helpdesk.switch_tab("All")
@@ -305,6 +349,9 @@ class TestM2HelpdeskManagement:
 
     @pytest.mark.e2e
     @pytest.mark.serial
+    # Deferred: parked out of the default run with the fully blocked
+    # suites in tests_deferred/. See cbse-m2-blocked-tests notes.
+    @pytest.mark.deferred
     def test_tc_wpad_helpdesk_05_reassign_first_line_ticket(
         self, record_property, page_evidence
     ):
@@ -316,6 +363,17 @@ class TestM2HelpdeskManagement:
         L2 agents only, so this is a one-way move: the ticket cannot be handed
         back to the first-line queue through this panel.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Find a ticket still sitting with the first-line queue and reassign it to "
+            "an L2 agent.\n"
+            "Check the queue then shows the new owner.\n"
+            "Only first-line tickets are eligible, so the test never moves work an L2 "
+            "agent already owns. The move is one-way: the picker offers L2 agents "
+            "only.",
+        )
         helpdesk = self.open_helpdesk()
         # Reassignment is a one-way move of real work, so it stays a hard gate.
         self.survey(helpdesk, record_property, "Reassign").publish()
@@ -323,9 +381,19 @@ class TestM2HelpdeskManagement:
 
         candidates = helpdesk.find_tickets_assigned_to(self.SOURCE_ASSIGNEE)
         if not candidates:
+            # This cannot be self-provisioned through the admin UI. Probed on UAT
+            # 2026-09-07: all 10 tickets in the queue read "(unassigned)"/Open -
+            # nothing auto-triages - and the Assign panel offers exactly one
+            # agent, "L 2". There is no way to put a ticket into
+            # SOURCE_ASSIGNEE's hands from here, so the precondition has to come
+            # from an L1 agent signing in and picking a ticket up, or from API
+            # seeding. Raising a ticket first would not help: it would land
+            # unassigned like the rest.
             pytest.skip(
-                f"No ticket is currently assigned to {self.SOURCE_ASSIGNEE!r}, so there is "
-                "nothing to reassign without disturbing an L2 agent's workload."
+                f"No ticket is currently assigned to {self.SOURCE_ASSIGNEE!r}, and the "
+                "Assign panel offers L2 agents only, so this precondition cannot be "
+                "created from the admin UI. It needs an L1 agent login to self-assign "
+                "a ticket, or API seeding."
             )
         ticket_id = candidates[0]
         page_evidence.checkpoint(

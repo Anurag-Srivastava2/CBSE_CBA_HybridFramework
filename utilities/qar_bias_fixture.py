@@ -1,9 +1,15 @@
-from copy import copy as copy_cell_style
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from shutil import copy2
 
 from openpyxl import load_workbook
+
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    resolve_columns,
+    write_row_fields,
+)
 
 
 @dataclass(frozen=True)
@@ -105,39 +111,41 @@ TEXT_BIAS_PLACEHOLDER_EXPLANATION = (
 )
 
 
-def _copy_template_row(worksheet, source_row, target_row):
-    for column in range(1, 25):
-        source_cell = worksheet.cell(source_row, column)
-        target_cell = worksheet.cell(target_row, column)
-        target_cell.value = source_cell.value
-        if source_cell.has_style:
-            target_cell._style = copy_cell_style(source_cell._style)
-        target_cell.alignment = copy_cell_style(source_cell.alignment)
-        target_cell.protection = copy_cell_style(source_cell.protection)
-        target_cell.number_format = source_cell.number_format
-
-
 def _write_item_rows(worksheet, prefix, rows):
     """Write (question, answer, explanation) rows into the upload template from row 2."""
+    columns = resolve_columns(worksheet)
+    if columns is None:
+        raise ValueError("Upload template has no recognisable item-data sheet.")
+
     for offset, (question, answer, explanation) in enumerate(rows):
         row = offset + 2
         if row > 2:
-            _copy_template_row(worksheet, 2, row)
-        worksheet.cell(row, 5).value = offset + 1
-        worksheet.cell(row, 10).value = "True or False"
-        worksheet.cell(row, 11).value = question
-        worksheet.cell(row, 12).value = None
-        for column in range(13, 21):
-            worksheet.cell(row, column).value = None
-        worksheet.cell(row, 21).value = answer
-        worksheet.cell(row, 22).value = None
-        worksheet.cell(row, 23).value = f"{prefix}: {explanation}"
-        worksheet.cell(row, 24).value = "1"
+            copy_item_row(worksheet, 2, row)
+        write_row_fields(
+            worksheet,
+            row,
+            columns,
+            {
+                "sequence": offset + 1,
+                "typology": "True or False",
+                "question": question,
+                "question_image": None,
+                "option_1": None,
+                "option_2": None,
+                "option_3": None,
+                "option_4": None,
+                "image_1": None,
+                "image_2": None,
+                "image_3": None,
+                "image_4": None,
+                "answer": answer,
+                "answer_image": None,
+                "explanation": f"{prefix}: {explanation}",
+                "marks": "1",
+            },
+        )
 
-    first_unused_row = len(rows) + 2
-    for row in range(first_unused_row, worksheet.max_row + 1):
-        for column in range(1, 25):
-            worksheet.cell(row, column).value = None
+    clear_rows_from(worksheet, len(rows) + 2)
 
 
 def build_qar_bias_workbook(template_path, output_path, prefix):

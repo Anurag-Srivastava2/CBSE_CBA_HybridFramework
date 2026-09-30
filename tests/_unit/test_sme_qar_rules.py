@@ -1,4 +1,3 @@
-from copy import copy as copy_cell_style
 from pathlib import Path
 from shutil import copy2
 from time import monotonic
@@ -10,6 +9,12 @@ import pytest
 from pages.common.login_page import LoginPage
 from pages.rwg.review_queue_page import RWGReviewQueuePage
 from pages.sme.upload_item_file_page import UploadItemFilePage
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    last_item_column,
+    resolve_columns,
+)
 from utilities.read_config import ReadConfig
 
 
@@ -23,25 +28,21 @@ class TestSMEQARRules:
         copy2(source, target)
         workbook = load_workbook(target)
         worksheet = workbook.active
+        columns = resolve_columns(worksheet)
+        assert columns, "Upload template has no recognisable item-data sheet."
+        max_data_column = last_item_column(worksheet)
         run_id = uuid4().hex[:10]
         for offset, question in enumerate(questions):
             row = offset + 2
             if row != 2:
-                for column in range(1, 25):
-                    source_cell = worksheet.cell(2, column)
-                    target_cell = worksheet.cell(row, column)
-                    target_cell.value = source_cell.value
-                    if source_cell.has_style:
-                        target_cell._style = copy_cell_style(source_cell._style)
-            worksheet.cell(row, 5).value = offset + 1
-            worksheet.cell(row, 10).value = "True or False"
-            worksheet.cell(row, 11).value = f"{question} QAR run {run_id}-{offset + 1}"
-            worksheet.cell(row, 21).value = "True"
-            worksheet.cell(row, 23).value = "Automation QAR scenario explanation."
-            worksheet.cell(row, 24).value = "1"
-        for row in range(len(questions) + 2, worksheet.max_row + 1):
-            for column in range(1, 25):
-                worksheet.cell(row, column).value = None
+                copy_item_row(worksheet, 2, row, max_data_column)
+            worksheet.cell(row, columns["sequence"]).value = offset + 1
+            worksheet.cell(row, columns["typology"]).value = "True or False"
+            worksheet.cell(row, columns["question"]).value = f"{question} QAR run {run_id}-{offset + 1}"
+            worksheet.cell(row, columns["answer"]).value = "True"
+            worksheet.cell(row, columns["explanation"]).value = "Automation QAR scenario explanation."
+            worksheet.cell(row, columns["marks"]).value = "1"
+        clear_rows_from(worksheet, len(questions) + 2, max_data_column)
         workbook.save(target)
         workbook.close()
         return target
@@ -89,7 +90,15 @@ class TestSMEQARRules:
             f"QAR-locked set {item_set_id} incorrectly reached the RWG queue."
         )
 
-    def test_qar_report_sections_statuses_and_sla(self, tmp_path):
+    def test_qar_report_sections_statuses_and_sla(self, tmp_path, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Submit a clean ten-item set for QAR and time how long it takes.\n"
+            "Check the report renders its sections and per-item statuses, and that it "
+            "finishes inside the expected service level.",
+        )
         questions = [f"Is {80 + i} greater than {10 + i}?" for i in range(10)]
         _, _, _, report, elapsed = self.submit_scenario(tmp_path, questions)
         normalized = report.casefold()
@@ -100,7 +109,15 @@ class TestSMEQARRules:
         assert "clarity" in normalized or "ambiguous" in normalized
         assert any(status in normalized for status in ("approved", "needs revision", "rejected"))
 
-    def test_qar_flags_paraphrase_bias_and_ambiguity(self, tmp_path):
+    def test_qar_flags_paraphrase_bias_and_ambiguity(self, tmp_path, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Submit a set holding a biased statement, a culturally narrow question, "
+            "an ambiguous stem and a paraphrase.\n"
+            "Check QAR flags each of those problems rather than letting them through.",
+        )
         questions = [
             "A boy is naturally better at mathematics than a girl.",
             "Only children who celebrate a regional harvest festival can solve this.",
@@ -115,7 +132,15 @@ class TestSMEQARRules:
         assert "ambiguous" in normalized or "multiple valid interpretations" in normalized
         assert "paraphrase" in normalized or "similarity" in normalized
 
-    def test_qar_40_percent_failure_does_not_lock_set(self, tmp_path):
+    def test_qar_40_percent_failure_does_not_lock_set(self, tmp_path, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Submit a set where 40 percent of the items fail QAR.\n"
+            "Check the set is not locked, since 40 percent sits below the locking "
+            "threshold.",
+        )
         questions = [f"Is {70+i} greater than {20+i}?" for i in range(6)] + ["What is it?"] * 4
         _, _, _, report, _ = self.submit_scenario(tmp_path, questions)
         normalized = report.casefold()
@@ -123,7 +148,14 @@ class TestSMEQARRules:
         assert "locked" not in normalized
         assert "partial revision" in normalized or "needs revision" in normalized
 
-    def test_qar_exactly_60_percent_failure_locks_and_blocks_forwarding(self, tmp_path):
+    def test_qar_exactly_60_percent_failure_locks_and_blocks_forwarding(self, tmp_path, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Submit a set where exactly 60 percent of the items fail.\n"
+            "Check the set locks at that boundary and cannot be forwarded on.",
+        )
         questions = [f"Is {60+i} greater than {10+i}?" for i in range(4)] + ["What is it?"] * 6
         _, _, item_set_id, report, _ = self.submit_scenario(tmp_path, questions)
         normalized = report.casefold()
@@ -132,7 +164,14 @@ class TestSMEQARRules:
         assert "60%" in normalized or "60 %" in normalized
         self.assert_item_set_blocked_from_rwg(item_set_id)
 
-    def test_qar_70_percent_failure_provides_exception_report(self, tmp_path):
+    def test_qar_70_percent_failure_provides_exception_report(self, tmp_path, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Submit a set where 70 percent of the items fail.\n"
+            "Check an exception report is produced for it.",
+        )
         questions = [f"Is {50+i} greater than {5+i}?" for i in range(3)] + ["What is it?"] * 7
         _, _, item_set_id, report, _ = self.submit_scenario(tmp_path, questions)
         normalized = report.casefold()

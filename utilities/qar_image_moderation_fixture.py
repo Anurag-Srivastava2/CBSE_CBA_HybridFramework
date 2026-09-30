@@ -19,7 +19,6 @@ validate true detection accuracy against real sensitive imagery.
 
 import random
 import re
-from copy import copy as copy_cell_style
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from shutil import copy2
@@ -27,6 +26,13 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from openpyxl import load_workbook
 from PIL import Image, ImageDraw, ImageFont
+
+from utilities.item_template_columns import (
+    clear_rows_from,
+    copy_item_row,
+    resolve_columns,
+    write_row_fields,
+)
 
 CATEGORIES = ("nudity_sexual", "violence_gore", "weapon", "drugs", "self_harm")
 
@@ -605,21 +611,9 @@ def extract_real_images(source_zip_path, cases, output_dir):
     return output_dir
 
 
-def _copy_template_row(worksheet, source_row, target_row):
-    for column in range(1, 25):
-        source_cell = worksheet.cell(source_row, column)
-        target_cell = worksheet.cell(target_row, column)
-        target_cell.value = source_cell.value
-        if source_cell.has_style:
-            target_cell._style = copy_cell_style(source_cell._style)
-        target_cell.alignment = copy_cell_style(source_cell.alignment)
-        target_cell.protection = copy_cell_style(source_cell.protection)
-        target_cell.number_format = source_cell.number_format
-
-
 def build_image_moderation_workbook(template_path, output_path, prefix, cases):
     """Build a fresh workbook with one True/False item per case, referencing its
-    image by filename in the "Question Image" column (column 12).
+    image by filename in the "Question Image" column.
 
     "Image 1"-"Image 4" are option images and only valid for Multiple Choice
     Questions; a True/False row has no options, so its image must go in
@@ -634,28 +628,41 @@ def build_image_moderation_workbook(template_path, output_path, prefix, cases):
     copy2(template_path, output_path)
     workbook = load_workbook(output_path)
     worksheet = workbook.active
+    columns = resolve_columns(worksheet)
+    if columns is None:
+        raise ValueError(f"{template_path} has no recognisable item-data sheet.")
 
     for offset, case in enumerate(cases):
         row = offset + 2
         if row > 2:
-            _copy_template_row(worksheet, 2, row)
-        worksheet.cell(row, 5).value = offset + 1
-        worksheet.cell(row, 10).value = "True or False"
-        worksheet.cell(row, 11).value = case.question
-        worksheet.cell(row, 12).value = case.filename  # Question Image
-        for column in range(13, 17):  # Option 1-4
-            worksheet.cell(row, column).value = None
-        for column in range(17, 21):  # Image 1-4
-            worksheet.cell(row, column).value = None
-        worksheet.cell(row, 21).value = case.answer
-        worksheet.cell(row, 22).value = None
-        worksheet.cell(row, 23).value = case.explanation
-        worksheet.cell(row, 24).value = "1"
+            copy_item_row(worksheet, 2, row)
+        write_row_fields(
+            worksheet,
+            row,
+            columns,
+            {
+                "sequence": offset + 1,
+                "typology": "True or False",
+                "question": case.question,
+                "question_image": case.filename,
+                # Option 1-4 and their Image 1-4 are cleared: they are option
+                # images, and a True/False row has no options to hang them on.
+                "option_1": None,
+                "option_2": None,
+                "option_3": None,
+                "option_4": None,
+                "image_1": None,
+                "image_2": None,
+                "image_3": None,
+                "image_4": None,
+                "answer": case.answer,
+                "answer_image": None,
+                "explanation": case.explanation,
+                "marks": "1",
+            },
+        )
 
-    first_unused_row = len(cases) + 2
-    for row in range(first_unused_row, worksheet.max_row + 1):
-        for column in range(1, 25):
-            worksheet.cell(row, column).value = None
+    clear_rows_from(worksheet, len(cases) + 2)
 
     workbook.save(output_path)
     workbook.close()

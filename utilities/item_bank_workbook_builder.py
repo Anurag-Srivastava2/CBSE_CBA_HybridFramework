@@ -5,57 +5,22 @@ from shutil import copy2
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 
+from utilities.item_template_columns import last_item_column, resolve_columns
 from utilities.question_bank_manager import get_questions
 from utilities.read_config import ReadConfig
 
 
-ITEM_COLUMN_COUNT = 24
 DEFAULT_QUESTION_COUNT = 4
 
 
-def _normalize_header(value):
-    return "".join(character for character in str(value or "").casefold() if character.isalnum())
+def _copy_template_row(worksheet, source_row, target_row, item_column_count):
+    """Carry the template row's metadata and styling down to a new item row.
 
-
-def _item_columns(worksheet):
-    headers = {
-        _normalize_header(cell.value): cell.column
-        for cell in worksheet[1]
-        if cell.value is not None
-    }
-    aliases = {
-        "sequence": ("sno", "serialnumber", "itemnumber"),
-        "typology": ("typology", "questiontypology", "itemtype"),
-        "question": ("question", "questiontext", "itemcontent"),
-        "question_image": ("questionimage",),
-        "option_1": ("option1", "optiona"),
-        "option_2": ("option2", "optionb"),
-        "option_3": ("option3", "optionc"),
-        "option_4": ("option4", "optiond"),
-        "image_1": ("image1",),
-        "image_2": ("image2",),
-        "image_3": ("image3",),
-        "image_4": ("image4",),
-        "answer": ("answer", "correctanswer", "answerkey"),
-        "answer_image": ("answerimage",),
-        "explanation": ("explanationremarks", "explanation", "rationale"),
-        "marks": ("marks", "mark"),
-    }
-    resolved = {}
-    for field, candidates in aliases.items():
-        resolved[field] = next(
-            (headers[candidate] for candidate in candidates if candidate in headers),
-            None,
-        )
-
-    required = ("sequence", "typology", "question", "answer", "explanation", "marks")
-    if any(resolved[field] is None for field in required):
-        return None
-    return resolved
-
-
-def _copy_template_row(worksheet, source_row, target_row):
-    for column in range(1, ITEM_COLUMN_COUNT + 1):
+    Copies the item columns only. Grade, Subject, Book, Unit and Chapter all
+    live in that range, so every generated row inherits the template's
+    curriculum chain — including the Book the importer now requires.
+    """
+    for column in range(1, item_column_count + 1):
         source_cell = worksheet.cell(row=source_row, column=column)
         target_cell = worksheet.cell(row=target_row, column=column)
         target_cell.value = source_cell.value
@@ -68,6 +33,8 @@ def _copy_template_row(worksheet, source_row, target_row):
 
 def _format_item_area(worksheet, columns, first_row, last_row):
     column_widths = {
+        "book": 16,
+        "unit": 24,
         "typology": 28,
         "question": 58,
         "question_image": 24,
@@ -139,23 +106,29 @@ def populate_item_workbook(workbook_path, count=DEFAULT_QUESTION_COUNT, seed=Non
     environment_key = ReadConfig.get_environment_key()
 
     for worksheet in workbook.worksheets:
-        columns = _item_columns(worksheet)
+        columns = resolve_columns(worksheet)
         if columns is None:
             continue
         worksheet._images = []
+        # Read from the sheet in hand rather than assumed: the tester-pack
+        # templates are trimmed to the item columns while a freshly downloaded
+        # one carries its lookup data far to the right, and copying or clearing
+        # a fixed width would either drop Marks off the end of a 25-column
+        # sheet or wipe a downloaded template's lookups.
+        item_column_count = last_item_column(worksheet)
 
         items = get_questions(count, env=environment_key)
         for offset, item in enumerate(items):
             row = offset + 2
             if row > 2:
-                _copy_template_row(worksheet, 2, row)
+                _copy_template_row(worksheet, 2, row, item_column_count)
             _write_item(worksheet, row, columns, item)
 
         _format_item_area(worksheet, columns, 2, len(items) + 1)
 
         first_unused_row = len(items) + 2
         for row in range(first_unused_row, worksheet.max_row + 1):
-            for column in range(1, ITEM_COLUMN_COUNT + 1):
+            for column in range(1, item_column_count + 1):
                 worksheet.cell(row=row, column=column).value = None
 
         summaries[worksheet.title] = items

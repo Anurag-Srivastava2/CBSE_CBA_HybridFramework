@@ -25,8 +25,15 @@ class TestSMEMetadataTypologyAndIDs:
         return page
 
     def test_tc_ibmm_03_p01_created_items_receive_unique_12_character_ids(
-        self, page_evidence
+        self, page_evidence, record_property
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Author several manual items as an SME.\n"
+            "Check each one receives its own 12-character ID and that no two collide.",
+        )
         page = self.login_as_sme2()
         page.open_true_false_manual_item_form()
         page.wait_for_saved_draft_to_hydrate()
@@ -61,7 +68,15 @@ class TestSMEMetadataTypologyAndIDs:
         # and ID-format checks don't apply at this stage.
         assert len(item_ids) == 2
 
-    def test_tc_ibmm_04_m01_all_required_metadata_fields_are_enforced(self, page_evidence):
+    def test_tc_ibmm_04_m01_all_required_metadata_fields_are_enforced(self, page_evidence, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the manual item form.\n"
+            "Check every metadata field that should be mandatory is actually marked "
+            "required: stage, grade, subject and the rest.",
+        )
         page = self.login_as_sme2()
         page.open_true_false_manual_item_form()
         labels = page.get_visible_required_field_labels()
@@ -88,8 +103,15 @@ class TestSMEMetadataTypologyAndIDs:
         assert page.is_continue_enabled() is False
 
     def test_tc_ibmm_04_m02_metadata_tags_support_exact_and_partial_search(
-        self, page_evidence
+        self, page_evidence, record_property
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Search the repository by a full metadata tag, then by only part of one.\n"
+            "Check both return results, so tags can be found either way.",
+        )
         page = self.login_as_sme2()
         exact = "Identify SI units of kinematic quantities"
         exact_results, exact_seconds = page.open_repository_and_search(exact)
@@ -113,7 +135,14 @@ class TestSMEMetadataTypologyAndIDs:
         assert "kinematic" in partial_results.casefold()
         assert max(exact_seconds, partial_seconds) < 2.0
 
-    def test_tc_ibmm_04_m03_invalid_stage_grade_combination_is_blocked(self, page_evidence):
+    def test_tc_ibmm_04_m03_invalid_stage_grade_combination_is_blocked(self, page_evidence, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Pick a stage and grade combination that is not valid together.\n"
+            "Check the form blocks it rather than accepting an impossible pairing.",
+        )
         page = self.login_as_sme2()
         page.open_true_false_manual_item_form()
         page_evidence.checkpoint(
@@ -137,7 +166,14 @@ class TestSMEMetadataTypologyAndIDs:
             "Invalid Grade 9 + Foundational stage combination was selectable."
         )
 
-    def test_tc_ibmm_05_p01_all_controlled_typologies_are_available(self, page_evidence):
+    def test_tc_ibmm_05_p01_all_controlled_typologies_are_available(self, page_evidence, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Item Typology dropdown on the manual item form.\n"
+            "Check every controlled typology is offered.",
+        )
         page = self.login_as_sme2()
         page.open_true_false_manual_item_form()
         try:
@@ -160,7 +196,15 @@ class TestSMEMetadataTypologyAndIDs:
         )
         assert not missing, f"Controlled typologies missing from dev dropdown: {missing}"
 
-    def test_tc_ibmm_05_p02_answer_controls_change_with_typology(self, page_evidence):
+    def test_tc_ibmm_05_p02_answer_controls_change_with_typology(self, page_evidence, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Switch the manual item form between typologies.\n"
+            "Check the answer controls change to match: a multiple-choice item must "
+            "not offer the same inputs as a True or False one.",
+        )
         page = self.login_as_sme2()
         page.open_true_false_manual_item_form()
         page.select_common_manual_item_metadata()
@@ -188,7 +232,14 @@ class TestSMEMetadataTypologyAndIDs:
         assert "word limit" in short_answer["text"].casefold()
         assert "model answer" in long_answer["text"].casefold()
 
-    def test_tc_ibmm_05_n01_mcq_with_three_options_is_blocked(self, page_evidence):
+    def test_tc_ibmm_05_n01_mcq_with_three_options_is_blocked(self, page_evidence, record_property):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Try to add a multiple-choice item carrying only three options.\n"
+            "Check the form refuses it, since four are required.",
+        )
         page = self.login_as_sme2()
         page.open_true_false_manual_item_form()
         page.wait_for_saved_draft_to_hydrate()

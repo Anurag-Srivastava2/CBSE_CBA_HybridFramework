@@ -7,6 +7,8 @@ from uuid import uuid4
 
 from openpyxl import load_workbook
 
+from utilities.item_template_columns import resolve_columns
+
 from utilities.question_bank_manager import QuestionBankExhaustedError, get_replacement_question
 from utilities.read_config import ReadConfig
 
@@ -28,21 +30,25 @@ def _workbook_item_records(workbook_path):
     records = {}
     item_number = 1
     for worksheet in workbook.worksheets:
+        columns = resolve_columns(worksheet)
+        if columns is None:
+            continue
         for row in range(2, worksheet.max_row + 1):
-            question = str(worksheet.cell(row=row, column=11).value or "").strip()
+            question = str(worksheet.cell(row=row, column=columns["question"]).value or "").strip()
             if not question:
                 continue
             records[item_number] = {
                 "typology": str(
-                    worksheet.cell(row=row, column=10).value or ""
+                    worksheet.cell(row=row, column=columns["typology"]).value or ""
                 ).strip(),
                 "question": question,
                 "options": [
-                    str(worksheet.cell(row=row, column=column).value or "").strip()
-                    for column in range(13, 17)
+                    str(worksheet.cell(row=row, column=columns[f"option_{index}"]).value or "").strip()
+                    for index in range(1, 5)
+                    if columns[f"option_{index}"] is not None
                 ],
                 "answer": str(
-                    worksheet.cell(row=row, column=21).value or ""
+                    worksheet.cell(row=row, column=columns["answer"]).value or ""
                 ).strip(),
             }
             item_number += 1

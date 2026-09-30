@@ -277,6 +277,7 @@ class ManualItemPage(BasePage):
     METADATA_FIELD_LABELS = (
         "Grade *",
         "Subject *",
+        "Book *",
         "Chapter *",
         "Curricular Goal",
         "Competency *",
@@ -285,6 +286,16 @@ class ManualItemPage(BasePage):
         "Item Typology *",
         "Marks *",
     )
+
+    # Unit is deliberately *not* in METADATA_FIELD_LABELS. It is optional (the
+    # form renders it without the mandatory asterisk) and conditional: it
+    # appears only once a Book has been picked. Surveying it unconditionally
+    # would file a FAILED row for a field the page is right not to be showing
+    # yet. Note it is not conditional on the subject carrying unit data —
+    # Grade 1 Mathematics has none and still gets the field, opened on an
+    # empty list.
+    UNIT_FIELD_LABEL = "Unit"
+    CONDITIONAL_METADATA_FIELD_LABELS = (UNIT_FIELD_LABEL,)
     CONTENT_FIELD_LABELS = (
         "Item Content *",
         "Correct Answer / Answer Key *",
@@ -640,11 +651,17 @@ class ManualItemPage(BasePage):
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
         return page_text
 
-    def get_manual_item_typology_options(self):
-        """Read the actual controlled options currently rendered by the app."""
+    def get_dropdown_options(self, label, timeout=10):
+        """Read the options a metadata dropdown currently offers.
+
+        The lists are master-data driven and differ per grade/subject, so tests
+        that need a real value (a book, a unit, a chapter) ask the page what is
+        on offer rather than carrying an environment's master data as a
+        literal.
+        """
         dropdown = self.wait.until(
             EC.element_to_be_clickable(
-                (By.XPATH, '//*[normalize-space()="Item Typology *"]/following::button[1]')
+                (By.XPATH, f'//*[normalize-space()="{label}"]/following::button[1]')
             )
         )
         self.driver.execute_script(
@@ -673,11 +690,40 @@ class ManualItemPage(BasePage):
                     )
                     else None
                 ),
-                timeout=10,
+                timeout=timeout,
             )
             return tuple(dict.fromkeys(options))
         finally:
             self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+
+    def get_manual_item_typology_options(self):
+        """Read the actual controlled options currently rendered by the app."""
+        return self.get_dropdown_options("Item Typology *")
+
+    def get_book_options(self):
+        """The books offered for the grade/subject currently selected."""
+        return self.get_dropdown_options("Book *")
+
+    def get_unit_options(self):
+        """The units offered for the book currently selected.
+
+        Empty when the subject carries no unit data, which reaches here in two
+        shapes: the field is not rendered at all, or it renders and opens on an
+        empty list. This build does the latter for Grade 1 Mathematics, where
+        get_dropdown_options finds no option to return and waits out its
+        timeout instead. Both shapes mean "no units", so both report () rather
+        than raising a TimeoutException at the caller.
+        """
+        if not self.has_unit_field():
+            return ()
+        try:
+            return self.get_dropdown_options(self.UNIT_FIELD_LABEL)
+        except TimeoutException:
+            return ()
+
+    def get_chapter_options(self):
+        """The chapters offered for the book (or unit) currently selected."""
+        return self.get_dropdown_options("Chapter *")
 
     @classmethod
     def canonical_manual_typology(cls, option_text):
@@ -911,6 +957,50 @@ class ManualItemPage(BasePage):
     def select_subject(self, subject):
         self.select_dropdown_option("Subject *", subject)
 
+    def select_book(self, book):
+        self.select_dropdown_option("Book *", book)
+
+    def select_book_by_index(self, index=0):
+        self.select_dropdown_option_by_index("Book *", index)
+
+    def has_unit_field(self, timeout=3):
+        """Is the optional Unit dropdown on screen?
+
+        Rendering is gated on a Book having been picked. It is *not* gated on
+        the subject having unit data: this build renders the field for Grade 1
+        Mathematics, which has none, and simply opens it on an empty list. So
+        this answers "is the control there", never "can a unit be chosen" —
+        callers that need the latter ask get_unit_options() instead.
+        """
+        # is_visible rather than count_visible: the field is revealed
+        # asynchronously once the Book selection resolves, so a bare count
+        # taken immediately afterwards reads 0 for a field that is about to
+        # appear.
+        return bool(self.is_visible(self.field_label_locator(self.UNIT_FIELD_LABEL), timeout))
+
+    def select_unit(self, unit):
+        self.select_dropdown_option(self.UNIT_FIELD_LABEL, unit)
+
+    def select_unit_by_index(self, index=0):
+        self.select_dropdown_option_by_index(self.UNIT_FIELD_LABEL, index)
+
+    def select_unit_if_offered(self, index=0):
+        """Pick a unit when the subject has them; report what was chosen.
+
+        Returns the unit selected, or "" when no unit is on offer — the field
+        missing and the field open on an empty list both count, which is why
+        this reads the options through get_unit_options() rather than calling
+        get_dropdown_options() directly and timing out on the empty case. Unit
+        is optional — the chapter list falls back to the book's full chapter
+        set when it is left empty — so a subject without units is not a
+        failure.
+        """
+        options = self.get_unit_options()
+        if not options:
+            return ""
+        self.select_unit_by_index(index)
+        return options[index]
+
     def select_chapter(self, chapter):
         self.select_dropdown_option("Chapter *", chapter)
 
@@ -929,11 +1019,34 @@ class ManualItemPage(BasePage):
     def select_blooms_level_by_index(self, index=0):
         self.select_dropdown_option_by_index("Bloom's Level *", index)
 
+    def select_typology_option(self, typology):
+        """Pick the dropdown entry for `typology`, trying every known spelling.
+
+        Environments word the same typology differently - UAT lists "Case
+        Based Questions" where the test data says "Case Based Question" - so an
+        exact match on one label fails on the other. The mapped UI label goes
+        first, then each alias.
+        """
+        candidates = [self.MANUAL_TYPOLOGY_UI_LABELS.get(typology, typology)]
+        for alias in self.MANUAL_TYPOLOGY_OPTION_ALIASES.get(typology, ()):
+            if alias not in candidates:
+                candidates.append(alias)
+        last_error = None
+        for candidate in candidates:
+            try:
+                self.select_dropdown_option("Item Typology *", candidate)
+                return candidate
+            except Exception as error:  # noqa: BLE001 - try the next spelling
+                last_error = error
+                # Close the list so the next attempt reopens it instead of
+                # toggling it shut.
+                self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+        raise last_error
+
     def select_typology(self, typology):
-        ui_label = self.MANUAL_TYPOLOGY_UI_LABELS.get(typology, typology)
         last_error = None
         for attempt in range(2):
-            self.select_dropdown_option("Item Typology *", ui_label)
+            self.select_typology_option(typology)
             try:
                 self.wait_utils.until_visible(self.VISIBLE_RICH_TEXT_EDITORS, timeout=15)
                 return
@@ -989,6 +1102,9 @@ class ManualItemPage(BasePage):
     def select_true_false_item_metadata(self):
         self.select_grade("Grade 1")
         self.select_subject("Mathematics")
+        # Book is mandatory and sits between Subject and Chapter: the chapter
+        # list stays empty until one is picked.
+        self.select_book_by_index()
         self.select_chapter_by_index()
         self.select_competency_by_index()
         self.select_learning_outcome_by_index()
@@ -996,16 +1112,30 @@ class ManualItemPage(BasePage):
         self.select_true_false_item_type()
         self.select_marks("1")
 
-    def select_common_manual_item_metadata(self):
+    def select_common_manual_item_metadata(self, subject="Mathematics", select_unit=False):
+        """Fill the metadata a manual item needs, in the order the form gates it.
+
+        Grade -> Subject -> Book unlocks Chapter, and Chapter unlocks Competency
+        and Learning Outcome; picking out of order lands on a dropdown that is
+        still showing "Pick subject & grade first".
+
+        `select_unit` asks for the optional Unit to be filled too where the
+        subject offers it. It defaults off because the default subject
+        (Mathematics) has no unit data, and because leaving Unit empty is the
+        supported path the rest of the suite exercises.
+        """
         self.select_grade("Grade 1")
-        self.select_subject("Mathematics")
+        self.select_subject(subject)
+        self.select_book_by_index()
+        if select_unit:
+            self.select_unit_if_offered()
         self.select_chapter_by_index()
         self.select_competency_by_index()
         self.select_learning_outcome_by_index()
         self.select_blooms_level_by_index()
 
-    def select_manual_item_metadata(self, typology, marks="1"):
-        self.select_common_manual_item_metadata()
+    def select_manual_item_metadata(self, typology, marks="1", subject="Mathematics", select_unit=False):
+        self.select_common_manual_item_metadata(subject=subject, select_unit=select_unit)
         self.select_typology(typology)
         self.select_marks(marks)
 
@@ -1038,10 +1168,14 @@ class ManualItemPage(BasePage):
                 manual_item["explanation"],
             )
 
-    def open_manual_item_form_for_typology(self, typology, marks="1"):
+    def open_manual_item_form_for_typology(
+        self, typology, marks="1", subject="Mathematics", select_unit=False
+    ):
         self.open_item_creation_module()
         self.open_manual_item_tab()
-        self.select_manual_item_metadata(typology, marks)
+        self.select_manual_item_metadata(
+            typology, marks, subject=subject, select_unit=select_unit
+        )
 
     def get_visible_rich_text_editors(self):
         self.wait_utils.until_visible(self.VISIBLE_RICH_TEXT_EDITORS, timeout=15)
@@ -1930,12 +2064,41 @@ class ManualItemPage(BasePage):
             item_ids.append("ID not found after QAR submit")
         return item_ids
 
+    @classmethod
+    def item_set_id_for(cls, item_id):
+        """The item set an item belongs to, from the item's own ID.
+
+        The app names an item "<item set id>-i<n>" — "IS413-G1-Mathematics-Ch38-i1"
+        belongs to set "IS413-G1-Mathematics-Ch38" — and offers no separate
+        reading of the set's name on the submit screen. Callers used to strip
+        the suffix themselves; this keeps the one convention in one place.
+
+        Returns "" for anything that is not a numbered item ID, so a caller
+        that failed to read an ID reports that rather than a truncated
+        placeholder that looks like a real set.
+        """
+        text = str(item_id or "").strip()
+        if not cls.QAR_RESULTS_ITEM_ID_PATTERN.fullmatch(text) or "-i" not in text:
+            return ""
+        return text.rsplit("-i", 1)[0]
+
     def submit_item_set_for_qar(self, question_text):
         self.click_continue()
         self.click_continue()
         self.click_submit_for_qar()
         self.wait_for_qar_success_popup()
         return self.get_qar_results_item_id_for_question(question_text)
+
+    def create_item_set_from_staged_items(self, question_text):
+        """Take the staged items through the wizard and report the set created.
+
+        Adding an item only stages it on step 1; the item set itself does not
+        exist until the wizard is carried through Review & Tag Metadata and
+        Confirm & Submit. Returns (item_set_id, item_id, qar_message).
+        """
+        item_id = self.submit_item_set_for_qar(question_text)
+        qar_message = self.wait_for_qar_success_popup()
+        return self.item_set_id_for(item_id), item_id, qar_message
 
     def submit_item_set_for_qar_for_questions(self, question_texts):
         self.click_continue()
@@ -1950,7 +2113,22 @@ class ManualItemPage(BasePage):
     def is_submission_successful(self):
         return self.is_element_visible(self.SUCCESS_OR_LIST_INDICATOR)
 
+    def wait_for_qar_analysis_to_finish(self, timeout=180):
+        """Wait out the "QAR Analysis in Progress..." banner.
+
+        The QAR Results heading renders as soon as the page opens, while the
+        analysis is still running, so it cannot stand in for "QAR finished".
+        On UAT a single manual item sits at 95% for well over the 15s the
+        results-table lookup allows. Same budget as the Excel upload path.
+        """
+        self.wait_utils.until_condition(
+            lambda driver: "analysis in progress"
+            not in driver.find_element(By.TAG_NAME, "body").text.lower(),
+            timeout=timeout,
+        )
+
     def wait_for_qar_success_popup(self):
+        self.wait_for_qar_analysis_to_finish()
         for locator in self.QAR_SUCCESS_POPUP_LOCATORS:
             try:
                 element = self.wait_utils.until_visible(locator, timeout=15)

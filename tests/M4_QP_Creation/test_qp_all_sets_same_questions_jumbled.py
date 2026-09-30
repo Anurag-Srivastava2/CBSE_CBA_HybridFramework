@@ -15,6 +15,7 @@ from tests.M4_QP_Creation.qp_surveys import (
 )
 from utilities.element_checks import ElementChecks
 from utilities.page_evidence import checkpoint
+from utilities.qp_question_budget import cap_item_counts
 from utilities.read_config import ReadConfig
 
 NUMBER_OF_SETS = 4
@@ -22,9 +23,12 @@ EXAM_DURATION_MINUTES = 30
 
 # Two sections, so the jumble can also be checked to stay inside its section
 # rather than moving questions across section boundaries.
+# Question counts shrink to fit CBSE_QP_MAX_QUESTIONS when it is set; the
+# two-section shape, and everything the test proves about it, is unchanged.
+SECTION_ITEM_COUNTS = cap_item_counts([10, 5])
 SECTION_CONFIGS = [
-    {"number_of_items": 10, "marks_per_item": 1},
-    {"number_of_items": 5, "marks_per_item": 2},
+    {"number_of_items": SECTION_ITEM_COUNTS[0], "marks_per_item": 1},
+    {"number_of_items": SECTION_ITEM_COUNTS[1], "marks_per_item": 2},
 ]
 TOTAL_MARKS = sum(
     config["number_of_items"] * config["marks_per_item"] for config in SECTION_CONFIGS
@@ -60,6 +64,19 @@ class TestQPAllSetsSameQuestionsJumbled:
         actually jumbled rather than four identical printings. The metadata
         the paper was configured with is checked to survive alongside it.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Build and publish a question paper configured so that all sets hold the "
+            "same questions.\n"
+            "Check every set really does hold the same questions carrying the same "
+            "marks.\n"
+            "Check the order is genuinely jumbled between sets, rather than four "
+            "identical printings of one paper.\n"
+            "Check the metadata the paper was configured with survives publication "
+            "alongside it.",
+        )
         self.login_as_teacher()
         page = QuestionPaperBuilderPage(self.driver)
 

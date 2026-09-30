@@ -93,6 +93,14 @@ class TestM2ItemBankOverview:
 
     def test_tc_wpad_itembank_01_core_ui_kpis(self, record_property, page_evidence):
         """Phase 1: page furniture, metric cards and grid, all recorded softly."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open Item Bank Overview as an admin.\n"
+            "Record the page furniture, the metric cards and the grid, all as soft "
+            "checks.",
+        )
         item_bank = self.open_item_bank()
         checks = self.survey(item_bank, record_property, "Core UI")
 
@@ -123,6 +131,15 @@ class TestM2ItemBankOverview:
         Tab presence is soft; the badge arithmetic and the scoping contract stay
         hard — a tab that shows the wrong items is a defect, not a gap.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Click the All, IB1, IB2 and Retired tabs on Item Bank Overview in turn.\n"
+            "Each tab must scope the grid to the count on its own badge.\n"
+            "Tab presence is soft, but the badge arithmetic and the scoping stay "
+            "hard: a tab showing the wrong items is a defect, not a gap.",
+        )
         item_bank = self.open_item_bank()
         checks = self.survey(item_bank, record_property, "Quick Filters")
 
@@ -187,6 +204,14 @@ class TestM2ItemBankOverview:
         self, record_property, page_evidence
     ):
         """Phase 3: the Filters toggle reveals the metadata filters and Export downloads a CSV."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Open the Filters toggle on Item Bank Overview and check the metadata "
+            "filters appear.\n"
+            "Use Export and check a CSV file downloads.",
+        )
         item_bank = self.open_item_bank()
         checks = self.survey(item_bank, record_property, "Filters & Export")
 
@@ -282,6 +307,13 @@ class TestM2ItemBankOverview:
         self, record_property, page_evidence
     ):
         """Phase 4: controls surveyed softly; advancing the grid stays hard."""
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Drive the Item Bank grid controls, recording each softly.\n"
+            "Hard-assert that paging actually advances the grid.",
+        )
         item_bank = self.open_item_bank()
         self.survey(item_bank, record_property, "Pagination").publish()
 
@@ -313,6 +345,15 @@ class TestM2ItemBankOverview:
 
         Selection behaviour stays hard; only the page furniture is soft.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Use the master checkbox on Item Bank Overview to select every row on the "
+            "page, then clear it again.\n"
+            "The page furniture is soft, but the selection behaviour itself stays a "
+            "hard assert.",
+        )
         item_bank = self.open_item_bank()
         checks = self.survey(item_bank, record_property, "Bulk Actions")
         item_bank.switch_tab("All")
@@ -363,14 +404,30 @@ class TestM2ItemBankOverview:
 
     @pytest.mark.e2e
     @pytest.mark.serial
+    # Deferred: parked out of the default run with the fully blocked
+    # suites in tests_deferred/. See cbse-m2-blocked-tests notes.
+    @pytest.mark.deferred
     def test_tc_wpad_itembank_06_retire_item(self, record_property, page_evidence):
         """Phase 6: retiring an item moves it out of the active bank into Retired.
 
         Retirement cannot be undone from the UI, so this never touches a seeded
         item: it retires automation residue left behind by earlier runs,
         identified by the markers in RETIRABLE_ITEM_MARKERS, and skips outright
-        when the bank holds no such item.
+        when the bank holds no such item. Residue sinks down the grid as newer
+        items arrive, so the search pages through the bank rather than reading
+        only the page the grid happens to open on.
         """
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Retire an item and check it moves out of the active bank into Retired.\n"
+            "Retiring cannot be undone from the UI, so this never touches a seeded "
+            "item: it only retires automation residue left by earlier runs, and skips "
+            "outright when the bank holds none.\n"
+            "Residue sinks down the grid as newer items arrive, so the search pages "
+            "through the bank rather than reading only the first page.",
+        )
         item_bank = self.open_item_bank()
         # Retirement is destructive and irreversible, so every assertion below
         # the survey stays hard.
@@ -378,19 +435,21 @@ class TestM2ItemBankOverview:
         item_bank.switch_tab("All")
 
         # Markers are tried in order, so the most disposable residue goes first
-        # regardless of where it sits in the grid.
-        target_item_id = ""
-        for marker in self.RETIRABLE_ITEM_MARKERS:
-            matches = item_bank.find_items_matching((marker,))
-            if matches:
-                target_item_id = matches[0]
-                break
+        # regardless of where it sits in the grid — including on a later page.
+        target_item_id, matched_marker, pages_searched = (
+            item_bank.find_best_item_matching_across_pages(self.RETIRABLE_ITEM_MARKERS)
+        )
         if not target_item_id:
             pytest.skip(
-                "No automation-residue item on the first page of the Item Bank to retire "
-                f"(looked for {list(self.RETIRABLE_ITEM_MARKERS)}). Refusing to retire a "
-                "seeded item, because retirement cannot be reversed from the UI."
+                f"No automation-residue item in the first {pages_searched} page(s) of the "
+                f"Item Bank to retire (looked for {list(self.RETIRABLE_ITEM_MARKERS)}). "
+                "Refusing to retire a seeded item, because retirement cannot be "
+                "reversed from the UI."
             )
+        page_evidence.checkpoint(
+            f"Searched {pages_searched} page(s) of the Item Bank for retirable "
+            f"automation residue; {target_item_id} matched {matched_marker!r}"
+        )
 
         retired_before = item_bank.get_tab_badge_count("Retired")
         all_before = item_bank.get_tab_badge_count("All")
@@ -448,8 +507,10 @@ class TestM2ItemBankOverview:
             f"After retirement — All {all_before} -> {all_after}, Retired "
             f"{retired_before} -> {retired_after}; toast {toast!r}"
         )
-        assert not item_bank.is_item_present_in_table(target_item_id), (
-            f"Item {target_item_id} is still listed on the 'All' tab after being retired."
+        still_on_page, all_pages_searched = item_bank.find_item_across_pages(target_item_id)
+        assert not still_on_page, (
+            f"Item {target_item_id} is still listed on the 'All' tab, on page "
+            f"{still_on_page} of the {all_pages_searched} searched, after being retired."
         )
         assert retired_after == retired_before + 1, (
             f"Retired badge should have risen from {retired_before} to {retired_before + 1}, "
@@ -460,11 +521,14 @@ class TestM2ItemBankOverview:
             f"but reads {all_after}."
         )
 
+        item_bank.open(ReadConfig.get_base_url())
         item_bank.switch_tab("Retired")
+        retired_page, retired_pages_searched = item_bank.find_item_across_pages(target_item_id)
         page_evidence.checkpoint(
-            f"{target_item_id} now appears on the Retired tab: "
-            f"{item_bank.is_item_present_in_table(target_item_id)}"
+            f"{target_item_id} now appears on the Retired tab: {bool(retired_page)} "
+            f"(page {retired_page or 'none'} of {retired_pages_searched} searched)"
         )
-        assert item_bank.is_item_present_in_table(target_item_id), (
-            f"Item {target_item_id} did not appear on the 'Retired' tab after retirement."
+        assert retired_page, (
+            f"Item {target_item_id} did not appear on the 'Retired' tab after retirement "
+            f"({retired_pages_searched} page(s) searched)."
         )

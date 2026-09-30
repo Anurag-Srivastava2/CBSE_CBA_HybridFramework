@@ -107,6 +107,17 @@ class BulkUploadPage(UploadItemFilePage):
         self.discard_active_upload_if_present()
         self.discard_staged_upload_files()
         self.upload_file(xlsx_path)
+        return self.attach_images_zip(zip_path, timeout=timeout)
+
+    def attach_images_zip(self, zip_path, timeout=90):
+        """Second step of an image upload: drop the images .zip once asked for.
+
+        The app stages the item file (Excel or Word) first, then shows an
+        "Upload Images ZIP" panel ("...has been staged -- drop the images ZIP
+        (.zip) to finalise the upload"). Sending the zip together with the
+        item file, or before that panel renders, leaves it unattached and the
+        app waits forever. Returns {"accepted": bool, "message": str}.
+        """
         self.wait_utils.until_visible(self.UPLOAD_IMAGES_ZIP_PANEL, timeout=30)
         self.pause_before_action()
         self.upload_file(zip_path)

@@ -39,6 +39,16 @@ class TestE2EQARPlagiarismPDFThreshold:
         record_property,
         page_evidence,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Build a workbook whose questions are copied word for word out of the "
+            "published item-bank PDF, each at least 97% similar to its source.\n"
+            "Sign in as an SME, upload it, and submit the set for QAR.\n"
+            "Expect QAR to catch every copy: no copied item may come back Approved or "
+            "Passed.",
+        )
         run_token = f"QAR_AUTO_PDF_PLAG_{uuid4().hex[:10]}"
         workbook_path, source_evidence = build_qar_plagiarism_workbook(
             ReadConfig.get_upload_item_file_path(),

@@ -63,8 +63,19 @@ class TestE2EQARImageModerationBulk:
         return int(match.group(1))
 
     def test_all_images_and_questions_in_one_sheet_upload_moderation(
-        self, request, page_evidence
+        self, request, page_evidence, record_property
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Upload all 22 curated images and their questions together in a single "
+            "sheet.\n"
+            "Check moderation blocks exactly the images marked bad and lets the rest "
+            "through.\n"
+            "Companion to the one-image-per-run test: this proves the same verdicts "
+            "hold in bulk, and carries them on through QAR.",
+        )
         prefix = f"QAR_AUTO_IMG_BULK_{uuid4().hex[:10]}"
         source_cases = load_real_image_cases(SOURCE_ZIP_PATH, prefix)
         blocked_cases = [

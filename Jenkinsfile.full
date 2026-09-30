@@ -11,16 +11,13 @@
 //
 // So the lanes are drawn along account boundaries, not directory boundaries:
 //
-//   Logic    the two files that drive no browser and touch no account
 //   M2       admin only, with the RWG-deactivating `serial` tests held back
 //   M3+M4    probe + teacher2
-//   M1+M5    one pytest process over M1, M5 and tests/_unit, so xdist's global
-//            `serial` group covers the reviewer flows of all three at once —
-//            separate processes would each keep their own serial worker and
+//   M1+M5    one pytest process over M1 and M5, so xdist's global `serial`
+//            group covers the reviewer flows of both at once — separate
+//            processes would each keep their own serial worker and
 //            double-book the reviewers. They also share tmp_uploads/, which
-//            one process schedules safely and several do not. Note tests/_unit
-//            is misnamed: 14 of its 22 files drive a real browser against SME2
-//            and the reviewer accounts, so it cannot run beside this lane.
+//            one process schedules safely and several do not.
 //   tail     M2's `serial` tests, after the parallel block: deactivating RWG
 //            mid-flight would fail M1 and M5 for a reason that is not a bug.
 //
@@ -29,18 +26,35 @@
 // just trade a long build for a flaky one. More real parallelism needs more
 // accounts, not more lanes; see docs/jenkins_setup.md section 6.
 //
-// Covers every test under tests/ except tests/_tmp_report_check/, which holds
-// synthetic pass/skip/retry fixtures for checking the report renderer and
-// contains a deliberate first-attempt failure.
+// Covers the five module folders tests/M1_* .. tests/M5_* only. Deliberately
+// left out: tests/_unit and the two top-level files tests/test_qar_retry_flow.py
+// and tests/test_manual_typology_coverage.py (the module job still runs them
+// for M1), and tests/_tmp_report_check/, which holds synthetic report fixtures.
+//
+// Daily run: create a second job named `cbse-daily` from this same file. The
+// 10:00 IST schedule and the team summary mail switch on for that job name
+// only, so `cbse-full` stays a by-hand run with its own build history. See
+// docs/jenkins_pipelines.md, "Daily regression".
 //
 // Related files:
 //   Jenkinsfile         post-deployment smoke gate (critical paths only)
 //   Jenkinsfile.module  one module at a time
 
 def cbse
+// Holds the daily summary's one-line status between the post steps.
+def summarySubject
 
 pipeline {
     agent any
+
+    // Scheduled for the daily job only; every other job built from this file
+    // gets an empty spec, which is no schedule at all. Jenkins registers the
+    // trigger when a build runs, so the schedule starts after the first build.
+    // The literal job name is repeated in SEND_REPORT below: declarative
+    // directives cannot see a script-level constant reliably.
+    triggers {
+        cron(env.JOB_BASE_NAME == 'cbse-daily' ? 'TZ=Asia/Kolkata\n0 10 * * *' : '')
+    }
 
     parameters {
         string(
@@ -50,13 +64,22 @@ pipeline {
         )
         string(
             name: 'WORKERS',
-            defaultValue: '4',
-            description: 'xdist workers for the M1+M5 lane — the critical path, so this is the number that moves the build time. Each worker drives its own headless Chrome (~200 MB). Above 6 the QA environment has shown connection contention.'
+            // Was 4. Build #2 (2026-09-30) lost 16 tests to the portal's
+            // sign-in rate limit with 7 browsers signing in across the lanes;
+            // it locks accounts after bursts of logins from one machine, and
+            // utilities/login_gate.py's spacing alone did not keep under it.
+            defaultValue: '2',
+            description: 'xdist workers for the M1+M5 lane — the critical path, so this is the number that moves the build time. Each worker drives its own headless Chrome (~200 MB). Kept low on purpose: the portal rate-limits sign-ins per machine, and more parallel browsers mean more lockouts, which fail tests for a reason that is not a bug.'
         )
         string(
             name: 'LIGHT_WORKERS',
-            defaultValue: '2',
-            description: 'xdist workers for the M2 and M3+M4 lanes. Peak concurrent browsers is WORKERS + 2 x LIGHT_WORKERS, so keep the agent sized for that.'
+            defaultValue: '1',
+            description: 'xdist workers for the M3+M4 lane. Peak concurrent browsers is WORKERS + LIGHT_WORKERS + M2_WORKERS (4 by default); raising any of them raises sign-in lockouts.'
+        )
+        string(
+            name: 'M2_WORKERS',
+            defaultValue: '1',
+            description: 'xdist workers for the M2 lane. Each worker takes its own admin from CBSE_ADMIN_USERNAMES + CBSE_ADMIN2_USERNAME; with one admin configured, a second worker signs the first out. Raise only to the number of admin accounts in the credential.'
         )
         string(
             name: 'RERUNS',
@@ -68,6 +91,21 @@ pipeline {
             defaultValue: false,
             description: 'Also run the nightly tests, which assert on AI/model verdicts rather than application logic. They fail on model drift, so they do not belong in a gate.'
         )
+        booleanParam(
+            name: 'INCLUDE_PERFORMANCE',
+            defaultValue: false,
+            description: 'Also run the performance budgets (TC-IBMM-08-P01 and friends). They measure wall-clock against a shared backend that does not currently meet the budget, so they are a standing red on a gate — and under -n the contention lands inside the measurement. Use the module job with SUITE=performance and WORKERS=1 for a trustworthy number.'
+        )
+        booleanParam(
+            name: 'SEND_REPORT',
+            defaultValue: env.JOB_BASE_NAME == 'cbse-daily',
+            description: 'Mail the module summary to the team when the build finishes. On by default for the cbse-daily job only.'
+        )
+        string(
+            name: 'NOTIFY_EMAILS',
+            defaultValue: '',
+            description: 'Comma-separated recipients. Empty uses Default Recipients from Manage Jenkins > System > Extended E-mail Notification, which is where the team list belongs.'
+        )
         string(
             name: 'ACCOUNT_LOCK',
             defaultValue: 'cbse-cba-accounts',
@@ -76,7 +114,7 @@ pipeline {
     }
 
     options {
-        timeout(time: 6, unit: 'HOURS')
+        timeout(time: 7, unit: 'HOURS')
         timestamps()
         // Needs the AnsiColor plugin; pairs with --color=yes, since pytest
         // drops colour when its output is a pipe rather than a terminal.
@@ -148,7 +186,9 @@ pipeline {
                 // no per-module build can slip in between them and sign these
                 // sessions out. Taken here rather than around the whole
                 // pipeline so checkout and pip do not hold the queue.
-                lock(resource: "${params.ACCOUNT_LOCK}")
+                // params is empty on a job's very first build, which locked
+                // "null" - a resource no other job shares - so fall back.
+                lock(resource: params.ACCOUNT_LOCK ?: 'cbse-cba-accounts')
             }
 
             stages {
@@ -157,39 +197,14 @@ pipeline {
                     // produce a complete result, so one red lane must not
                     // discard the three that are still running.
                     parallel {
-                        stage('Logic (no browser)') {
-                            environment {
-                                PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/logic"
-                            }
-                            options {
-                                timeout(time: 10, unit: 'MINUTES')
-                            }
-                            steps {
-                                // The only two files in the repo that drive no
-                                // browser and touch no account: they exercise
-                                // the QAR retry loop and the manual-typology
-                                // data purely in Python. Seconds to run, so no
-                                // xdist. Note that tests/_unit is *not* here —
-                                // despite the name, 14 of its 22 files drive a
-                                // real browser against SME2 and the reviewer
-                                // accounts, so it belongs to the M1+M5 lane.
-                                script {
-                                    cbse.runLane('Logic', [
-                                        'tests/test_qar_retry_flow.py',
-                                        'tests/test_manual_typology_coverage.py',
-                                        cbse.markerArgs([], params.INCLUDE_NIGHTLY),
-                                        cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
-                                    ].findAll { it }.join(' '))
-                                }
-                            }
-                        }
-
                         stage('M2 Web Portal Admin') {
                             environment {
                                 PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m2"
                             }
                             options {
-                                timeout(time: 90, unit: 'MINUTES')
+                                // One worker by default (see M2_WORKERS), and
+                                // M2 serially has measured 2h13m on UAT.
+                                timeout(time: 150, unit: 'MINUTES')
                             }
                             steps {
                                 // `not serial` holds back the tests that
@@ -200,8 +215,8 @@ pipeline {
                                 script {
                                     cbse.runLane('M2', [
                                         'tests/M2_Web_Portal_Admin',
-                                        cbse.markerArgs(['not serial'], params.INCLUDE_NIGHTLY),
-                                        cbse.xdistArgs(params.LIGHT_WORKERS),
+                                        cbse.markerArgs(['not serial'], params.INCLUDE_NIGHTLY, params.INCLUDE_PERFORMANCE),
+                                        cbse.xdistArgs(params.M2_WORKERS),
                                         cbse.rerunArgs(params.RERUNS),
                                         cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
                                     ].findAll { it }.join(' '))
@@ -224,7 +239,7 @@ pipeline {
                                     cbse.runLane('M3+M4', [
                                         'tests/M3_Item_Testing',
                                         'tests/M4_QP_Creation',
-                                        cbse.markerArgs([], params.INCLUDE_NIGHTLY),
+                                        cbse.markerArgs([], params.INCLUDE_NIGHTLY, params.INCLUDE_PERFORMANCE),
                                         cbse.xdistArgs(params.LIGHT_WORKERS),
                                         cbse.rerunArgs(params.RERUNS),
                                         cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
@@ -238,21 +253,25 @@ pipeline {
                                 PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m1_m5"
                             }
                             options {
-                                timeout(time: 180, unit: 'MINUTES')
+                                // Build #1 (2026-09-29) was killed here at 180:
+                                // the `serial` group's reviewer e2e flows run
+                                // on one worker for 2h+ after the rest finish,
+                                // and a killed lane writes no junit at all.
+                                timeout(time: 300, unit: 'MINUTES')
                             }
                             steps {
-                                // One process over all three paths on purpose
-                                // — see the header. tests/_unit is M1 content
-                                // driving SME2 and the reviewer accounts, so
-                                // it has to share this lane's scheduler. This
-                                // is the critical path, so WORKERS is the
+                                // One process over both paths on purpose — see
+                                // the header. Only tests/M1_Item_Bank_Mgmt
+                                // counts as M1 here: tests/_unit is left out
+                                // of the daily run by choice (2026-09-30), and
+                                // Jenkinsfile.module still runs it for M1.
+                                // This is the critical path, so WORKERS is the
                                 // parameter that decides the build's length.
                                 script {
                                     cbse.runLane('M1+M5', [
                                         'tests/M1_Item_Bank_Mgmt',
                                         'tests/M5_Teacher_Contribution',
-                                        'tests/_unit',
-                                        cbse.markerArgs([], params.INCLUDE_NIGHTLY),
+                                        cbse.markerArgs([], params.INCLUDE_NIGHTLY, params.INCLUDE_PERFORMANCE),
                                         cbse.xdistArgs(params.WORKERS),
                                         cbse.rerunArgs(params.RERUNS),
                                         cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
@@ -278,7 +297,7 @@ pipeline {
                         script {
                             cbse.runLane('M2 serial', [
                                 'tests/M2_Web_Portal_Admin',
-                                cbse.markerArgs(['serial'], params.INCLUDE_NIGHTLY),
+                                cbse.markerArgs(['serial'], params.INCLUDE_NIGHTLY, params.INCLUDE_PERFORMANCE),
                                 cbse.rerunArgs(params.RERUNS),
                                 cbse.reportingArgs(env.PYTEST_REPORTS_DIR),
                             ].findAll { it }.join(' '))
@@ -291,6 +310,14 @@ pipeline {
 
     post {
         always {
+            // One module-level summary across all lanes, built first so the
+            // archive step below captures it. This is the report to share;
+            // the per-lane reports are for whoever debugs a failure.
+            script {
+                String title = (env.JOB_BASE_NAME == 'cbse-daily' ? 'CBSE Daily Regression' : 'CBSE Full Suite') +
+                    " #${env.BUILD_NUMBER}"
+                summarySubject = cbse?.buildSummary('reports_ci', title)
+            }
             // allowEmptyResults keeps an environment-level failure (no lane
             // ever started) reporting as a build failure rather than masking it
             // as a Jenkins config error about missing results.
@@ -300,26 +327,44 @@ pipeline {
                 allowEmptyArchive: true,
                 fingerprint: false
             )
+            publishHTML(target: [
+                reportDir: 'reports_ci',
+                reportFiles: 'daily_summary.html',
+                reportName: 'CBSE Summary',
+                keepAll: true,
+                alwaysLinkToLastBuild: true,
+                allowMissing: true
+            ])
             script {
                 cbse?.publishLane('reports_ci/m1_m5', 'CBSE M1+M5 Report')
                 cbse?.publishLane('reports_ci/m2', 'CBSE M2 Report')
                 cbse?.publishLane('reports_ci/m2_serial', 'CBSE M2 Serial Report')
                 cbse?.publishLane('reports_ci/m3_m4', 'CBSE M3+M4 Report')
-                cbse?.publishLane('reports_ci/logic', 'CBSE Logic Report')
+                if (params.SEND_REPORT) {
+                    // A mail-server hiccup must not turn a finished run red.
+                    try {
+                        cbse?.emailSummary('reports_ci', summarySubject, params.NOTIFY_EMAILS)
+                    } catch (err) {
+                        echo "Summary mail was not sent: ${err}"
+                    }
+                }
             }
         }
         unstable {
-            echo 'Tests failed. Each lane publishes its own report — open the one named for the failing lane.'
+            echo 'Tests failed. Start from the CBSE Summary report, then open the lane report for the failing module.'
         }
         cleanup {
             // The decrypted .env holds real account passwords and must not sit
             // in the workspace between builds. Screenshots run to hundreds of
             // MB across builds; the archive above already took this build's.
+            // reports_ci goes too: a lane that does not run tomorrow would
+            // otherwise leave today's junit.xml behind, and the summary would
+            // report it as tomorrow's result.
             script {
                 cbse?.removeEnvFile()
                 cbse?.runShell(
-                    'rm -rf screenshots/* tmp_uploads/* || true',
-                    'if exist screenshots rmdir /s /q screenshots & if exist tmp_uploads rmdir /s /q tmp_uploads & exit /b 0'
+                    'rm -rf screenshots/* tmp_uploads/* reports_ci || true',
+                    'if exist screenshots rmdir /s /q screenshots & if exist tmp_uploads rmdir /s /q tmp_uploads & if exist reports_ci rmdir /s /q reports_ci & exit /b 0'
                 )
             }
         }

@@ -109,6 +109,16 @@ class TestPITSMERevisionApproval:
         record_property,
         page_evidence,
     ):
+        # Plain-English orientation for the report, for a reader who does
+        # not know this test. One line per step, in the order they happen.
+        record_property(
+            "test_summary",
+            "Create a fresh SME item set and take it all the way through to the PIT "
+            "stage.\n"
+            "A PIT member sends it back for revision; the SME corrects it and "
+            "resubmits.\n"
+            "PIT then approves and publishes it, and the published result is checked.",
+        )
         lifecycle, created_contexts = isolated_pit_lifecycle
         request.node.user_properties.append(
             ("result_checkpoint", "create a unique SME set and progress it to PIT")

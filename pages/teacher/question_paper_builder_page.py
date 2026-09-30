@@ -10,6 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
 from pages.common.base_page import BasePage
+from utilities.read_config import ReadConfig
 
 
 class QuestionPaperBuilderPage(BasePage):
@@ -651,7 +652,11 @@ class QuestionPaperBuilderPage(BasePage):
     ):
         selections = {}
         for label in ("Paper Title", "Assessment Type", "Grade", "Subject"):
-            selections[label] = self.select_first_available_option(label)
+            selections[label] = (
+                self.select_subject_option(label)
+                if label == "Subject"
+                else self.select_first_available_option(label)
+            )
         try:
             if select_all_chapters:
                 selections["Chapters"] = self.select_all_checkbox_option("Chapters")
@@ -744,7 +749,11 @@ class QuestionPaperBuilderPage(BasePage):
             "Subject*",
             "Assessment Type*",
         ):
-            selections[label] = self.select_first_available_option(label)
+            selections[label] = (
+                self.select_subject_option(label)
+                if label == "Subject*"
+                else self.select_first_available_option(label)
+            )
         if select_all_chapters:
             selections["Chapters*"] = self.select_all_checkbox_option("Chapters*")
         else:
@@ -861,6 +870,107 @@ class QuestionPaperBuilderPage(BasePage):
             f"{label} would not take the value {text!r} in {attempts} attempts - "
             f"the control still shows {shown!r}."
         )
+
+    def list_option_texts(self, label, occurrence=1):
+        """Open the dropdown near `label` and read back what it offers."""
+        self.close_open_popovers()
+        control = self.find_control_near_label(
+            label, occurrence=occurrence, selector="button, [role='combobox']"
+        )
+        self.safe_click(control)
+        self.wait_utils.until_condition(
+            lambda driver: driver.find_elements(
+                By.XPATH, "//*[@role='option' or @cmdk-item]"
+            ),
+            timeout=15,
+        )
+        texts = [
+            (option.text or "").strip()
+            for option in self.driver.find_elements(
+                By.XPATH, "//*[@role='option' or @cmdk-item]"
+            )
+            if option.is_displayed() and (option.text or "").strip()
+        ]
+        self.close_open_popovers()
+        return texts
+
+    def select_option_matching(self, label, wanted, occurrence=1, attempts=3):
+        """Pick the option named `wanted`, matched case-insensitively.
+
+        Falls back from an exact match to a prefix match, so "Math" finds
+        "Mathematics". Shares select_option_with_exact_text's discipline: the
+        click goes through JS and the trigger is read back, because a
+        swallowed click is otherwise indistinguishable from a successful one.
+        When the option is not offered at all the error names what is, which
+        is the answer to "does this environment carry that subject?".
+        """
+        target = wanted.strip().casefold()
+        shown = None
+        for _ in range(attempts):
+            self.close_open_popovers()
+            control = self.find_control_near_label(
+                label, occurrence=occurrence, selector="button, [role='combobox']"
+            )
+            self.safe_click(control)
+
+            def matching_option(driver):
+                options = [
+                    candidate
+                    for candidate in driver.find_elements(
+                        By.XPATH, "//*[@role='option' or @cmdk-item]"
+                    )
+                    if candidate.is_displayed()
+                    and candidate.is_enabled()
+                    and (candidate.text or "").strip()
+                ]
+                exact = [
+                    candidate
+                    for candidate in options
+                    if (candidate.text or "").strip().casefold() == target
+                ]
+                prefixed = [
+                    candidate
+                    for candidate in options
+                    if (candidate.text or "").strip().casefold().startswith(target)
+                ]
+                return (exact or prefixed or [False])[0]
+
+            try:
+                option = self.wait_utils.until_condition(matching_option, timeout=15)
+            except TimeoutException:
+                offered = self.list_option_texts(label, occurrence=occurrence)
+                raise AssertionError(
+                    f"{label} does not offer {wanted!r} for the current "
+                    f"selection. Offered: {offered}"
+                ) from None
+            value = self.driver.execute_script(
+                "return (arguments[0].innerText || arguments[0].textContent || '').trim();",
+                option,
+            )
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", option
+            )
+            self.driver.execute_script("arguments[0].click();", option)
+            self.close_open_popovers()
+            shown = self.get_selected_option_text(label, occurrence=occurrence)
+            if shown.casefold() == value.casefold():
+                return value
+            self.pause_before_action()
+        raise AssertionError(
+            f"{label} would not take {wanted!r} in {attempts} attempts - "
+            f"the control still shows {shown!r}."
+        )
+
+    def select_subject_option(self, label, occurrence=1):
+        """Subject the paper is built for.
+
+        CBSE_QP_SUBJECT names it; unset, the form's first subject is taken,
+        which is what every caller relied on before the knob existed.
+        """
+        preferred = ReadConfig.get_qp_subject()
+        if not preferred:
+            return self.select_first_available_option(label, occurrence=occurrence)
+        return self.select_option_matching(label, preferred, occurrence=occurrence)
 
     def select_first_checkbox_option(self, label, occurrence=1):
         self.close_open_popovers()
@@ -1476,14 +1586,16 @@ class QuestionPaperBuilderPage(BasePage):
         """Add a single Item Bank item worth <= `remaining` marks to Section A,
         skipping any card in `used_cards`. Returns the added card's text, or
         None when no eligible item remains."""
-        for _ in range(3):
+        skipped = list(used_cards)
+        failures = {}
+        for _ in range(6):
             self.close_open_popovers()
             try:
                 self.wait_for_item_bank_to_render()
             except TimeoutException:
                 return None
             candidate = self.driver.execute_script(
-                self.FIND_ADD_BUTTON_WITHIN_MARKS_SCRIPT, remaining, list(used_cards)
+                self.FIND_ADD_BUTTON_WITHIN_MARKS_SCRIPT, remaining, skipped
             )
             if not candidate:
                 return None
@@ -1525,7 +1637,13 @@ class QuestionPaperBuilderPage(BasePage):
                 IndexError,
             ):
                 # Clicked a card that the re-render detached underneath us;
-                # dismiss any half-open popover and pick a fresh one.
+                # dismiss any half-open popover and pick a fresh one. A card
+                # that fails twice is dropped rather than retried: on
+                # 2026-09-29 one 4M card's menu never opened, three retries
+                # on it ended the build at 5/10 while other items still fit.
+                failures[candidate["text"]] = failures.get(candidate["text"], 0) + 1
+                if failures[candidate["text"]] >= 2:
+                    skipped.append(candidate["text"])
                 self.close_open_popovers()
                 self.pause_before_action()
         return None
@@ -1539,6 +1657,7 @@ class QuestionPaperBuilderPage(BasePage):
         self.wait_for_item_bank_ready()
         self.remove_selected_question_paper_items()
         used_cards = []
+        stalled = 0
         for _ in range(max_items):
             allocation = self.get_marks_allocation()
             if not allocation:
@@ -1551,16 +1670,21 @@ class QuestionPaperBuilderPage(BasePage):
             )
             if not added_card:
                 return self.get_marks_allocation()
+            # Recorded before the progress check, so a card whose add did not
+            # register is skipped next time rather than picked again.
             used_cards.append(added_card)
-            # Guard against a click that silently did not register, so the
-            # loop cannot spin for its full budget making no progress.
             try:
                 self.wait_utils.until_condition(
                     lambda _: (self.get_marks_allocation() or [allocated])[0] > allocated,
                     timeout=10,
                 )
+                stalled = 0
             except TimeoutException:
-                return self.get_marks_allocation()
+                # One dead click is not an empty bank - try the next card, but
+                # stop if clicks keep landing on nothing.
+                stalled += 1
+                if stalled >= 3:
+                    return self.get_marks_allocation()
         return self.get_marks_allocation()
 
     def remove_selected_question_paper_items(self):

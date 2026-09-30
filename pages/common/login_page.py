@@ -4,6 +4,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from pages.common.base_page import BasePage
+from utilities.login_gate import wait_for_login_slot
 
 
 class LoginPage(BasePage):
@@ -258,6 +259,9 @@ class LoginPage(BasePage):
                     return
             self.enter_username(username)
             self.enter_password(password)
+            # The rate limit is per machine, so parallel workers and lanes
+            # take turns submitting - see utilities/login_gate.py.
+            wait_for_login_slot()
             self.click_sign_in()
             try:
                 self.wait_utils.until_condition(
