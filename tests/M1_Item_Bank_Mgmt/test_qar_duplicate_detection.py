@@ -515,22 +515,26 @@ class TestQARDuplicateDetection:
         # so falling back to them does not degrade gracefully, it guarantees
         # "Could not open QAR result item IS-G1-...-i2" a few lines below.
         duplicate_item_ids = duplicate["report_item_ids"]
-        # The set can already hold an item this workbook did not create: on
-        # 2026-09-30 IS1492 listed i1-i4 for a 3-row upload, and the review
-        # step had numbered the new rows i2-i4 because i1 was already there.
-        # The review-step IDs lack the set number but keep the item number,
-        # so keep only the set's rows whose number this workbook uploaded.
-        uploaded_numbers = {
-            match.group(1)
-            for match in (re.search(r"-i(\d+)$", item_id) for item_id in duplicate["item_ids"])
-            if match
-        }
-        if uploaded_numbers:
+        # The list can carry a row this workbook did not create (2026-09-30:
+        # IS1492 listed i1-i4 for a 3-row upload). Item numbers cannot tell
+        # them apart - the review step numbers a fresh upload i2-i4 (sheet
+        # rows) while the set numbers it i1-i3 - so keep the rows whose
+        # question carries this run's tag. If the rows cannot be read, the
+        # list is left as it was rather than emptied.
+        tagged_ids = self.driver.execute_script(
+            r"""
+            const tag = arguments[0];
+            return Array.from(document.querySelectorAll('table tbody tr'))
+                .filter(row => (row.innerText || '').includes(tag))
+                .map(row => ((row.querySelector('td') || {}).innerText || '').replace(/\s+/g, ''));
+            """,
+            f"Duplicate regression run {run_id}",
+        ) or []
+        tagged = {item_id.casefold() for item_id in tagged_ids}
+        if tagged:
             duplicate_item_ids = [
-                item_id
-                for item_id in duplicate_item_ids
-                if (re.search(r"-i(\d+)$", item_id) or [None, None])[1] in uploaded_numbers
-            ]
+                item_id for item_id in duplicate_item_ids if item_id.casefold() in tagged
+            ] or duplicate_item_ids
         assert len(duplicate_item_ids) == self.ITEM_COUNT, (
             f"Expected {self.ITEM_COUNT} numbered item IDs to inspect for "
             f"{duplicate['item_set_id'] or 'an unidentified set'}, got "

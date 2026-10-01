@@ -76,6 +76,25 @@ class ReadConfig:
         return ReadConfig._secret("CBSE_TEACHER_PASSWORD")
 
     @staticmethod
+    def get_account_slot():
+        """Which entry of an account pool this process should take, or None.
+
+        Under xdist each worker takes its own entry, gwN -> N. But every pytest
+        process counts from zero, so two processes running at once (the daily
+        job's parallel lanes, or two reruns launched together) both hand entry
+        0 to their first worker, and the two runs sign each other out of sme1
+        and teacher1. CBSE_ACCOUNT_SLOT_OFFSET moves a whole process along the
+        pools; give each concurrent run its own. None means a plain serial run
+        with no offset, which keeps the configured primary account.
+        """
+        offset = os.getenv("CBSE_ACCOUNT_SLOT_OFFSET", "").strip()
+        worker_id = os.getenv("PYTEST_XDIST_WORKER", "").strip()
+        if not offset and not worker_id.startswith("gw"):
+            return None
+        worker_number = int(worker_id.removeprefix("gw")) if worker_id.startswith("gw") else 0
+        return int(offset or 0) + worker_number
+
+    @staticmethod
     def get_teacher_usernames():
         """Every configured teacher login, primary first.
 
@@ -102,13 +121,13 @@ class ReadConfig:
         serial run is unaffected and still gets the primary teacher.
 
         Parallelism is capped by the pool size: with N teachers configured,
-        `-n N` is the maximum before workers start sharing an account again.
+        N workers across all concurrent runs is the maximum before two of them
+        share an account again (see get_account_slot()).
         """
         teachers = ReadConfig.get_teacher_usernames()
-        worker_id = os.getenv("PYTEST_XDIST_WORKER", "").strip()
-        if worker_id.startswith("gw") and teachers:
-            worker_number = int(worker_id.removeprefix("gw"))
-            return teachers[worker_number % len(teachers)]
+        slot = ReadConfig.get_account_slot()
+        if slot is not None and teachers:
+            return teachers[slot % len(teachers)]
         return teachers[0]
 
     @staticmethod
@@ -133,10 +152,9 @@ class ReadConfig:
         publishes and reads back before the next one starts.
         """
         pool = ReadConfig.get_qp_teacher_usernames()
-        worker_id = os.getenv("PYTEST_XDIST_WORKER", "").strip()
-        if worker_id.startswith("gw") and pool:
-            worker_number = int(worker_id.removeprefix("gw"))
-            return pool[worker_number % len(pool)]
+        slot = ReadConfig.get_account_slot()
+        if slot is not None and pool:
+            return pool[slot % len(pool)]
         return pool[0]
 
     @staticmethod
@@ -165,13 +183,13 @@ class ReadConfig:
         server-side per account — one worker's additions then show up mid-test
         in another's. Each worker therefore gets its own account from
         CBSE_SME_USERNAMES; serial runs are unaffected and still use
-        CBSE_SME2_USERNAME.
+        CBSE_SME2_USERNAME, unless CBSE_ACCOUNT_SLOT_OFFSET moves them along
+        the pool (see get_account_slot()).
         """
-        worker_id = os.getenv("PYTEST_XDIST_WORKER", "").strip()
         configured_sme_usernames = ReadConfig.get_role_usernames("sme")
-        if worker_id.startswith("gw") and configured_sme_usernames:
-            worker_number = int(worker_id.removeprefix("gw"))
-            return configured_sme_usernames[worker_number % len(configured_sme_usernames)]
+        slot = ReadConfig.get_account_slot()
+        if slot is not None and configured_sme_usernames:
+            return configured_sme_usernames[slot % len(configured_sme_usernames)]
         return ReadConfig._secret("CBSE_SME2_USERNAME")
 
     @staticmethod

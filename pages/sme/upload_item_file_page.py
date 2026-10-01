@@ -16,6 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from pages.common.base_page import BasePage
 from pages.qar.qar_report_page import QARReportPage
 from utilities.screenshot_utils import ScreenshotUtils
+from utilities.qar_gate import qar_turn
 from utilities.read_config import ReadConfig
 
 
@@ -824,6 +825,13 @@ class UploadItemFilePage(BasePage):
         (
             By.XPATH,
             "//*[@role='dialog' or contains(@class,'modal') or contains(@class,'Dialog')]",
+        ),
+        # By 2026-10-01 the errors render inline under the history row, as a
+        # ROW / SHEET / ERROR table, with no dialog around them.
+        (
+            By.XPATH,
+            "//table[.//*[self::th or self::td]"
+            "[translate(normalize-space(),'error','ERROR')='ERROR']]",
         ),
     ]
 
@@ -1798,7 +1806,17 @@ class UploadItemFilePage(BasePage):
     QAR_OUTCOME_IN_PLACE = "in_place"
     QAR_OUTCOME_ITEM_SET_DETAIL = "item_set_detail"
 
-    def click_submit_for_qar_and_wait_for_results(
+    def click_submit_for_qar_and_wait_for_results(self, *args, **kwargs):
+        """Submit for QAR and wait, holding the machine-wide QAR turn.
+
+        QA runs one QAR per grade + subject and refuses the rest as a silent
+        "alreadyRunning" success (see utilities/qar_gate.py), so our own
+        parallel processes take turns rather than refuse each other.
+        """
+        with qar_turn("Excel upload QAR"):
+            return self._submit_for_qar_and_wait_for_results(*args, **kwargs)
+
+    def _submit_for_qar_and_wait_for_results(
         self,
         analysis_timeout=180,
         item_ids=(),
@@ -2640,13 +2658,19 @@ class UploadItemFilePage(BasePage):
                 return line
         return message_text.strip()
 
-    def submit_uploaded_item_set_for_qar(self):
+    def submit_uploaded_item_set_for_qar(self, uploaded_file_name=""):
         """Navigate through the upload wizard steps and trigger QAR submission.
 
         The app wizard flow can vary:
           - upload → [Continue] → review → [Continue] → submit
           - upload → [Continue] → review/submit combined (no second Continue)
         This method handles both cases adaptively.
+
+        Pass uploaded_file_name (the workbook just uploaded) so that a wizard
+        which loses the run can still be resolved from the item set's own page
+        (see _submit_for_qar_and_wait_for_results). On that path there is no
+        completion toast, so the message returned is empty and the item IDs
+        come from the set's status table.
         """
         # Step 1: Navigate from upload validation to the next wizard step
         self.click_continue()
@@ -2691,7 +2715,18 @@ class UploadItemFilePage(BasePage):
                 f"Submit for QAR button not found. URL={url}\nPage preview:\n{body}"
             )
 
-        self.click_submit_for_qar_and_wait_for_results()
+        outcome = self.click_submit_for_qar_and_wait_for_results(
+            item_ids=item_ids,
+            uploaded_file_name=Path(str(uploaded_file_name)).name if uploaded_file_name else "",
+        )
+        if outcome == self.QAR_OUTCOME_ITEM_SET_DETAIL:
+            recovered_set_id = getattr(self, "recovered_item_set_id", "")
+            recovered_ids = (
+                sorted(self.get_qar_item_statuses(recovered_set_id))
+                if recovered_set_id
+                else []
+            )
+            return recovered_ids or item_ids, ""
         success_message = self.wait_for_ocr_success_message()
         final_item_ids = self.get_qar_result_item_ids()
         return final_item_ids or item_ids, success_message
@@ -2699,7 +2734,9 @@ class UploadItemFilePage(BasePage):
 
     def upload_item_file_and_submit_for_qar(self, file_path):
         upload_path, upload_success_message = self.upload_item_file_and_validate(file_path)
-        item_ids, ocr_success_message = self.submit_uploaded_item_set_for_qar()
+        item_ids, ocr_success_message = self.submit_uploaded_item_set_for_qar(
+            uploaded_file_name=upload_path
+        )
         return upload_path, upload_success_message, item_ids, ocr_success_message
 
     # --- Evidence capture actions ---
@@ -2851,6 +2888,22 @@ class UploadItemFilePage(BasePage):
                         return list(default)
                     return cell_lines[position]
 
+                def uploaded_file():
+                    # Long names are cut on screen ("sme_sheet_teacher_trip…",
+                    # QA 2026-10-01); the full name is the span's title, which
+                    # is its tooltip. Matching the visible text missed every
+                    # teacher upload, so the title wins when there is one.
+                    position = columns.get("uploaded_file")
+                    if position is None or position >= len(cells):
+                        return ""
+                    titles = [
+                        (element.get_attribute("title") or "").strip()
+                        for element in cells[position].find_elements(By.XPATH, ".//*[@title]")
+                    ]
+                    return " ".join(title for title in titles if title) or " ".join(
+                        lines_for("uploaded_file")
+                    )
+
                 subject_chapter = lines_for("subject_chapter")
                 item_set_id = lines_for("item_set_id")
                 grade = lines_for("grade")
@@ -2869,7 +2922,7 @@ class UploadItemFilePage(BasePage):
                         "item_status": " ".join(lines_for("item_status")),
                         "item_set_status": " ".join(lines_for("item_set_status")),
                         "review_stage": " ".join(lines_for("review_stage")),
-                        "uploaded_file": " ".join(lines_for("uploaded_file")),
+                        "uploaded_file": uploaded_file(),
                     }
                 )
             except Exception:
@@ -5115,6 +5168,16 @@ class UploadItemFilePage(BasePage):
         return False
 
     def rerun_qar_if_enabled(self):
+        """Resubmit or re-run QAR, holding the machine-wide QAR turn.
+
+        "Re-run QAR" waits for its own result, so the turn covers the whole
+        run. A teacher "Resubmit set for review" starts QAR in the background,
+        so the turn covers only the click; that run can still overlap another.
+        """
+        with qar_turn("QAR re-run / teacher resubmit"):
+            return self._rerun_qar_if_enabled()
+
+    def _rerun_qar_if_enabled(self):
         for locator in self.TEACHER_RESUBMIT_REVIEW_LOCATORS:
             try:
                 submit_button = self.wait_utils.until_clickable(locator, timeout=10)

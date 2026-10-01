@@ -14,7 +14,13 @@ reviewed.
 Modeled on the RWG/SRRWG/PIT review flow in
 test_e2e_sme_excel_typology_image_rwg_srrwg_revision_to_pit_publication.py,
 adapted for manual item creation instead of Excel upload.
+
+Moved from tests/M1_Item_Bank_Mgmt to tests/_unit on 2026-10-01, at the team's
+request, which takes it out of the daily run; the cbse-M1 module job still runs
+it. It needs the shared RWG, Sr. RWG and PIT accounts for its whole length, so
+it cannot overlap the other reviewer e2e flows.
 """
+from random import Random
 from time import sleep, monotonic
 from uuid import uuid4
 
@@ -50,6 +56,49 @@ FORMATTING_MARKERS = {
     "Highlight color": "background-color",
     "Image": "<img",
 }
+
+# The item's question is built fresh each run from these parts. It used to be
+# "What comes immediately after 24?" plus a run tag, and after ~25 runs QAR
+# failed it as plagiarism of the test's own earlier items (IS1519, 2026-10-01:
+# "1 potentially plagiarized match(es) found (similarity threshold 97%)"), so
+# it went to Needs Revision and never reached RWG. A different name, object,
+# sentence and number each run keeps it well under that threshold without a
+# meaningless tag in the question.
+SUCCESSOR_NAMES = (
+    "Aarav", "Diya", "Kabir", "Meera", "Riya", "Vihaan",
+    "Ishaan", "Anaya", "Arjun", "Sara", "Neel", "Tara",
+)
+SUCCESSOR_OBJECTS = (
+    "marbles", "pencils", "stickers", "shells", "buttons", "beads",
+    "leaves", "crayons", "stones", "cards",
+)
+SUCCESSOR_TEMPLATES = (
+    "{name} is counting {things} and has just said {n}. Which number will {name} say next?",
+    "{name} has {n} {things} and finds one more. How many {things} does {name} have now?",
+    "{name} is reading page {n} of a picture book. What is the number on the next page?",
+    "{name} lines up {things} and numbers them. The last one is number {n}. What number comes just after it?",
+    "There are {n} {things} in {name}'s box. One more is put in. How many {things} are in the box now?",
+    "{name} climbs the steps of a slide, counting {n} steps so far. Which number is the next step?",
+    "{name} writes the numbers in order and stops at {n}. Which number should come next?",
+    "On a number line, {name} is standing on {n}. Which number is one step ahead?",
+)
+
+
+def fresh_successor_question(rng=None):
+    """A Grade 1 "which number comes next" MCQ that differs on every run.
+
+    Returns (question, options, explanation); option A is the answer, as
+    ManualItemPage.fill_multiple_choice_question expects. The distractors are
+    the usual slips: one before, ten after, ten before.
+    """
+    rng = rng or Random()
+    name = rng.choice(SUCCESSOR_NAMES)
+    things = rng.choice(SUCCESSOR_OBJECTS)
+    n = rng.randint(11, 88)
+    question = rng.choice(SUCCESSOR_TEMPLATES).format(name=name, things=things, n=n)
+    options = [str(n + 1), str(n - 1), str(n + 10), str(n - 10)]
+    explanation = f"{n + 1} comes just after {n}."
+    return question, options, explanation
 
 
 # Carries a manual item through the shared RWG/SRRWG/PIT review accounts, which
@@ -189,8 +238,8 @@ class TestE2ESMEManualItemRichContentToPITPublication:
             "image.",
         )
         run_token = uuid4().hex[:10]
-        question_text = f"What comes immediately after 24? Rich content PIT run {run_token}"
-        explanation_text = "25 comes immediately after 24."
+        question_text, options, explanation_text = fresh_successor_question()
+        record_property("question_text", question_text)
 
         self.helper_page = BulkUploadPage(self.driver)
 
@@ -225,7 +274,7 @@ class TestE2ESMEManualItemRichContentToPITPublication:
         manual_item_page.select_typology("Multiple Choice Question")
         manual_item_page.select_marks("1")
         manual_item_page.fill_multiple_choice_question(
-            question_text, ["25", "23", "14", "55"], explanation_text
+            question_text, options, explanation_text
         )
 
         applied_html = {}

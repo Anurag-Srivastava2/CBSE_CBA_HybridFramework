@@ -12,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 
 from pages.common.base_page import BasePage
+from utilities.qar_gate import qar_turn
 from utilities.screenshot_utils import ScreenshotUtils
 
 
@@ -1606,10 +1607,7 @@ class ManualItemPage(BasePage):
             insert_button = self.wait_utils.until_clickable(self.INSERT_IMAGE_CONFIRM_BUTTON, timeout=10)
             insert_button.click()
             self.wait_utils.until_condition(
-                lambda driver: not any(
-                    element.is_displayed()
-                    for element in driver.find_elements(*self.INSERT_IMAGE_DIALOG_HEADING)
-                ),
+                lambda driver: not self._insert_image_dialog_open(driver),
                 timeout=30,
             )
             return editor.get_attribute("innerHTML")
@@ -1617,13 +1615,22 @@ class ManualItemPage(BasePage):
             self._close_insert_image_dialog_if_open()
             raise
 
+    def _insert_image_dialog_open(self, driver):
+        for element in driver.find_elements(*self.INSERT_IMAGE_DIALOG_HEADING):
+            try:
+                if element.is_displayed():
+                    return True
+            except StaleElementReferenceException:
+                # Unmounted between the lookup and the check: the dialog is
+                # closing, which is what the caller is waiting for. Raised
+                # straight out of the wait before this (rich content e2e,
+                # 2026-10-01) and failed an insert that had worked.
+                continue
+        return False
+
     def _close_insert_image_dialog_if_open(self):
         for _ in range(3):
-            dialog_open = any(
-                element.is_displayed()
-                for element in self.driver.find_elements(*self.INSERT_IMAGE_DIALOG_HEADING)
-            )
-            if not dialog_open:
+            if not self._insert_image_dialog_open(self.driver):
                 return
             self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
             self.pause_before_action()
@@ -2085,8 +2092,10 @@ class ManualItemPage(BasePage):
     def submit_item_set_for_qar(self, question_text):
         self.click_continue()
         self.click_continue()
-        self.click_submit_for_qar()
-        self.wait_for_qar_success_popup()
+        # One QAR per grade + subject on QA: take a turn (utilities/qar_gate.py).
+        with qar_turn("manual item QAR"):
+            self.click_submit_for_qar()
+            self.wait_for_qar_success_popup()
         return self.get_qar_results_item_id_for_question(question_text)
 
     def create_item_set_from_staged_items(self, question_text):
@@ -2103,8 +2112,9 @@ class ManualItemPage(BasePage):
     def submit_item_set_for_qar_for_questions(self, question_texts):
         self.click_continue()
         self.click_continue()
-        self.click_submit_for_qar()
-        self.wait_for_qar_success_popup()
+        with qar_turn("manual items QAR"):
+            self.click_submit_for_qar()
+            self.wait_for_qar_success_popup()
         try:
             return self.get_qar_results_item_ids_for_questions(question_texts)
         except TimeoutException:

@@ -14,6 +14,17 @@ from tests.M1_Item_Bank_Mgmt.test_e2e_teacher_excel_triple_revision_rejection_to
 )
 
 
+@pytest.fixture(autouse=True)
+def no_machine_wide_qar_gate(monkeypatch):
+    """These tests drive fakes, so they must not queue on the real QAR gate.
+
+    utilities/qar_gate.py is a machine-wide lock, and a live run on this
+    machine may hold it for minutes; a fake submit waiting behind it looks
+    exactly like a hang.
+    """
+    monkeypatch.setenv("CBSE_QAR_GATE", "0")
+
+
 class FakeUploadPage:
     def __init__(self, rerun_message="Teacher resubmitted the revised set for review.",
                  assignees=(), statuses=None):

@@ -12,8 +12,8 @@ application behaviour, not model behaviour, so it belongs in the gating suite:
 Asserted at set level, because that is where the app puts it. The QAR Report
 panel renders one card per check for the whole item set:
 
-    Meta Data Alignment | Hard Validation | Image Moderation | Bias Detection
-    Grammar Check       | Clarity Check   | Duplicate Check  | Plagiarism Check
+    Meta Data Alignment | Hard Validation | Image Moderation    | Bias Detection
+    Grammar Check       | Clarity Check   | Duplicate Detection | Plagiarism Detection
 
 There is no per-item breakdown of these checks in this build, so the "for every
 item" half of TC-IBMM-07-P01 is not verifiable through the UI — see the xfail
@@ -23,6 +23,7 @@ Covers:
   TC-IBMM-06-P01/N01  QAR Report shows a plagiarism score
   TC-IBMM-07-P01      Bias section present, with per-category detail (xfail)
 """
+from datetime import date
 from pathlib import Path
 from shutil import copy2
 from uuid import uuid4
@@ -35,7 +36,6 @@ from pages.qar.qar_report_page import QARReportPage
 from pages.sme.upload_item_file_page import UploadItemFilePage
 from utilities.item_template_columns import (
     clear_rows_from,
-    copy_item_row,
     item_data_worksheet,
     resolve_columns,
     trim_helper_columns,
@@ -44,44 +44,93 @@ from utilities.item_template_columns import (
 from utilities.read_config import ReadConfig
 
 
-@pytest.mark.rtm
-@pytest.mark.e2e
-# serial: every test here uploads under the same SME account. Without this the
-# three scattered across xdist workers and contended for that one session,
-# which surfaced as a fixture ERROR rather than an honest assertion failure.
-@pytest.mark.serial
-@pytest.mark.usefixtures("setup")
-class TestQARPlagiarismAndBiasSections:
-    ITEM_COUNT = 3
+class QARReportSnapshot:
+    """The set-level check cards, read once while the QAR report was open.
 
-    # Card labels exactly as the QAR Report panel renders them. The app says
-    # "Plagiarism Check" and "Duplicate Check" but "Bias Detection", so these
-    # are not derivable from a single naming rule.
-    PLAGIARISM_CHECK = "Plagiarism Check"
+    Answers the three QARReportPage calls read_check() makes, so a test that
+    runs after the browser which read the report has closed can still assert
+    on it. The cards belong to the set, not to a test, so one reading serves
+    every test in the class.
+    """
+
+    def __init__(self, cards):
+        self._cards = cards
+
+    def get_check_card_text(self, check_name, item_id=""):
+        return self._cards.get(check_name, {}).get("card")
+
+    def get_check_score(self, check_name, item_id=""):
+        return self._cards.get(check_name, {}).get("score")
+
+    def get_check_card_status_color(self, check_name, item_id=""):
+        return self._cards.get(check_name, {}).get("color")
+
+
+class QARBankCopyReport:
+    """What every bank-copy QAR test shares: the bank item, its rewordings,
+    the one-upload-per-run fixture and the report snapshot.
+
+    No Test prefix, so pytest does not collect it. The suite below and
+    tests/_unit/M1_Item_Bank_Mgmt/test_qar_plagiarism_flags_bank_copy.py
+    both build on it.
+    """
+
+    # Card labels exactly as the QAR Report panel renders them. Renamed by
+    # 2026-10-01 from "Plagiarism Check" / "Duplicate Check": the old labels
+    # matched no card, so every read came back score=None.
+    PLAGIARISM_CHECK = "Plagiarism Detection"
+    DUPLICATE_CHECK = "Duplicate Detection"
     BIAS_CHECK = "Bias Detection"
 
     # The collapsed panel that holds every check card on the results view.
     REPORT_PANEL = "QAR Report"
 
-    # Near-verbatim copies of items already in the IB1 repository: the bank's
-    # own sentence with a short reference tag appended.
+    # An exact copy of an item already in the IB1 repository, chosen by the
+    # team for the plagiarism and duplicate checks (2026-10-01):
+    #   Grade 1 Mathematics, CH-1: Finding the Furry Cat! (Pre-number Concepts),
+    #   Very Short Answer Question  "Convert 2 hours into minutes."
+    # The template's first row already carries that grade, subject and chapter,
+    # so only the typology, question and answer are written.
     #
-    # Byte-identical text cannot be used here. Upload validation rejects a row
-    # whose question already exists in the bank, so an exact copy never reaches
-    # QAR at all - proved with a four-row upload where the two verbatim rows
-    # failed and the two novel rows passed ("PASSED 4 2 2"). The tag makes the
-    # row ingestable while leaving it far more similar to the source than any
-    # paraphrase, so QAR's duplicate and plagiarism checks have something real
-    # to score.
+    # The bank item the team chose for the plagiarism and duplicate checks
+    # (2026-10-01): Grade 1 Mathematics, CH-1: Finding the Furry Cat!
+    # (Pre-number Concepts), Very Short Answer Question. The template's first
+    # row already carries that grade, subject and chapter.
+    BANK_QUESTION = "Convert 2 hours into minutes."
+    BANK_ANSWER = "120 minutes"
+    BANK_EXPLANATION = "1 hour = 60 minutes, so 2 hours = 120 minutes."
+
+    # The bank question itself never reaches QAR. Upload validation refuses it
+    # outright - "Duplicate question - an item with identical text already
+    # exists in this grade/subject" - and changing only the Answer or the
+    # Explanation does not get it through (probed as sme2 and sme4,
+    # 2026-10-01). So the set carries the same question reworded: the
+    # paraphrase case QAR's duplicate and plagiarism checks exist for.
     #
-    # Source items (Grade 1 Mathematics, CH-1) from Item Bank Repository:
-    #   IS1062-G1-Mathematics-Ch29-i3  "129 is greater than 190."
-    #   IS1013-G1-Mathematics-Ch29-i3  "407 is greater than 356."
-    COPIED_BANK_QUESTIONS = [
-        ("True or False", "129 is greater than 190.", "FALSE"),
-        ("True or False", "407 is greater than 356.", "TRUE"),
-        ("True or False", "16 is greater than 140.", "FALSE"),
-    ]
+    # Each rewording works once. After a run it is in the bank as well, and
+    # validation refuses it from then on, so the fixture starts at a
+    # different rewording each day and steps past refused ones. When all of
+    # them are used up the test says so: add new rewordings here.
+    BANK_QUESTION_REWORDINGS = (
+        "How many minutes are there in 2 hours?",
+        "Change 2 hours into minutes.",
+        "Express 2 hours in minutes.",
+        "2 hours is equal to how many minutes?",
+        "Write 2 hours as minutes.",
+        "How many minutes make 2 hours?",
+        "Find the number of minutes in 2 hours.",
+        "What is 2 hours in minutes?",
+        "Turn 2 hours into minutes.",
+        "Convert two hours into minutes.",
+        "Two hours equal how many minutes?",
+        "Convert 2 hours to minutes.",
+        "Change two hours into minutes.",
+        "How many minutes are in two hours?",
+        "Work out how many minutes are in 2 hours.",
+        "Give the time 2 hours in minutes.",
+    )
+    # A refused rewording costs one upload, so stop after this many.
+    MAX_REWORDING_ATTEMPTS = 5
 
     # TC-IBMM-07-P01 requires a pass/fail per category. Several spellings are
     # accepted so a mismatch means the category is genuinely absent rather than
@@ -103,16 +152,15 @@ class TestQARPlagiarismAndBiasSections:
         page.close_popup_if_open()
         return page
 
-    @staticmethod
-    def build_copied_workbook(tmp_path):
-        """A workbook whose questions are verbatim copies of existing IB1 items.
+    @classmethod
+    def build_reworded_workbook(cls, tmp_path, question):
+        """A one-row workbook carrying `question` with the bank item's answer.
 
         Mirrors the column handling the duplicate-detection suite proved out:
         the template carries helper columns past the canonical item columns,
         and leaving them in place makes upload validation reject the file.
         """
-        tag = uuid4().hex[:6]
-        target = tmp_path / f"qar_copied_{tag}.xlsx"
+        target = tmp_path / f"qar_reworded_{uuid4().hex[:6]}.xlsx"
         copy2(Path(ReadConfig.get_upload_item_file_path()), target)
         workbook = load_workbook(target)
         # Not workbook.active: a freshly downloaded template opens on its
@@ -123,46 +171,44 @@ class TestQARPlagiarismAndBiasSections:
         columns = resolve_columns(worksheet)
         assert columns, "Upload template has no recognisable item-data sheet."
 
-        questions = TestQARPlagiarismAndBiasSections.COPIED_BANK_QUESTIONS
-        for offset, (typology, question, answer) in enumerate(questions):
-            row = offset + 2
-            if row != 2:
-                copy_item_row(worksheet, 2, row, max_data_column)
-            write_row_fields(
-                worksheet,
-                row,
-                columns,
-                {
-                    "sequence": offset + 1,
-                    "typology": typology,
-                    # The bank's sentence plus a short reference tag, as the
-                    # class comment above describes. Byte-identical copies are
-                    # refused at upload validation ("All 3 row(s) failed
-                    # validation", build #3, 2026-10-01), which set up an
-                    # ERROR for all five tests before QAR ever ran.
-                    "question": f"{question} [ref {tag}-{offset + 1}]",
-                    "answer": answer,
-                    "explanation": "Copied verbatim from the item bank.",
-                    "marks": "1",
-                },
-            )
-
-        clear_rows_from(worksheet, len(questions) + 2, max_data_column)
+        write_row_fields(
+            worksheet,
+            2,
+            columns,
+            {
+                "sequence": 1,
+                "typology": "Very Short Answer Question",
+                "question": question,
+                "answer": cls.BANK_ANSWER,
+                "explanation": cls.BANK_EXPLANATION,
+                "marks": "1",
+            },
+        )
+        clear_rows_from(worksheet, 3, max_data_column)
 
         workbook.save(target)
         workbook.close()
         return target
 
-    def assert_check_is_not_clean(self, page_evidence, report, label, record_property):
-        """One check must not score 100% on content copied out of the bank.
+    @classmethod
+    def rewordings_for_today(cls):
+        """The rewordings to try this run, starting at a different one each day."""
+        pool = cls.BANK_QUESTION_REWORDINGS
+        start = date.today().toordinal() % len(pool)
+        ordered = pool[start:] + pool[:start]
+        return ordered[: cls.MAX_REWORDING_ATTEMPTS]
 
-        A clean 100% means the check did not recognise content it has already
-        stored — the exact regression this exists to catch. Split per check so
+    def assert_check_is_not_clean(self, page_evidence, report, label, record_property):
+        """One check must not report a clean score on a rewording of a bank item.
+
+        A clean score (0% for a Detection card, 100% for the others) means the
+        check did not recognise content it has already stored — the exact
+        regression this exists to catch. Split per check so
         a duplicate-detection failure and a plagiarism failure are separately
         attributable rather than sharing one red result.
         """
         page_evidence.checkpoint(
-            f"QAR report opened for the copied item set; reading {label}"
+            f"QAR report opened for the reworded bank item; reading {label}"
         )
 
         result = self.read_check(report, label)
@@ -177,68 +223,115 @@ class TestQARPlagiarismAndBiasSections:
             f"QAR Report rendered no {label!r} card, so the check either did "
             "not run or stopped reporting."
         )
+        # A "... Detection" card scores what it found, so 0% is its clean mark
+        # (the report shows Bias/Duplicate/Plagiarism Detection 0% with a pass
+        # tick, 2026-10-01). The other cards score quality, where 100% is
+        # clean. Asserting "< 100" on a Detection card would pass on 0% - the
+        # very miss this exists to catch.
+        clean_mark = 0 if "detection" in label.casefold() else 100
         assert result["score"] is not None, (
             f"{label} rendered no numeric score, so it cannot be compared "
-            f"against the 100% clean mark. Card: {result['card'][:200]!r}"
+            f"against the {clean_mark}% clean mark. Card: {result['card'][:200]!r}"
         )
 
         page_evidence.checkpoint(
-            f"{label} scored {result['score']}% against a 100% clean mark"
+            f"{label} scored {result['score']}% against a {clean_mark}% clean mark"
         )
-        assert result["score"] < 100, (
-            f"{label} scored {result['score']}% on items copied verbatim from "
-            "the item bank. A clean 100% means the check did not recognise "
-            f"content already stored in IB1. Card: {result['card'][:200]!r}"
+        assert result["score"] != clean_mark, (
+            f"{label} scored a clean {result['score']}% on a rewording of the item "
+            f"bank question {self.BANK_QUESTION!r}, so the check did not recognise content already "
+            f"stored in IB1. Card: {result['card'][:200]!r}"
         )
         return result["score"]
 
-    @pytest.fixture
-    def qar_report(self, tmp_path, record_property, page_evidence):
-        """Upload copied bank items, run QAR, and open the report.
+    def upload_first_unused_rewording(self, page, tmp_path, page_evidence):
+        """Upload rewordings until validation accepts one; return (question, workbook).
 
-        Content copied verbatim from IB1 on purpose: a clean set passes at 100%
-        and the QAR report then renders no per-check detail at all, so there is
-        no card to assert against. Copied content trips the plagiarism and
-        duplicate checks, which is what makes the section render.
+        A rewording refused as a duplicate was used by an earlier run and is
+        already in the bank, so the next one is tried. Any other refusal is a
+        real validation problem and fails straight away.
         """
-        self.login_as_sme()
-        workbook = self.build_copied_workbook(tmp_path)
-        page = UploadItemFilePage(self.driver)
-        page.open_item_creation_module()
-        page.open_upload_item_file_tab()
-        page.open_upload_step()
-        page.upload_file(workbook)
-        page.wait_for_upload_validation_success()
+        refused = []
+        for question in self.rewordings_for_today():
+            workbook = self.build_reworded_workbook(tmp_path, question)
+            page.open_item_creation_module()
+            page.open_upload_item_file_tab()
+            page.open_upload_step()
+            page.upload_file(workbook)
+            try:
+                page.wait_for_upload_validation_success()
+                return question, workbook
+            except AssertionError as error:
+                if "rejected by validation" not in str(error):
+                    raise
+                row = page.get_upload_history_row_by_file_name(workbook.name)
+                reason = " ".join(page.click_view_errors_and_get_message(row).split())
+                if "duplicate" not in reason.casefold():
+                    raise AssertionError(
+                        f"Upload validation refused {question!r} for a reason other "
+                        f"than duplication: {reason[:300]}"
+                    ) from error
+                refused.append(question)
+                page_evidence.checkpoint(
+                    f"{question!r} is already in the bank (refused as a duplicate); "
+                    "trying the next rewording"
+                )
+                # A refused upload leaves the wizard on its error view.
+                self.driver.get(ReadConfig.get_base_url())
+                page.close_popup_if_open()
+                page.discard_active_upload_if_present()
+        pytest.fail(
+            "Every rewording tried this run was refused as already in the bank: "
+            f"{refused}. Each rewording works once - add new ones to "
+            "BANK_QUESTION_REWORDINGS."
+        )
+
+    def submit_reworded_bank_question(self, tmp_path, page_evidence):
+        """Upload one rewording of the bank question, run QAR, and snapshot the report."""
+        page = self.login_as_sme()
+        question, workbook = self.upload_first_unused_rewording(
+            page, tmp_path, page_evidence
+        )
         page_evidence.checkpoint(
-            f"{self.ITEM_COUNT} near-verbatim copies of IB1 items passed upload "
-            "validation, so QAR has something real to score"
+            f"Uploaded {question!r}, a rewording of the bank item "
+            f"{self.BANK_QUESTION!r}; it passed upload validation, so QAR has a "
+            "paraphrase of bank content to score"
         )
         page.click_continue()
         review_ids = page.get_review_item_ids()
         page.click_continue()
         # 420s, not the 180s default: QAR on this environment regularly runs
-        # past three minutes even for small text-only sets.
-        page.click_submit_for_qar_and_wait_for_results(analysis_timeout=420)
-        page.wait_for_ocr_success_message()
-
-        item_ids = page.get_qar_result_item_ids() or review_ids
-        item_set_id = page.get_item_set_id_from_item_ids(item_ids)
-        record_property("item_set_id", item_set_id)
-        record_property("qar_item_count", str(len(item_ids)))
-        page_evidence.checkpoint(
-            f"QAR finished; results list {len(item_ids)} item(s) under set "
-            f"{item_set_id or 'UNKNOWN'}"
+        # past three minutes even for small text-only sets. The workbook name
+        # lets a wizard that drops back to Confirm & Submit mid-run (seen on QA
+        # 2026-10-01, while the run completes server-side) be resolved from
+        # the Sets grid instead of failing - and a rewording, once through
+        # QAR, cannot be uploaded again.
+        outcome = page.click_submit_for_qar_and_wait_for_results(
+            analysis_timeout=420,
+            item_ids=review_ids,
+            uploaded_file_name=workbook.name,
         )
-
+        if outcome == UploadItemFilePage.QAR_OUTCOME_ITEM_SET_DETAIL:
+            item_set_id = getattr(page, "recovered_item_set_id", "")
+            item_ids = sorted(page.get_qar_item_statuses(item_set_id)) if item_set_id else []
+            read_from = "the item set's own page (the upload wizard lost the run)"
+        else:
+            page.wait_for_ocr_success_message()
+            item_ids = page.get_qar_result_item_ids() or review_ids
+            item_set_id = page.get_item_set_id_from_item_ids(item_ids)
+            read_from = "the upload wizard's results view"
+        page_evidence.checkpoint(
+            f"QAR finished; {len(item_ids)} item(s) under set "
+            f"{item_set_id or 'UNKNOWN'}, read from {read_from}"
+        )
         assert item_ids, "QAR results listed no items, so there is no report."
-        report = QARReportPage(self.driver)
 
+        report = QARReportPage(self.driver)
         # The check cards are disclosed by expanding a result ROW, not by any
         # panel-level control and not by opening the item (which navigates away
         # from the results view entirely). Asking to expand by a check label
         # can never work either: that label is exactly what is still hidden.
         expanded = report.expand_result_row(item_ids[0])
-        record_property("result_row_expanded", str(expanded))
         page_evidence.checkpoint(
             f"Result row {item_ids[0]} expanded: {expanded} — this is what "
             "discloses the per-check cards"
@@ -247,7 +340,57 @@ class TestQARPlagiarismAndBiasSections:
             "Could not expand a QAR result row, so the per-check cards were "
             f"never disclosed. Item ids seen: {item_ids[:3]}."
         )
-        return report, item_ids
+        cards = {label: self.read_check(report, label) for label in self.ALL_QAR_CHECKS}
+        assert any(card["card"] for card in cards.values()), (
+            f"QAR completed for {item_set_id} ({question!r}), but no check card "
+            f"could be read from {read_from}. Status: "
+            f"{page.get_item_set_status_summary()}. Open the set to read its "
+            "Duplicate and Plagiarism cards by hand."
+        )
+        return {
+            "question": question,
+            "item_set_id": item_set_id,
+            "item_ids": item_ids,
+            "report": QARReportSnapshot(cards),
+        }
+
+    # One upload serves every test built on this class. They all read the same
+    # set-level cards, and each rewording of the bank question can be used
+    # only once, so an upload per test would use them up several times as
+    # fast (and cost a QAR run each). Kept on this base class rather than the
+    # subclass, so the suite and its tests/_unit companion share it when they
+    # run in one process. Every subclass is `serial`, so they run on one
+    # worker. A failed upload is retried by the next test, at most twice in all.
+    _shared_report = None
+    _shared_failures = ()
+
+    @pytest.fixture
+    def qar_report(self, tmp_path, record_property, page_evidence):
+        """The QAR report for one rewording of the bank question, uploaded once per run."""
+        cls = QARBankCopyReport
+        if cls._shared_report is None:
+            if len(cls._shared_failures) >= 2:
+                pytest.fail(
+                    "The rewording upload already failed twice this run; not "
+                    f"trying again. Last error: {cls._shared_failures[-1]}"
+                )
+            try:
+                cls._shared_report = self.submit_reworded_bank_question(
+                    tmp_path, page_evidence
+                )
+            except Exception as error:
+                cls._shared_failures += (" ".join(str(error).split())[:300],)
+                raise
+        else:
+            page_evidence.checkpoint(
+                f"Reusing the QAR report of {cls._shared_report['item_set_id']} "
+                f"({cls._shared_report['question']!r}), uploaded earlier in this run"
+            )
+        shared = cls._shared_report
+        record_property("uploaded_question", shared["question"])
+        record_property("item_set_id", shared["item_set_id"])
+        record_property("qar_item_count", str(len(shared["item_ids"])))
+        return shared["report"], shared["item_ids"]
 
     @staticmethod
     def read_check(report, label):
@@ -267,6 +410,32 @@ class TestQARPlagiarismAndBiasSections:
             "color": report.get_check_card_status_color(label),
         }
 
+    # Every check the QAR Report panel renders, as the app labels them.
+    ALL_QAR_CHECKS = (
+        "Meta Data Alignment",
+        "Hard Validation",
+        "Image Moderation",
+        "Bias Detection",
+        "Grammar Check",
+        "Clarity Check",
+        "Duplicate Detection",
+        "Plagiarism Detection",
+    )
+
+
+
+@pytest.mark.rtm
+@pytest.mark.e2e
+# serial: every test here uploads under the same SME account. Without this the
+# three scattered across xdist workers and contended for that one session,
+# which surfaced as a fixture ERROR rather than an honest assertion failure.
+@pytest.mark.serial
+@pytest.mark.usefixtures("setup")
+class TestQARPlagiarismAndBiasSections(QARBankCopyReport):
+    # TC-IBMM-06-N01 (Plagiarism Detection flags the bank copy) lives in
+    # tests/_unit/M1_Item_Bank_Mgmt/test_qar_plagiarism_flags_bank_copy.py,
+    # out of the daily run, since 2026-10-01 - see that file.
+
     def test_tc_ibmm_06_plagiarism_check_reports_a_score(
         self, qar_report, record_property, page_evidence
     ):
@@ -275,7 +444,7 @@ class TestQARPlagiarismAndBiasSections:
         record_property(
             "test_summary",
             "Open the QAR report for a submitted item set.\n"
-            "Find the Plagiarism Check card and expect it to show a score or a "
+            "Find the Plagiarism Detection card and expect it to show a score or a "
             "pass/fail colour.\n"
             "Fail if the card is missing, which would mean the check stopped running "
             "or stopped reporting.",
@@ -382,62 +551,27 @@ class TestQARPlagiarismAndBiasSections:
             f"Missing: {absent}. Bias card text: {card[:300]!r}"
         )
 
-    # Every check the QAR Report panel renders, as the app labels them.
-    ALL_QAR_CHECKS = (
-        "Meta Data Alignment",
-        "Hard Validation",
-        "Image Moderation",
-        "Bias Detection",
-        "Grammar Check",
-        "Clarity Check",
-        "Duplicate Check",
-        "Plagiarism Check",
-    )
-
     def test_tc_ibmm_03_n01_duplicate_check_flags_copied_items(
         self, qar_report, page_evidence, record_property
     ):
-        """Duplicate Check must not score 100% on items copied out of IB1."""
+        """Duplicate Detection must not report a clean result on items copied out of IB1."""
         # Plain-English orientation for the report, for a reader who does
         # not know this test. One line per step, in the order they happen.
         record_property(
             "test_summary",
-            "Open the QAR report for a set whose items were copied out of an earlier "
-            "item bank set.\n"
-            "Expect the Duplicate Check to notice: it must not hand those items a "
-            "clean 100%.",
+            "Open the QAR report for a set holding a reworded copy of an item bank "
+            "question ('Convert 2 hours into minutes.').\n"
+            "Expect Duplicate Detection to notice: it must not hand that item a "
+            "clean 0%.",
         )
         report, _ = qar_report
         score = self.assert_check_is_not_clean(
-            page_evidence, report, "Duplicate Check", record_property
+            page_evidence, report, self.DUPLICATE_CHECK, record_property
         )
         record_property(
             "result_description",
-            f"Duplicate Check scored {score}% on items copied verbatim from the "
-            "item bank, so the duplicate content was detected.",
-        )
-
-    def test_tc_ibmm_06_n01_plagiarism_check_flags_copied_items(
-        self, qar_report, page_evidence, record_property
-    ):
-        """Plagiarism Check must not score 100% on items copied out of IB1."""
-        # Plain-English orientation for the report, for a reader who does
-        # not know this test. One line per step, in the order they happen.
-        record_property(
-            "test_summary",
-            "Open the QAR report for a set whose items were copied out of an earlier "
-            "item bank set.\n"
-            "Expect the Plagiarism Check to notice: it must not hand those items a "
-            "clean 100%.",
-        )
-        report, _ = qar_report
-        score = self.assert_check_is_not_clean(
-            page_evidence, report, "Plagiarism Check", record_property
-        )
-        record_property(
-            "result_description",
-            f"Plagiarism Check scored {score}% on items copied verbatim from the "
-            "item bank, so the copied content was detected.",
+            f"Duplicate Detection scored {score}% on a rewording of the item bank "
+            "question, so the duplicate content was detected.",
         )
 
     def test_every_qar_check_reports_a_verdict(

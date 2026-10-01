@@ -6492,7 +6492,13 @@
     "explanation": "2739 - 596 = 2143, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:fe57412be643ed45043e421d0edfe041c24e70a392d384ad164598facce67952",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:31:43.886263+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000229",
@@ -6513,7 +6519,13 @@
     "explanation": "81 + 61 = 142, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:1b31f534f2d866b0daa7cb330b760345b26608c41090484963c92d23ba60d942",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:42:16.495280+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000230",
@@ -6534,7 +6546,13 @@
     "explanation": "937 - 753 = 184, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:fb4a709cad84db8a432715c40dc4b49c21fe5e3e56b9a572c586e6fd07333c5e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:49:42.798290+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000231",
@@ -10569,7 +10587,13 @@
     "explanation": "12 x 14 = 168, recalled from the multiplication table of 12.",
     "marks": 1,
     "content_hash": "sha256:720d74b58f9719a64197e2127e043e5b2f020c88ceb7b4d2e0d32fb1e3647da4",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:31:43.886263+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000409",
@@ -10585,7 +10609,13 @@
     "explanation": "12 x 15 = 180, recalled from the multiplication table of 12.",
     "marks": 1,
     "content_hash": "sha256:32d9bc520542a4ad5111cba6c4f9a65d0378d856658179bae2f71c8dce1ffe39",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:42:16.495280+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000410",
@@ -10601,7 +10631,13 @@
     "explanation": "12 x 16 = 192, recalled from the multiplication table of 12.",
     "marks": 1,
     "content_hash": "sha256:c323d5a59baec91ba9db08d91257cace941d10e01940ed230fef12d4c2c87601",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:49:42.798290+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000411",
@@ -13880,7 +13916,13 @@
     "explanation": "469 is not greater than 480; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:79ade31c05f286f212d3d8f99a6dc3d4facd7db8b5e5a81c012895a7b4ba5b6e",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:31:43.886263+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000571",
@@ -13896,7 +13938,13 @@
     "explanation": "267 is indeed greater than 256, so the statement is true.",
     "marks": 1,
     "content_hash": "sha256:d26cc8ce73d6d1d19bb89f26ff0020cbca221abd5e33acc6f61303c2fafa7a38",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:42:16.495280+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_metadata_edit_carries_through_to_item_set.py::TestE2EMetadataEditCarriesThroughToItemSet::test_review_step_metadata_edits_reach_confirm_step_and_created_item_set (call)"
+      }
+    }
   },
   {
     "id": "QB-000572",
@@ -13912,7 +13960,13 @@
     "explanation": "189 is not greater than 433; the comparison is reversed, so the statement is false.",
     "marks": 1,
     "content_hash": "sha256:786e7d40c6d407871a9fa38ffc5530ac5a076dc16b24466e78cb91571d2898e8",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-01T11:49:42.798290+00:00",
+        "used_in_run": "tests/_unit/M1_Item_Bank_Mgmt/test_e2e_pit_revision_sme_revision_correction_to_pit_publication.py::TestPITSMERevisionApproval::test_e2e_pit_revision_sme_resubmit_then_pit_approval_and_publication (call)"
+      }
+    }
   },
   {
     "id": "QB-000573",

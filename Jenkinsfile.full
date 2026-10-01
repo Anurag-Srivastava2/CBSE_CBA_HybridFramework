@@ -26,6 +26,15 @@
 // just trade a long build for a flaky one. More real parallelism needs more
 // accounts, not more lanes; see docs/jenkins_setup.md section 6.
 //
+// Accounts per lane: each lane is its own pytest process, and xdist numbers
+// workers from gw0 in every process, so without help every lane's first worker
+// would drive sme1/teacher1 at once and sign the others out. The M2 and M3+M4
+// lanes therefore start CBSE_ACCOUNT_SLOT_OFFSET entries along the pools, just
+// past the WORKERS accounts M1+M5 holds. With the default 2/1/1 workers that is
+// M1+M5 sme1+sme2 / teacher1+teacher2, M2 sme3 / teacher7, M4 teacher3. The
+// pools wrap, so keep CBSE_SME_USERNAMES and CBSE_TEACHER_USERNAMES longer than
+// the workers drawing on them, or two lanes share an account again.
+//
 // Covers the five module folders tests/M1_* .. tests/M5_* only. Deliberately
 // left out: tests/_unit and the two top-level files tests/test_qar_retry_flow.py
 // and tests/test_manual_typology_coverage.py (the module job still runs them
@@ -200,6 +209,8 @@ pipeline {
                         stage('M2 Web Portal Admin') {
                             environment {
                                 PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m2"
+                                // Past M1+M5's accounts; see the header.
+                                CBSE_ACCOUNT_SLOT_OFFSET = "${params.WORKERS ?: '2'}"
                             }
                             options {
                                 // One worker by default (see M2_WORKERS), and
@@ -227,14 +238,15 @@ pipeline {
                         stage('M3 + M4') {
                             environment {
                                 PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m3_m4"
+                                CBSE_ACCOUNT_SLOT_OFFSET = "${params.WORKERS ?: '2'}"
                             }
                             options {
                                 timeout(time: 45, unit: 'MINUTES')
                             }
                             steps {
                                 // M3 is a probe over a module the build does
-                                // not ship yet; M4 drives teacher2, picked so
-                                // it never meets M5's contributor account.
+                                // not ship yet; M4 drives one QP teacher past
+                                // M1+M5's teachers (teacher3 by default).
                                 script {
                                     cbse.runLane('M3+M4', [
                                         'tests/M3_Item_Testing',

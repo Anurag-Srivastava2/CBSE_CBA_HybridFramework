@@ -221,9 +221,9 @@ class TripleIterationUploadItemFilePage(MajorActionEvidenceMixin, UploadItemFile
 
         return self._revise_items_loop(item_set_id, edit)
 
-    def submit_uploaded_item_set_for_qar(self):
+    def submit_uploaded_item_set_for_qar(self, uploaded_file_name=""):
         self._confirmation_action_name = "Submit teacher item set for QAR"
-        return super().submit_uploaded_item_set_for_qar()
+        return super().submit_uploaded_item_set_for_qar(uploaded_file_name)
 
     def rerun_qar_if_enabled(self):
         self._confirmation_action_name = "Teacher resubmit revised item set"
@@ -871,7 +871,12 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
                 f"Teacher Excel file validation success message shown: {upload_message}",
                 "teacher_file_validation_success_message",
             )
-            item_ids, ocr_message = upload_page.submit_uploaded_item_set_for_qar()
+            # The file name lets a wizard that loses the QAR run be resolved
+            # from the Sets grid (build #3: QA bounced back to Confirm &
+            # Submit with no name to look the set up by).
+            item_ids, ocr_message = upload_page.submit_uploaded_item_set_for_qar(
+                uploaded_file_name=uploaded_file
+            )
             assert len(item_ids) == question_count, (
                 f"Fresh upload expected {question_count} IDs but received {len(item_ids)}."
             )
