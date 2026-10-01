@@ -148,8 +148,10 @@ class TestM2AuditTrail:
             f"{all(seed_user in text for text in matched)}"
         )
         assert matched, f"Search for user {seed_user!r} returned no results."
-        assert all(seed_user in text for text in matched), (
-            f"Search for {seed_user!r} returned unrelated rows."
+        unrelated = [text for text in matched if seed_user not in text]
+        assert not unrelated, (
+            f"Search for {seed_user!r} returned {len(unrelated)} of {len(matched)} "
+            f"row(s) that do not mention it, e.g. {unrelated[0][:200]!r}."
         )
 
         # Negative: gibberish yields the empty state.

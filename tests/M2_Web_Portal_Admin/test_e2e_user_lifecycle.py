@@ -17,7 +17,10 @@ class TestM2UserLifecycle:
     Active, the admin deactivates them, and the same credentials are then
     refused."""
 
-    NEW_USER_PASSWORD = "Test@12345"
+    @property
+    def new_user_password(self):
+        # From .env (CBSE_NEW_USER_PASSWORD): a literal here was public on GitHub.
+        return ReadConfig.get_new_user_password()
 
     def login(self, username, password):
         self.driver.get(ReadConfig.get_base_url())
@@ -88,7 +91,7 @@ class TestM2UserLifecycle:
                 last_name=last_name,
                 email=email,
                 mobile=mobile,
-                password=self.NEW_USER_PASSWORD,
+                password=self.new_user_password,
                 role="SME role",
             )
         except TimeoutException as error:
@@ -114,7 +117,7 @@ class TestM2UserLifecycle:
 
         # --- Step 2: the active user can sign in ------------------------------
         record_property("result_checkpoint", "Step 2 — active user signs in")
-        self.login(email, self.NEW_USER_PASSWORD)
+        self.login(email, self.new_user_password)
         signed_in_while_active = self.is_signed_in()
         page_evidence.checkpoint(
             f"Step 2 — the Active user {email} signed in with its provisioned "
@@ -152,7 +155,7 @@ class TestM2UserLifecycle:
         # --- Step 4: the deactivated user is blocked --------------------------
         record_property("result_checkpoint", "Step 4 — deactivated user is blocked")
         try:
-            self.login(email, self.NEW_USER_PASSWORD)
+            self.login(email, self.new_user_password)
         except TimeoutException:
             # The app refused the credentials and kept the login form up.
             pass

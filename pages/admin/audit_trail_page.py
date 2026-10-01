@@ -127,10 +127,46 @@ class AuditTrailPage(BasePage):
 
     # ------------------------------------------------------------ search/filter
 
+    def _grid_snapshot(self):
+        """The visible rows' text in one round trip, or None if unreadable."""
+        try:
+            return tuple(self.driver.execute_script(
+                "return Array.from(document.querySelectorAll('table tbody tr'))"
+                ".map(row => (row.innerText || '').trim());"
+            ) or ())
+        except WebDriverException:
+            return None
+
+    def _wait_for_grid_to_settle(self, before, timeout=30, quiet=1.5, no_change_grace=10):
+        """Wait until the grid reflects the search just typed.
+
+        Replaces a fixed 2s sleep. On 2026-10-01 a slow QA answered the search
+        after that sleep, so audit_02 read the previous, unfiltered page and
+        reported a correct search as returning "unrelated rows". Waits for the
+        rows to change and then stay still for `quiet` seconds. A search that
+        legitimately changes nothing (clearing an already-clear box) is let go
+        after `no_change_grace` seconds.
+        """
+        deadline = monotonic() + timeout
+        last = self._grid_snapshot()
+        changed = last != before
+        steady_since = monotonic()
+        while monotonic() < deadline:
+            sleep(0.5)
+            current = self._grid_snapshot()
+            if current != last:
+                last, steady_since = current, monotonic()
+                changed = changed or current != before
+                continue
+            steady_for = monotonic() - steady_since
+            if (changed and steady_for >= quiet) or (not changed and steady_for >= no_change_grace):
+                return
+
     def search_audit_log(self, term):
         last_error = None
         for _ in range(3):
             try:
+                before = self._grid_snapshot()
                 search_input = self.wait_utils.until_clickable(self.SEARCH_INPUT, timeout=20)
                 self.element_utils.scroll_to_element(search_input)
                 search_input.click()
@@ -138,7 +174,7 @@ class AuditTrailPage(BasePage):
                 search_input.send_keys(Keys.DELETE)
                 if term:
                     search_input.send_keys(term)
-                sleep(2)
+                self._wait_for_grid_to_settle(before)
                 return
             except WebDriverException as error:
                 last_error = error

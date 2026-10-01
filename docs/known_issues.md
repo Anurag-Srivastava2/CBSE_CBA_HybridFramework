@@ -4,6 +4,8 @@ These are product, data, or environment gaps that are intentionally reported as 
 
 | ID | Module | Area | Reason |
 | --- | --- | --- | --- |
+| KI-M1-DOCX-001 | M1 | Word (.docx) upload | The importer accepts a document whose field label was renamed (e.g. "Competency" to "Cmptncy") instead of refusing it. Found 2026-09-30 on QA. |
+| KI-M1-DOCX-002 | M1 | Word (.docx) upload | The importer accepts a file named .docx that is not a Word document; it checks the extension, not the content. Found 2026-09-30 on QA. |
 | KI-M1-TEMPLATE-001 | M1 | SME Excel template | Downloaded upload template does not expose a clear version marker. |
 | KI-M1-TEMPLATE-002 | M1 | SME Excel template | Downloaded upload template may miss controlled columns or list validations. |
 | KI-M1-TEMPLATE-003 | M1 | SME Excel template | Upload service may not reject a renamed legacy-version template or may reject it without a version-specific message. |

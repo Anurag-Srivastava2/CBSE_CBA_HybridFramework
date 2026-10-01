@@ -54,6 +54,9 @@ INFRA_ERROR_MARKERS = (
     "too many attempts",
     "temporarily locked",
     "repeated tries",
+    # The reverse proxy in front of QA answered for an app that did not
+    # (AdminPortalPage.wait_for_application_ready raises this).
+    "returned a gateway error page",
     # The browser or its driver died underneath the test.
     "chrome not reachable",
     # chromedriver lost a node reference because the SPA repainted between

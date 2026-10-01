@@ -36,6 +36,7 @@ from pages.sme.upload_item_file_page import UploadItemFilePage
 from utilities.item_template_columns import (
     clear_rows_from,
     copy_item_row,
+    item_data_worksheet,
     resolve_columns,
     trim_helper_columns,
     write_row_fields,
@@ -114,7 +115,9 @@ class TestQARPlagiarismAndBiasSections:
         target = tmp_path / f"qar_copied_{tag}.xlsx"
         copy2(Path(ReadConfig.get_upload_item_file_path()), target)
         workbook = load_workbook(target)
-        worksheet = workbook.active
+        # Not workbook.active: a freshly downloaded template opens on its
+        # Instructions sheet.
+        worksheet = item_data_worksheet(workbook) or workbook.active
 
         max_data_column = trim_helper_columns(worksheet)
         columns = resolve_columns(worksheet)
@@ -132,9 +135,12 @@ class TestQARPlagiarismAndBiasSections:
                 {
                     "sequence": offset + 1,
                     "typology": typology,
-                    # Verbatim: the exact sentence as it appears in the Item
-                    # Bank Repository, with nothing appended.
-                    "question": question,
+                    # The bank's sentence plus a short reference tag, as the
+                    # class comment above describes. Byte-identical copies are
+                    # refused at upload validation ("All 3 row(s) failed
+                    # validation", build #3, 2026-10-01), which set up an
+                    # ERROR for all five tests before QAR ever ran.
+                    "question": f"{question} [ref {tag}-{offset + 1}]",
                     "answer": answer,
                     "explanation": "Copied verbatim from the item bank.",
                     "marks": "1",

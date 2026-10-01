@@ -312,6 +312,13 @@ class ReadConfig:
         return ReadConfig._secret("CBSE_ALL_USERS_PASSWORD")
 
     @staticmethod
+    def get_new_user_password():
+        """Password given to accounts the suite creates (user lifecycle test,
+        tools/create_bulk_users.py). Read from .env like every other secret:
+        it was once hardcoded in both files, which published it on GitHub."""
+        return ReadConfig._secret("CBSE_NEW_USER_PASSWORD")
+
+    @staticmethod
     def get_password_for_username(username):
         """Resolve a login's password, most specific override first.
 

@@ -70,10 +70,44 @@ class TestE2ESMEManualItemRichContentToPITPublication:
         )
         helper_page.close_popup_if_open()
 
-    def resolve_reviewer_username(self, review_page, role, item_set_id, item_set_url):
-        """Try each configured account for `role` until one can open this
-        item set's review queue entry."""
-        candidates = ReadConfig.get_role_usernames(role)
+    def assigned_reviewer(self, item_set_id, role, timeout):
+        """The reviewer the SME's own item set page names ("Reviewer: rwg 2").
+
+        Run while signed in as the SME. Re-opens the page each pass: it does
+        not repaint when the backend hands the set on. Returns the login, or
+        "" if no label appeared within `timeout`.
+        """
+        deadline = monotonic() + timeout
+        while True:
+            self.helper_page.open_item_set_detail(item_set_id)
+            assignee = self.helper_page.get_item_set_assignee(role)
+            if assignee:
+                return ReadConfig.get_all_user_username(assignee)
+            if monotonic() >= deadline:
+                return ""
+            sleep(20)
+
+    def item_set_status_text(self, item_set_id):
+        try:
+            self.helper_page.open_item_set_detail(item_set_id)
+            return self.helper_page.format_status_summary(
+                self.helper_page.get_item_set_status_summary()
+            ) or "unreadable"
+        except Exception as error:  # noqa: BLE001 - diagnostics only
+            return f"unreadable ({error.__class__.__name__})"
+
+    def resolve_reviewer_username(
+        self, review_page, role, item_set_id, item_set_url, assigned=None
+    ):
+        """Open this item set as its reviewer for `role`.
+
+        With `assigned`, only that account is tried - the one the SME's item
+        set page names. Without it, each configured account is tried in turn;
+        on 2026-10-01 that guess opened IS1504 as rwg1 and rwg2, both got
+        "Failed to load items for this item set", and the run failed as "not
+        visible in any RWG queue" with no word on who the reviewer was.
+        """
+        candidates = [assigned] if assigned else ReadConfig.get_role_usernames(role)
         last_error = None
         for candidate in candidates:
             try:
@@ -260,7 +294,17 @@ class TestE2ESMEManualItemRichContentToPITPublication:
             ("result_checkpoint", "RWG verifies formatting/image, approves")
         )
         rwg_page = RWGReviewQueuePage(self.driver)
-        self.resolve_reviewer_username(rwg_page, "rwg", item_set_id, item_set_url)
+        # Still the SME here: read who the set went to rather than guessing.
+        rwg_username = self.assigned_reviewer(item_set_id, "rwg", timeout=420)
+        assert rwg_username, (
+            f"{item_set_id} shows no RWG reviewer on the SME's item set page 7 "
+            "minutes after QAR, so it was never handed to RWG. Statuses: "
+            f"{self.item_set_status_text(item_set_id)}"
+        )
+        page_evidence.checkpoint(f"SME's item set page names {rwg_username} as RWG reviewer")
+        self.resolve_reviewer_username(
+            rwg_page, "rwg", item_set_id, item_set_url, assigned=rwg_username
+        )
         rwg_visible = self.verify_formatting_visible_to_reviewer(rwg_page, item_set_id, item_id)
         request.node.user_properties.append(("rwg_visible_formatting", str(rwg_visible)))
         page_evidence.checkpoint(
@@ -275,7 +319,16 @@ class TestE2ESMEManualItemRichContentToPITPublication:
             ("result_checkpoint", "SRRWG verifies formatting/image, approves")
         )
         sr_rwg_page = SRRWGReviewQueuePage(self.driver)
-        self.resolve_reviewer_username(sr_rwg_page, "sr_rwg", item_set_id, item_set_url)
+        # The SR-RWG label on the SME's page is not yet proven, so it gets a
+        # short look and the old account-by-account lookup stays as fallback.
+        self.login_as(sme_username, self.helper_page)
+        sr_rwg_username = self.assigned_reviewer(item_set_id, "sr_rwg", timeout=60)
+        page_evidence.checkpoint(
+            f"SME's item set page names {sr_rwg_username or 'no one'} as SR-RWG reviewer"
+        )
+        self.resolve_reviewer_username(
+            sr_rwg_page, "sr_rwg", item_set_id, item_set_url, assigned=sr_rwg_username or None
+        )
         sr_rwg_visible = self.verify_formatting_visible_to_reviewer(
             sr_rwg_page, item_set_id, item_id
         )

@@ -57,7 +57,44 @@ class AdminPortalPage(BasePage):
         self.driver.get(urljoin(self.driver.current_url, path))
         self.wait_for_application_ready()
 
+    # The reverse proxy in front of QA answers with its own tiny HTML page when
+    # the app behind it does not respond (seen 2026-10-01: "Proxy Error ...
+    # Error reading from remote server" on the Create Role page). The SPA
+    # never loads, so every locator after it timed out with no reason given.
+    GATEWAY_ERROR_MARKERS = (
+        "proxy error",
+        "bad gateway",
+        "gateway timeout",
+        "error reading from remote server",
+        "service unavailable",
+    )
+
+    def gateway_error_text(self):
+        """The proxy's error text if that page is what is showing, else ""."""
+        try:
+            text = self.body_text(attempts=1).strip()
+        except WebDriverException:
+            return ""
+        # The proxy page is a few lines; the app never is. The length guard
+        # keeps an app screen that merely mentions one of the words safe.
+        if len(text) < 600 and any(marker in text.casefold() for marker in self.GATEWAY_ERROR_MARKERS):
+            return " ".join(text.split())[:200]
+        return ""
+
     def wait_for_application_ready(self, timeout=30):
+        # Ride out a short proxy blip with two refreshes; a lasting one fails
+        # as the environment fault it is (see INFRA_ERROR_MARKERS).
+        for attempt in range(3):
+            error_page = self.gateway_error_text()
+            if not error_page:
+                break
+            if attempt == 2:
+                raise TimeoutException(
+                    f"QA returned a gateway error page instead of the app: {error_page!r}"
+                )
+            sleep(10)
+            self.driver.refresh()
+
         def painted(driver):
             # WebDriverWait only ignores NoSuchElementException, so a tree swap
             # mid-poll would otherwise escape as a stale-node error and fail the

@@ -36,7 +36,6 @@ from pages.admin.user_management_page import UserManagementPage
 from pages.common.login_page import LoginPage
 from utilities.read_config import ReadConfig
 
-DEFAULT_PASSWORD = "Test@12345"
 DEFAULT_GRADE = "Grade 2"
 DEFAULT_SUBJECT = "Mathematics"
 EMAIL_DOMAIN = "test.com"
@@ -149,11 +148,16 @@ def main():
     parser.add_argument("--roles", nargs="+", choices=sorted(ROLES), default=sorted(ROLES))
     parser.add_argument("--count", type=int, default=5, help="accounts per role")
     parser.add_argument("--start", type=int, default=1, help="first index in the email suffix")
-    parser.add_argument("--password", default=DEFAULT_PASSWORD)
+    parser.add_argument(
+        "--password",
+        default=None,
+        help="password for the new accounts (default: CBSE_NEW_USER_PASSWORD from .env)",
+    )
     parser.add_argument("--grade", default=DEFAULT_GRADE)
     parser.add_argument("--subject", default=DEFAULT_SUBJECT)
     parser.add_argument("--headless", action="store_true")
     args = parser.parse_args()
+    args.password = args.password or ReadConfig.get_new_user_password()
 
     base_url = ReadConfig.get_base_url()
     admin = ReadConfig.get_admin_username()
