@@ -110,14 +110,14 @@ because several modules share accounts:
 | --- | --- | --- | --- |
 | M2 | `tests/M2_Web_Portal_Admin` minus `serial` | admin (+ admin2 if configured), sme3, teacher7 | 56 |
 | M3 + M4 | `tests/M3_Item_Testing`, `tests/M4_QP_Creation` | teacher3 | 8 |
-| M1 + M5 | `tests/M1_Item_Bank_Mgmt`, `tests/M5_Teacher_Contribution` | sme1 + sme2, teacher1 + teacher2, RWG/SR-RWG/PIT | 75 |
+| M1 + M5 | `tests/M1_Item_Bank_Mgmt`, `tests/M5_Teacher_Contribution` | sme1, teacher1 (+ teacher2 for the triple-revision e2e), RWG/SR-RWG/PIT | 75 |
 | *(tail)* M2 serial | `tests/M2_Web_Portal_Admin` `serial` only | admin + RWG | 9 |
 
-The SME and teacher columns assume the default workers (2/1/1) and the QA pools
+The SME and teacher columns assume the default workers (1/1/1 since 2026-10-05; it was 2/1/1) and the QA pools
 `CBSE_SME_USERNAMES=sme1..sme4@dev.com` and
 `CBSE_TEACHER_USERNAMES=teacher1,teacher2,teacher7,teacher3@dev.com` (2026-10-01).
 Each xdist worker gwN takes entry N of a pool, and the M2 and M3+M4 lanes add
-`CBSE_ACCOUNT_SLOT_OFFSET=WORKERS`, so they start past the accounts M1+M5 holds
+`CBSE_ACCOUNT_SLOT_OFFSET=WORKERS` (at least 2: the triple-revision e2e always drives teacher2), so they start past the accounts M1+M5 holds
 (M4 draws on the teacher pool minus its first entry). Pools wrap, so raising a
 worker count past the pool length puts two lanes back on one account.
 

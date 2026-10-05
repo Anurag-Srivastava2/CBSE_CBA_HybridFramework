@@ -6627,7 +6627,13 @@
     "explanation": "98 + 50 = 148, computed by standard addition.",
     "marks": 1,
     "content_hash": "sha256:1bba04cae4e37cd89dcb5ec46dfd68e4bbb753f55238a493a185a40c66cecb0b",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-05T04:44:06.742481+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000234",
@@ -6648,7 +6654,13 @@
     "explanation": "702 - 332 = 370, computed by standard subtraction.",
     "marks": 1,
     "content_hash": "sha256:352d9fc296329803abb2bde7880d4a87dd4591a99674f09f5d2acb5d8417ddff",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-05T04:52:45.169693+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_upload_file_size_limit.py::TestUploadFileSizeLimit::test_tc_neg_m1_10_upload_file_size_limit_exceeded (call)"
+      }
+    }
   },
   {
     "id": "QB-000235",
@@ -10687,7 +10699,13 @@
     "explanation": "12 x 18 = 216, recalled from the multiplication table of 12.",
     "marks": 1,
     "content_hash": "sha256:0ef7aec02f0420897984ded964fe3ced5b87d037bb2407e7fbd31f1a8a5b2fe7",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-05T04:44:06.742481+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_smoke_m1_item_bank.py::TestSmokeM1ItemBank::test_smoke_m1_04_excel_upload_creates_item_set@smoke-m1-excel (call)"
+      }
+    }
   },
   {
     "id": "QB-000413",
@@ -10703,7 +10721,13 @@
     "explanation": "12 x 19 = 228, recalled from the multiplication table of 12.",
     "marks": 1,
     "content_hash": "sha256:5e7b501f8023ad2957e2014f0567c9c4c1bf1d1aea3733693a5335681e4253a7",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-05T05:51:41.818350+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_teacher_excel_triple_revision_rejection_to_pit_publication.py::TestE2ETeacherExcelTripleRevisionRejectionToPITPublication::test_e2e_teacher_third_rwg_iteration_rejects_items_then_pit_publishes_approved_only@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000414",
@@ -16459,7 +16483,13 @@
     "explanation": "SI = (P x R x T)/100 = (4100 x 6 x 5)/100 = 1230.",
     "marks": 2,
     "content_hash": "sha256:3041128633451c162f5f0dd7ce4e79414aeb107be9a4793b8ccb9ec94ac81b13",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-05T05:44:42.162657+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_teacher_excel_triple_revision_rejection_to_pit_publication.py::TestE2ETeacherExcelTripleRevisionRejectionToPITPublication::test_e2e_teacher_third_rwg_iteration_rejects_items_then_pit_publishes_approved_only@serial (call)"
+      }
+    }
   },
   {
     "id": "QB-000712",

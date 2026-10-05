@@ -2040,7 +2040,17 @@ class ManualItemPage(BasePage):
             if match:
                 return match.group(0)
 
-        raise TimeoutException(f"QAR Results row not found for question: {question_text}")
+        # Say what the grid actually held: a Case/Source Based item renders its
+        # parent and sub-question blocks as separate rows, so "not found" with
+        # several rows present means the text matched none of them - a different
+        # fault from an empty grid, and indistinguishable without this.
+        observed = " | ".join(
+            self.normalize_review_text(row.text)[:120] for row in rows
+        ) or "no rows"
+        raise TimeoutException(
+            f"QAR Results row not found for question: {question_text}. "
+            f"{len(rows)} row(s) on the grid: {observed}"
+        )
 
     def get_qar_results_item_ids_for_questions(self, question_texts):
         question_texts = list(question_texts)

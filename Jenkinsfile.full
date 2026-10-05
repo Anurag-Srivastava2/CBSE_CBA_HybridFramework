@@ -30,10 +30,13 @@
 // workers from gw0 in every process, so without help every lane's first worker
 // would drive sme1/teacher1 at once and sign the others out. The M2 and M3+M4
 // lanes therefore start CBSE_ACCOUNT_SLOT_OFFSET entries along the pools, just
-// past the WORKERS accounts M1+M5 holds. With the default 2/1/1 workers that is
-// M1+M5 sme1+sme2 / teacher1+teacher2, M2 sme3 / teacher7, M4 teacher3. The
-// pools wrap, so keep CBSE_SME_USERNAMES and CBSE_TEACHER_USERNAMES longer than
-// the workers drawing on them, or two lanes share an account again.
+// past the WORKERS accounts M1+M5 holds - and never before entry 2, because the
+// teacher triple-revision e2e always drives teacher2 (the first teacher after
+// the primary), whatever its slot. With the default 1/1/1 workers that is
+// M1+M5 sme1 / teacher1 (+ teacher2 for that e2e), M2 sme3 / teacher7, M4
+// teacher3. The pools wrap, so keep CBSE_SME_USERNAMES and
+// CBSE_TEACHER_USERNAMES longer than the workers drawing on them, or two lanes
+// share an account again.
 //
 // Covers the five module folders tests/M1_* .. tests/M5_* only. Deliberately
 // left out: tests/_unit and the two top-level files tests/test_qar_retry_flow.py
@@ -77,7 +80,10 @@ pipeline {
             // sign-in rate limit with 7 browsers signing in across the lanes;
             // it locks accounts after bursts of logins from one machine, and
             // utilities/login_gate.py's spacing alone did not keep under it.
-            defaultValue: '2',
+            // Was 2 until 2026-10-05: the team asked for one worker per lane.
+            // The lanes still run side by side (3 browsers at peak); M1+M5
+            // runs its tests one at a time, which is why its timeout is 360.
+            defaultValue: '1',
             description: 'xdist workers for the M1+M5 lane — the critical path, so this is the number that moves the build time. Each worker drives its own headless Chrome (~200 MB). Kept low on purpose: the portal rate-limits sign-ins per machine, and more parallel browsers mean more lockouts, which fail tests for a reason that is not a bug.'
         )
         string(
@@ -123,7 +129,7 @@ pipeline {
     }
 
     options {
-        timeout(time: 7, unit: 'HOURS')
+        timeout(time: 8, unit: 'HOURS')
         timestamps()
         // Needs the AnsiColor plugin; pairs with --color=yes, since pytest
         // drops colour when its output is a pipe rather than a terminal.
@@ -210,7 +216,7 @@ pipeline {
                             environment {
                                 PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m2"
                                 // Past M1+M5's accounts; see the header.
-                                CBSE_ACCOUNT_SLOT_OFFSET = "${params.WORKERS ?: '2'}"
+                                CBSE_ACCOUNT_SLOT_OFFSET = "${(!params.WORKERS || params.WORKERS == '0' || params.WORKERS == '1') ? '2' : params.WORKERS}"
                             }
                             options {
                                 // One worker by default (see M2_WORKERS), and
@@ -238,7 +244,7 @@ pipeline {
                         stage('M3 + M4') {
                             environment {
                                 PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/m3_m4"
-                                CBSE_ACCOUNT_SLOT_OFFSET = "${params.WORKERS ?: '2'}"
+                                CBSE_ACCOUNT_SLOT_OFFSET = "${(!params.WORKERS || params.WORKERS == '0' || params.WORKERS == '1') ? '2' : params.WORKERS}"
                             }
                             options {
                                 timeout(time: 45, unit: 'MINUTES')
@@ -269,7 +275,9 @@ pipeline {
                                 // the `serial` group's reviewer e2e flows run
                                 // on one worker for 2h+ after the rest finish,
                                 // and a killed lane writes no junit at all.
-                                timeout(time: 300, unit: 'MINUTES')
+                                // 300 with 2 workers; one worker runs M1+M5
+                                // end to end in ~4-4.5h (2026-10-05 estimate).
+                                timeout(time: 360, unit: 'MINUTES')
                             }
                             steps {
                                 // One process over both paths on purpose — see

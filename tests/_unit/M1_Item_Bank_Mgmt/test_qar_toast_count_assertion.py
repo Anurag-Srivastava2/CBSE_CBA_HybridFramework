@@ -9,7 +9,7 @@ say the opposite, which is exactly the state the old version waved through.
 """
 import pytest
 
-from tests.M1_Item_Bank_Mgmt.test_qar_duplicate_detection import (
+from tests._unit.M1_Item_Bank_Mgmt.test_qar_duplicate_detection import (
     TestQARDuplicateDetection as Dup,
 )
 
