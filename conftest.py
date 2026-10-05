@@ -1307,8 +1307,45 @@ def open_extent_report_if_enabled(report_path):
         print(f"Could not auto-open Extent report: {error}")
 
 
+def _guard_target_environment(session):
+    """Fail fast when .env does not describe the host it claims to.
+
+    Nothing used to state which environment a run was driving: .env is the only
+    file read, and its name says nothing about its contents. A run on 2026-09-24
+    had .env swapped UAT->QA underneath it by something outside the session, and
+    the only symptom was a wall of login failures that read like a product
+    outage. The profiles in env/ declare CBSE_ENV_EXPECTED_HOST; if it and
+    CBSE_BASE_URL disagree, that is a half-written or swapped .env, and the run
+    stops here rather than sending one environment's accounts at another's host
+    (repeated wrong passwords lock the shared accounts at HTTP 429 for the team).
+
+    An .env without CBSE_ENV_EXPECTED_HOST - Jenkins writes one from its Secret
+    file credential - skips the check, so CI is unaffected.
+    """
+    expected_host = os.getenv("CBSE_ENV_EXPECTED_HOST", "").strip()
+    actual_host = urlparse(ReadConfig.get_base_url()).hostname or ""
+
+    if expected_host and expected_host != actual_host:
+        raise pytest.UsageError(
+            f"Environment mismatch: .env declares CBSE_ENV_EXPECTED_HOST="
+            f"{expected_host!r} but CBSE_BASE_URL points at {actual_host!r}. "
+            f"The .env is half-edited or was swapped mid-run. Re-run "
+            f"`python tools/use_env.py <profile>` to restore a consistent one."
+        )
+
+    if get_xdist_worker_id(session.config) is None:
+        profile = os.getenv("CBSE_ENV_PROFILE", "").strip() or "(unnamed)"
+        api_base_url = os.getenv("CBSE_API_BASE_URL", "(unset)")
+        print("", flush=True)
+        print(f"Target environment: profile={profile}  host={actual_host}", flush=True)
+        print(f"  API      : {api_base_url}", flush=True)
+        print(f"  Bank key : {ReadConfig.get_environment_key()}", flush=True)
+        print("", flush=True)
+
+
 def pytest_sessionstart(session):
     if not getattr(session.config.option, "collectonly", False):
+        _guard_target_environment(session)
         SESSION_TIMING["start"] = time.time()
         SESSION_TIMING["end"] = None
         EXTENT_RESULTS.clear()

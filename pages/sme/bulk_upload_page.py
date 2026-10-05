@@ -216,7 +216,14 @@ class BulkUploadPage(UploadItemFilePage):
         )
         return element, "review_file_validation_passed"
 
-    def submit_for_qar(self, unique_prefix, analysis_timeout=180):
+    def submit_for_qar(self, unique_prefix, analysis_timeout=180, uploaded_file_name=""):
+        """Review, submit for QAR, and return the item IDs and set ID it produced.
+
+        Pass uploaded_file_name (the workbook just uploaded) so that a wizard
+        which stalls or drops back to Confirm & Submit mid-run is resolved from
+        the Sets grid instead of failing: QA regularly finishes QAR server-side
+        after the wizard has given up on it (2026-10-01).
+        """
         self.click_continue()
 
         def scoped_review_is_ready(driver):
@@ -262,7 +269,21 @@ class BulkUploadPage(UploadItemFilePage):
                 item_ids = current_item_ids
         item_set_id = self.get_item_set_id_from_item_ids(item_ids)
         self.click_continue()
-        self.click_submit_for_qar_and_wait_for_results(analysis_timeout=analysis_timeout)
+        outcome = self.click_submit_for_qar_and_wait_for_results(
+            analysis_timeout=analysis_timeout,
+            item_ids=item_ids,
+            uploaded_file_name=Path(str(uploaded_file_name)).name if uploaded_file_name else "",
+        )
+        if outcome == self.QAR_OUTCOME_ITEM_SET_DETAIL:
+            recovered_set_id = getattr(self, "recovered_item_set_id", "")
+            recovered_ids = (
+                sorted(self.get_qar_item_statuses(recovered_set_id)) if recovered_set_id else []
+            )
+            return {
+                "item_ids": recovered_ids or item_ids,
+                "item_set_id": recovered_set_id or item_set_id,
+                "current_url": self.driver.current_url,
+            }
         result_item_ids = self.get_qar_result_item_ids()
         if result_item_ids:
             item_ids = result_item_ids

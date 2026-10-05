@@ -58,5 +58,8 @@ venv/
 .env
 .env.*
 !.env.example
+# Per-environment profiles that .env is generated from (tools/use_env.py).
+# They hold real account passwords, same as .env - never commit them.
+env/
 .idea/
 .vscode/

@@ -582,7 +582,11 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
             "Upload accepted for %s: %s", typology, upload_outcome["message"]
         )
 
-        qar_outcome = upload_page.submit_for_qar(run_token)
+        # The workbook name lets a stalled QAR run be resolved from the Sets
+        # grid (the full run of 2026-10-01 lost MTF twice without it).
+        qar_outcome = upload_page.submit_for_qar(
+            run_token, uploaded_file_name=workbook_path
+        )
         item_ids = qar_outcome["item_ids"]
         item_set_id = qar_outcome["item_set_id"]
         page_evidence.checkpoint(

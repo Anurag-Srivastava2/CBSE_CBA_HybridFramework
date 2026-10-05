@@ -33,8 +33,8 @@ committed files. `.env` is gitignored precisely so credentials stay out of the
 repo, and the pipeline must preserve that.
 
 Create a **Secret file** credential in Jenkins holding a complete `.env`
-(use [.env.example](../.env.example) as the shape), then bind it in the
-`Smoke` stage:
+(use [.env.example](../.env.example) as the shape, or upload a profile from
+`env/` verbatim), then bind it in the `Smoke` stage:
 
 ```groovy
 environment {
@@ -47,6 +47,10 @@ and copy it into place before pytest runs:
 ```groovy
 sh 'cp "$CBSE_ENV_FILE" .env'
 ```
+
+A profile carries `CBSE_ENV_EXPECTED_HOST`, which the session-start guard in
+`conftest.py` asserts against `CBSE_BASE_URL`; an `.env` without that key skips
+the check, so an existing credential keeps working untouched.
 
 `utilities/read_config.py` loads `.env` via `os.environ.setdefault`, so real
 environment variables always win over the file — either mechanism works.

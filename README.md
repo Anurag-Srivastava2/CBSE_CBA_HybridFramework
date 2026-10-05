@@ -25,7 +25,46 @@ This framework was created from your BlazeMeter Selenium YAML recordings.
 
 ## Important
 
-Copy `.env.example` to `.env`, then set the local URL and credentials:
+### Environments
+
+`.env` is the only file the suite reads, and it is **generated** - do not edit it
+by hand. The per-environment profiles live in `env/` and are the source of truth:
+
+```text
+env/qa.env        profile for QA-NEW
+env/uat.env       profile for UAT
+env/_archive/     retired snapshots, and previous.env (the .env last replaced)
+```
+
+Switch with:
+
+```bash
+python tools/use_env.py            # report which environment .env points at
+python tools/use_env.py uat        # switch to UAT
+python tools/use_env.py qa         # switch back
+```
+
+Each profile declares `CBSE_ENV_EXPECTED_HOST`, which `conftest.py` asserts
+against `CBSE_BASE_URL` at session start, and every run now opens by printing
+its target environment. A half-edited or swapped `.env` therefore stops the run
+instead of firing one environment's accounts at another's host - which locks the
+shared accounts at HTTP 429 for the whole team.
+
+`env/` is gitignored in full: the profiles hold real passwords, exactly as `.env`
+does. Jenkins is unaffected - it writes `.env` straight from its Secret file
+credential and never consults `env/`.
+
+Note that profiles deliberately do **not** set `CBSE_ENV`. That variable feeds
+`ReadConfig.get_environment_key()`, which keys question-bank usage in
+`data/question_bank/questions.json` by the `CBSE_BASE_URL` hostname; overriding
+it would orphan those records and start handing back already-used questions,
+silently contaminating the QAR duplicate baselines. `CBSE_ENV_PROFILE` is a
+descriptive label only.
+
+### First-time setup
+
+Copy `.env.example` to `env/qa.env` (or `env/<your-env>.env`), set the URL and
+credentials, then run `python tools/use_env.py <your-env>`:
 
 ```text
 .env
