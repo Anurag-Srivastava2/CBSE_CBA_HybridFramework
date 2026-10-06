@@ -265,8 +265,10 @@ Auto-open is controlled from `config/config.ini`:
 
 ```ini
 [reports]
-auto_open_extent = true
+auto_open_extent = false
 ```
 
-Set it to `false` to generate the report without opening a browser. Allure-compatible
+Off by default since 2026-10-06: every pytest session opened a browser tab, including
+one-second unit runs and the Jenkins lanes, which run on the same desktop. Set it to `true`
+to have the report open when a run finishes. Allure-compatible
 JSON results are still written to `reports/allure-results`, but Allure is not auto-opened.
