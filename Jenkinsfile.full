@@ -116,6 +116,11 @@ pipeline {
             defaultValue: env.JOB_BASE_NAME == 'cbse-daily',
             description: 'Mail the module summary to the team when the build finishes. On by default for the cbse-daily job only.'
         )
+        booleanParam(
+            name: 'OPEN_REPORT',
+            defaultValue: true,
+            description: 'Open the CBSE All Modules Report in the browser on the Jenkins machine when the build ends. Meant for a Jenkins running on a desktop, like the local C:\\jenkins-cbse; Linux agents skip it.'
+        )
         string(
             name: 'NOTIFY_EMAILS',
             defaultValue: '',
@@ -385,6 +390,15 @@ pipeline {
                     } catch (err) {
                         echo "Summary mail was not sent: ${err}"
                     }
+                }
+                // params is empty on a job's very first build, hence != false.
+                if (params.OPEN_REPORT != false) {
+                    // The copy publishHTML just took for this build; the
+                    // workspace one goes in cleanup.
+                    cbse?.openOnDesktop(
+                        "${env.JENKINS_HOME}\\jobs\\${env.JOB_NAME}\\builds\\${env.BUILD_NUMBER}" +
+                        '\\htmlreports\\CBSE_20All_20Modules_20Report\\extent_report.html'
+                    )
                 }
             }
         }

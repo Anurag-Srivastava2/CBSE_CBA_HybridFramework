@@ -97,6 +97,12 @@ lanes' Extent reports into one, grouped M1 to M5, and publishes it as
 - `reports_ci/all_modules/excel_report.xlsx`: the same results as a workbook,
   attached to the summary mail.
 
+When the build ends, Jenkins also opens the report in the browser of whoever
+is signed in to the Jenkins machine (`OPEN_REPORT`, on by default). This is
+meant for the local Jenkins, which runs on a desktop. It opens the build's
+archived copy under `builds\<n>\htmlreports`, since cleanup deletes the
+workspace copy. Linux agents skip this step.
+
 It works from `run_results.json`, which every pytest session saves beside its
 own report (`conftest.dump_run_results`). A lane killed by its timeout saves
 nothing, so its modules show as zero, as they do in the summary. The preflight

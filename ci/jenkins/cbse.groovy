@@ -226,6 +226,26 @@ def buildCombinedReport(String reportsDir, String title) {
     }
 }
 
+// Open a file in the browser of whoever is signed in to this machine.
+//
+// Only for a Jenkins that runs on someone's desktop, like the local one at
+// C:\jenkins-cbse. A Unix agent has nobody to show it to, so it skips this.
+// Pass the build's archived copy, not the workspace one: cleanup empties
+// reports_ci as soon as the build ends.
+def openOnDesktop(String path) {
+    if (isUnix()) {
+        return
+    }
+    // Jenkins kills whatever a step leaves running when the step ends, which
+    // would close a browser that this step had to start.
+    withEnv(['JENKINS_NODE_COOKIE=dontKillMe', 'BUILD_ID=dontKillMe']) {
+        int code = bat(returnStatus: true, script: "@if exist \"${path}\" (start \"\" \"${path}\") else (echo Not found: ${path} & exit /b 1)")
+        if (code != 0) {
+            echo "Report was not opened (exit ${code})."
+        }
+    }
+}
+
 // Mail the summary to the team. Needs the Email Extension plugin.
 //
 // An empty recipient list falls back to $DEFAULT_RECIPIENTS, the team list set

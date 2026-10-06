@@ -109,7 +109,14 @@ def collect(reports_dir):
             continue
         suites = [root] if root.tag == "testsuite" else root.findall("testsuite")
         lane_seconds[lane] = sum(float(s.get("time") or 0) for s in suites)
+        # A test that pytest-rerunfailures retried appears once per attempt,
+        # and the failed first attempt carries no <failure>, so it read as a
+        # pass: build #5 (2026-10-06) counted a test that failed twice as one
+        # pass and one fail. Keep the last attempt, which is the verdict.
+        final_attempts = {}
         for testcase in root.iter("testcase"):
+            final_attempts[(testcase.get("classname"), testcase.get("name"))] = testcase
+        for testcase in final_attempts.values():
             classname = testcase.get("classname") or ""
             outcome, message, detail = outcome_for(testcase)
             results.append({

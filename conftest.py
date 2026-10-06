@@ -1346,9 +1346,9 @@ def open_extent_report_if_enabled(report_path, config=None):
     """Open the Extent report after a full local run.
 
     Not after single files or tests: each pytest session opened a tab, down to
-    one-second unit checks (2026-10-06). Not under Jenkins either, which
-    publishes the report and mails the summary, and whose lanes would otherwise
-    open tabs on this desktop from a hidden build.
+    one-second unit checks (2026-10-06). Not under Jenkins either, where each
+    lane would open its own tab: Jenkinsfile.full opens its one all-modules
+    report itself when the build ends (OPEN_REPORT).
     """
     if not ReadConfig.should_auto_open_extent():
         return
