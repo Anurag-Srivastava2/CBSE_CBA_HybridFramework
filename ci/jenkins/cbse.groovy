@@ -212,6 +212,20 @@ String buildSummary(String reportsDir, String title) {
     return readFile("${reportsDir}/daily_summary.txt").trim()
 }
 
+// Merge every lane's results into one Extent report and workbook covering all
+// modules, in <reportsDir>/all_modules. Run it before the workspace's
+// screenshots/ are cleaned: the report embeds them from there. Never fails the
+// build; the lane reports are still published without it.
+def buildCombinedReport(String reportsDir, String title) {
+    String args = "--reports-dir \"${reportsDir}\" --title \"${title}\""
+    int code = isUnix()
+        ? sh(returnStatus: true, script: ". .venv/bin/activate && python tools/build_combined_report.py ${args}")
+        : bat(returnStatus: true, script: "call .venv\\Scripts\\activate.bat && python tools\\build_combined_report.py ${args}")
+    if (code != 0) {
+        echo "All-modules report was not built (exit ${code}); the lane reports are still published."
+    }
+}
+
 // Mail the summary to the team. Needs the Email Extension plugin.
 //
 // An empty recipient list falls back to $DEFAULT_RECIPIENTS, the team list set
@@ -230,11 +244,16 @@ def emailSummary(String reportsDir, String subject, String recipients) {
         )
         return
     }
+    // The all-modules workbook rides along: every test's result and reason in
+    // one file. The HTML report embeds its screenshots and is far too large to
+    // mail, so the body links to it instead. A missing workbook just goes
+    // unattached.
     emailext(
         to: to,
         subject: subject,
         mimeType: 'text/html',
-        body: "\${FILE,path=\"${reportsDir}/daily_summary.html\"}"
+        body: "\${FILE,path=\"${reportsDir}/daily_summary.html\"}",
+        attachmentsPattern: "${reportsDir}/all_modules/excel_report.xlsx"
     )
 }
 

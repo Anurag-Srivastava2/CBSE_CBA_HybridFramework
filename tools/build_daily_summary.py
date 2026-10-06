@@ -248,6 +248,8 @@ def build_html(results, lane_seconds, args):
         build_url = args.build_url.rstrip("/")
         links = (
             f"<p style='margin:0 0 16px;font-size:13px;'>"
+            f"<a href='{html.escape(build_url)}/CBSE_20All_20Modules_20Report/'>"
+            f"All Modules Report</a> &middot; "
             f"<a href='{html.escape(build_url)}/'>Jenkins build</a> &middot; "
             f"<a href='{html.escape(build_url)}/testReport/'>All test results</a> &middot; "
             f"<a href='{html.escape(build_url)}/artifact/'>Reports &amp; screenshots</a>"

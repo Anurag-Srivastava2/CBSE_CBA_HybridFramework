@@ -174,6 +174,12 @@ pipeline {
         }
 
         stage('Preflight') {
+            environment {
+                // Its own folder, so its one-test report does not sit at the
+                // top of reports_ci looking like the run's report. The
+                // all-modules report skips this folder by name.
+                PYTEST_REPORTS_DIR = "${WORKSPACE}/reports_ci/preflight"
+            }
             options {
                 timeout(time: 10, unit: 'MINUTES')
             }
@@ -337,6 +343,10 @@ pipeline {
                 String title = (env.JOB_BASE_NAME == 'cbse-daily' ? 'CBSE Daily Regression' : 'CBSE Full Suite') +
                     " #${env.BUILD_NUMBER}"
                 summarySubject = cbse?.buildSummary('reports_ci', title)
+                // Every test from every lane in one Extent report, grouped M1
+                // to M5, with its screenshots. Built here, before cleanup
+                // empties screenshots/.
+                cbse?.buildCombinedReport('reports_ci', "All Modules Report - ${title}")
             }
             // allowEmptyResults keeps an environment-level failure (no lane
             // ever started) reporting as a build failure rather than masking it
@@ -351,6 +361,14 @@ pipeline {
                 reportDir: 'reports_ci',
                 reportFiles: 'daily_summary.html',
                 reportName: 'CBSE Summary',
+                keepAll: true,
+                alwaysLinkToLastBuild: true,
+                allowMissing: true
+            ])
+            publishHTML(target: [
+                reportDir: 'reports_ci/all_modules',
+                reportFiles: 'extent_report.html',
+                reportName: 'CBSE All Modules Report',
                 keepAll: true,
                 alwaysLinkToLastBuild: true,
                 allowMissing: true
@@ -371,7 +389,7 @@ pipeline {
             }
         }
         unstable {
-            echo 'Tests failed. Start from the CBSE Summary report, then open the lane report for the failing module.'
+            echo 'Tests failed. Start from the CBSE Summary, then the CBSE All Modules Report for each failure in full.'
         }
         cleanup {
             // The decrypted .env holds real account passwords and must not sit

@@ -82,9 +82,36 @@ body, also published as **CBSE Summary** on the build) and lists:
 Run it locally against any reports directory:
 `python tools/build_daily_summary.py --reports-dir reports_ci`.
 
-Jenkins' default Content Security Policy strips inline styles from published
-HTML, so the **CBSE Summary** page renders plain in the browser; the mail is
-unaffected.
+### The all-modules report
+
+The summary gives counts and one-line reasons. For the full detail of every
+test (steps, traceback, screenshots) in one place,
+[tools/build_combined_report.py](../tools/build_combined_report.py) merges the
+lanes' Extent reports into one, grouped M1 to M5, and publishes it as
+**CBSE All Modules Report** on every build:
+
+- `reports_ci/all_modules/extent_report.html`: every test with its
+  screenshots. It is large (about the size of the four lane reports together),
+  because the screenshots are embedded so the file stands alone once
+  downloaded.
+- `reports_ci/all_modules/excel_report.xlsx`: the same results as a workbook,
+  attached to the summary mail.
+
+It works from `run_results.json`, which every pytest session saves beside its
+own report (`conftest.dump_run_results`). A lane killed by its timeout saves
+nothing, so its modules show as zero, as they do in the summary. The preflight
+probe is left out, because the M3+M4 lane runs it again. Run it locally against
+any reports directory that holds lane folders:
+`python tools/build_combined_report.py --reports-dir reports_ci`.
+
+Jenkins' default Content Security Policy strips inline styles and embedded
+images from published HTML, so the Extent reports render unstyled and without
+screenshots in the browser unless the policy is relaxed. The mail is
+unaffected. The local Jenkins at `C:\jenkins-cbse` starts with
+`"-Dhudson.model.DirectoryBrowserSupport.CSP=sandbox allow-same-origin; default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline';"`
+in `start-jenkins.cmd`, which allows the reports' inline styles and embedded
+screenshots and still blocks scripts. On a shared Jenkins, agree this with
+whoever runs it, or download a report and open it locally.
 
 **10:00 is working hours.** The account lock keeps other Jenkins jobs off the
 portal accounts, but not people or local runs. A local pytest run using the
@@ -234,10 +261,12 @@ are distinguishable:
 | **Failure, "pytest exited N"** | Exit 2/3/4 — the run itself broke (aborted, broken conftest or plugin, bad arguments), not a product defect. |
 | **Failure, "collected no tests"** | Exit 5 — the paths or markers selected nothing. See the coverage table above. |
 
-Each lane publishes its own HTML report (`CBSE M1+M5 Report`, `CBSE M2
-Report`, …) and its own `junit.xml` under `reports_ci/<lane>/`, kept apart by
-the `PYTEST_REPORTS_DIR` environment variable that `conftest.py` reads for
-exactly this purpose.
+Start from **CBSE Summary**, then **CBSE All Modules Report** for each
+failure in full. Each lane also publishes its own HTML report (`CBSE M1+M5
+Report`, `CBSE M2 Report`, …) and its own `junit.xml` under
+`reports_ci/<lane>/`, kept apart by the `PYTEST_REPORTS_DIR` environment
+variable that `conftest.py` reads for exactly this purpose. The preflight
+check writes to `reports_ci/preflight/`.
 
 `.env` is written from the `cbse-smoke-env` credential at the start of every
 build and deleted in `post { cleanup }`, along with `screenshots/` and

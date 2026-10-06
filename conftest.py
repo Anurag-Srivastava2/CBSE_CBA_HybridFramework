@@ -102,6 +102,32 @@ def merge_worker_results():
     shutil.rmtree(partial_dir, ignore_errors=True)
 
 
+RUN_RESULTS_FILE = "run_results.json"
+
+
+def dump_run_results():
+    """Save this session's results beside its reports.
+
+    Jenkinsfile.full runs the suite as several pytest processes ("lanes"),
+    and each writes its own Extent report. tools/build_combined_report.py
+    reads this file from every lane and renders one report for all modules.
+    """
+    reports_dir = get_reports_dir()
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        # As in dump_worker_results: screenshots are re-encoded from their
+        # paths at render time, so the base64 copies are not saved.
+        "results": [dict(result, screenshot_base64=None) for result in EXTENT_RESULTS],
+        "module_counts": MODULE_TEST_COUNTS,
+        "start": SESSION_TIMING.get("start"),
+        "end": SESSION_TIMING.get("end"),
+        "environment": get_environment_info(),
+    }
+    (reports_dir / RUN_RESULTS_FILE).write_text(
+        json.dumps(payload, default=str), encoding="utf-8"
+    )
+
+
 PROJECT_NAME = "CBSE_CBA"
 MODULE_NAMES = {
     "m1_item_bank_mgmt": "M1 - Item Bank Mgmt",
@@ -114,6 +140,9 @@ MODULE_TEST_COUNTS = {display_name: 0 for display_name in MODULE_NAMES.values()}
 logger = LogGenerator.loggen()
 
 ENVIRONMENT_REACHABILITY = {}
+# Set by tools/build_combined_report.py to the environment the lanes recorded,
+# so a merged report describes the run rather than the machine merging it.
+RUN_ENVIRONMENT = {}
 SESSION_TIMING = {"start": None, "end": None}
 # Set when a test fails with an infrastructure signature, and cleared by the
 # next test's setup once the environment answers again. Without this, one
@@ -124,6 +153,8 @@ INFRA_OUTAGE = {"pending": False}
 
 def get_environment_info():
     """Best-effort snapshot of the environment/URL and browser under test."""
+    if RUN_ENVIRONMENT:
+        return dict(RUN_ENVIRONMENT)
     try:
         base_url = ReadConfig.get_base_url()
     except Exception:
@@ -691,7 +722,7 @@ def render_message_html(message, status):
     return f"<span class='{color_class}'>{html.escape(text)}</span>"
 
 
-def build_extent_report():
+def build_extent_report(title="Extent Report"):
     reports_dir = get_reports_dir()
     reports_dir.mkdir(exist_ok=True)
     report_path = reports_dir / "extent_report.html"
@@ -850,7 +881,7 @@ def build_extent_report():
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{PROJECT_NAME} - Extent Report</title>
+    <title>{PROJECT_NAME} - {html.escape(title)}</title>
     <style>
         :root {{
             --passed: #0a7d47; --passed-bg: #e6f7ee; --passed-border: #a9e2c5;
@@ -958,7 +989,7 @@ def build_extent_report():
 </head>
 <body>
     <div class="report-header">
-        <h1>{PROJECT_NAME} &mdash; Extent Report</h1>
+        <h1>{PROJECT_NAME} &mdash; {html.escape(title)}</h1>
         <div class="subtitle">Generated {timing['end']} &middot; Duration {timing['duration']}</div>
     </div>
     {stat_cards_html}
@@ -1923,6 +1954,10 @@ def pytest_sessionfinish(session, exitstatus):
         return
     if is_xdist_run(session.config):
         merge_worker_results()
+    try:
+        dump_run_results()
+    except Exception as error:
+        print(f"WARNING: could not save {RUN_RESULTS_FILE}: {error}")
     extent_report_path = build_extent_report()
     build_excel_report()
     build_allure_results()
