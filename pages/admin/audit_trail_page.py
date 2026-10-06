@@ -123,7 +123,24 @@ class AuditTrailPage(BasePage):
         return self._column_values(self.COLUMN_ENTITY)
 
     def get_row_text(self):
-        return [row.text.strip() for row in self.get_rows()]
+        """Each data row's text, with cut-off cells read in full.
+
+        Long cells render as "IN_APP notification sent to teacher3@dev…"; the
+        full text is on the cell's title (its tooltip). Reading only what is on
+        screen made a search for teacher3@dev.com look like it returned rows
+        that do not mention it (build #4, 2026-10-05).
+        """
+        texts = []
+        for row in self.get_rows():
+            try:
+                titles = [
+                    (element.get_attribute("title") or "").strip()
+                    for element in row.find_elements(By.XPATH, ".//*[@title]")
+                ]
+                texts.append(" ".join([row.text.strip(), *(t for t in titles if t)]))
+            except WebDriverException:
+                continue
+        return texts
 
     # ------------------------------------------------------------ search/filter
 

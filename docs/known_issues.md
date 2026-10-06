@@ -18,6 +18,7 @@ These are product, data, or environment gaps that are intentionally reported as 
 | KI-M1-QAR-002 | M1 | QAR rules | Current QAR service does not flag the supplied bias/ambiguity fixture. |
 | KI-M1-QAR-003 | M1 | QAR rules | Current QAR service does not enforce the 60% failure lock rule. |
 | KI-M1-QAR-004 | M1 | QAR rules | Current QAR service does not enforce the 70% failure lock and exception-report rule. |
+| KI-M1-QAR-005 | M1 | QAR run | QAR accepts an Excel + images ZIP submission, returns to Confirm & Submit with no results and no error message, and creates no item set, so a recovery lookup by uploaded file name finds nothing either and the run times out after 420s. **Intermittent**: failed four times on 2026-10-05 on QA across two SME accounts (sme1, sme2), both under `-n 2` and serially, then passed on a fifth attempt the same evening, so a single green run does not clear it. Text-only QAR submissions on the same grade/subject passed throughout. Matches the 2026-10-01 capture where `POST /qar/run` answered 201 `success:true` with `alreadyRunning:true`. Needs backend investigation. |
 | KI-M1-TYPOLOGY-001 | M1 | Manual item typology | Live Item Typology dropdown no longer exposes "Multiple Choice Question" after Assertion and Reasoning, FA Activity, Free Response, and Source Based Question were added (confirmed via full-DOM inspection, not a scroll/render issue - the option is genuinely absent even after scrolling the select viewport to its end). Likely a product regression in the typology list source; needs dev-team investigation. |
 | KI-M1-METADATA-001 | M1 | Metadata | Current dev manual-item form may miss mandatory metadata controls. |
 | KI-M1-METADATA-002 | M1 | Metadata search | Current SME repository has no searchable published-item fixture. |
@@ -70,6 +71,7 @@ These are product, data, or environment gaps that are intentionally reported as 
 | KI-M2-PERF-001..003 | M2 | Performance | Rapid user creation, audit-log volume, and 100-user load tests require dedicated data/load environments. |
 | KI-M2-QARCFG-001 | M2 | QAR Configuration | Admin QAR Configuration screen may not be reachable from the current Admin navigation. |
 | KI-M2-QARCFG-002 | M2 | QAR Configuration | Global Settings controls (pass threshold, batch frequency, scheduled batch time) may not be readable/editable in the current build. |
+| KI-M2-QARCFG-003 | M2 | QAR Configuration | Global Settings edits do not persist: after changing Pass Threshold or Scheduled Batch Time and pressing Save Changes, a reload (or a fresh session) shows the old values. The button may switch to "Saved", but nothing is stored server-side; a plain click sometimes sends no request at all. Seen on QA in builds #3 and #4 (2026-10-01/05). |
 
 When an item is fixed in the product or fixture data, remove the related `pytest.xfail(...)` from the test and let the assertion run normally.
 

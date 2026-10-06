@@ -584,9 +584,27 @@ class TestE2ESMEExcelTypologyImageRWGSRRWGRevisionToPITPublication:
 
         # The workbook name lets a stalled QAR run be resolved from the Sets
         # grid (the full run of 2026-10-01 lost MTF twice without it).
-        qar_outcome = upload_page.submit_for_qar(
-            run_token, uploaded_file_name=workbook_path
-        )
+        try:
+            qar_outcome = upload_page.submit_for_qar(
+                run_token, uploaded_file_name=workbook_path
+            )
+        except AssertionError as error:
+            # KI-M1-QAR-005. QAR takes the submission, drops back to Confirm &
+            # Submit with neither results nor an error, and creates no item set
+            # at all - so the Sets-grid recovery by file name above finds
+            # nothing either. Reproduced 2026-10-05 over four attempts on two
+            # SME accounts (sme1, sme2), both under -n 2 and serially, while
+            # text-only QAR submissions on the same grade/subject passed in the
+            # same window. Matched on that one signature so any other failure
+            # here stays a real failure, and the evidence is published before
+            # the guard fires.
+            if "did not produce a result" not in str(error):
+                raise
+            page_evidence.checkpoint(
+                f"KI-M1-QAR-005: QAR returned no result for {template_name} "
+                f"and created no item set - {error}"
+            )
+            pytest.xfail(f"KI-M1-QAR-005: {error}")
         item_ids = qar_outcome["item_ids"]
         item_set_id = qar_outcome["item_set_id"]
         page_evidence.checkpoint(

@@ -10743,7 +10743,13 @@
     "explanation": "12 x 20 = 240, recalled from the multiplication table of 12.",
     "marks": 1,
     "content_hash": "sha256:3af334b4567daa7f5e0d80a9c07c7de0e939030632d1bfc50e8ffe9179509c0c",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-05T09:39:20.455780+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_teacher_excel_triple_revision_rejection_to_pit_publication.py::TestE2ETeacherExcelTripleRevisionRejectionToPITPublication::test_e2e_teacher_third_rwg_iteration_rejects_items_then_pit_publishes_approved_only (call)"
+      }
+    }
   },
   {
     "id": "QB-000415",
@@ -15159,7 +15165,13 @@
     "explanation": "1 kilograms = 1000 grams, so 33 kilograms = 33 x 1000 = 33000 grams.",
     "marks": 1,
     "content_hash": "sha256:db7c9cbf3c306455f9ce8e77955014946a8e0d98306a1637974142f93ee3fcbd",
-    "usage": {}
+    "usage": {
+      "cbse-qa-new-akashic-dhira-io": {
+        "status": "used",
+        "used_at": "2026-10-05T09:40:37.593086+00:00",
+        "used_in_run": "tests/M1_Item_Bank_Mgmt/test_e2e_teacher_excel_triple_revision_rejection_to_pit_publication.py::TestE2ETeacherExcelTripleRevisionRejectionToPITPublication::test_e2e_teacher_third_rwg_iteration_rejects_items_then_pit_publishes_approved_only (call)"
+      }
+    }
   },
   {
     "id": "QB-000633",

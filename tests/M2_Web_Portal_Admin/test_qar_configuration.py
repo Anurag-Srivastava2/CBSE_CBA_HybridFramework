@@ -249,7 +249,7 @@ class TestM2QARConfiguration:
             assert page.is_save_enabled(), (
                 "Save stayed disabled after editing Global Settings."
             )
-            page.save_configuration()
+            saved_as = page.save_configuration()
 
             persisted = page.reload().read_global_settings()
             not_persisted = {
@@ -264,7 +264,9 @@ class TestM2QARConfiguration:
             )
             assert not not_persisted, (
                 f"Global settings did not persist (setting: expected vs stored): "
-                f"{not_persisted}"
+                f"{not_persisted}. The save reported {saved_as or 'no confirmation'!r}. "
+                "Known product defect KI-M2-QARCFG-003: QA reproduces this on every "
+                "run, and a fresh session reads the old values back from the server."
             )
 
             if "pass_threshold" in targets:

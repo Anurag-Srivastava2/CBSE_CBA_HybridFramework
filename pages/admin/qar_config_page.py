@@ -310,26 +310,47 @@ class QARConfigPage(AdminPortalPage):
             for element in self.driver.find_elements(*locator)
         )
 
+    def save_button_label(self):
+        """The save button's caption, casefolded: "saved" when nothing is pending,
+        "save changes" while there are unsaved edits, "" when there is none."""
+        label = self.driver.execute_script(
+            "const b = Array.from(document.querySelectorAll('button'))"
+            r".find(x => /^\s*save/i.test(x.innerText || ''));"
+            "return b ? b.innerText : '';"
+        )
+        return " ".join(str(label or "").split()).casefold()
+
     def save_configuration(self, timeout=20):
-        """Save the screen and return the confirmation text, or '' when none shows."""
+        """Save the screen; return how the save showed it took, or '' if it did not.
+
+        A save that took turns the button back to "Saved", or puts up a new
+        confirmation. Finding words such as "successfully" anywhere on the page
+        is not enough: the login toast ("User logged in successfully") is often
+        still there, and on 2026-10-05 it vouched for a Global Settings save
+        that never left the browser (no request was sent).
+        """
+        before = self.normalized_body_text()
         self.click_any_element(self.CONFIG_SAVE_BUTTONS)
         self.confirm_if_prompted()
         self.wait_for_application_ready()
-        try:
-            self.wait_utils.until_condition(
-                lambda driver: any(
-                    marker in driver.find_element(By.TAG_NAME, "body").text.casefold()
+
+        def took(driver):
+            if self.save_button_label() == "saved":
+                return "saved"
+            text = driver.find_element(By.TAG_NAME, "body").text.casefold()
+            return next(
+                (
+                    marker
                     for marker in self.SAVE_CONFIRMATION_MARKERS
+                    if text.count(marker) > before.count(marker)
                 ),
-                timeout=timeout,
+                False,
             )
+
+        try:
+            return self.wait_utils.until_condition(took, timeout=timeout)
         except TimeoutException:
             return ""
-        text = self.normalized_body_text()
-        return next(
-            (marker for marker in self.SAVE_CONFIRMATION_MARKERS if marker in text),
-            "",
-        )
 
     def reset_rules(self):
         self.click_any_element(self.RESET_RULES_BUTTONS)

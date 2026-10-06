@@ -78,6 +78,42 @@ for (const row of document.querySelectorAll('table tbody tr')) {
         || (rowText.match(inRowPattern) || [])[1]
         || '';
 }
+if (Object.keys(result).length) return result;
+
+// Split view: once an item is opened, the set keeps its URL but the items
+// render as cards in the left rail instead of a table, so the loop above
+// finds nothing and every caller saw {} - no item got actioned and Submit
+// RWG Review stayed disabled. Only some cards carry the item ID in their
+// text (a revised item shows it, an image-only one shows a placeholder),
+// so cards are mapped by their position in the rail: card N is item -iN.
+const seenTops = new Set();
+const cards = Array.from(document.querySelectorAll('button, a, [role="button"], div'))
+    .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        const text = (element.innerText || '').trim();
+        if (!text || rect.width < 80 || rect.height < 35) return false;
+        if (rect.left > window.innerWidth * 0.45 || rect.top < 80) return false;
+        // The opened item's pane also starts inside the left 45% and its text
+        // carries a status badge too, so width is what separates a rail card
+        // (narrow) from the detail container (more than half the viewport).
+        if (rect.width > window.innerWidth * 0.30) return false;
+        // Every rail card carries a marks badge ("1m"). Without this the scan
+        // also matched wrappers around the cards and invented positions past
+        // the end of the set (a 5-item set reported an i10 and an i11).
+        if (!/\b\d+\s*m\b/i.test(text)) return false;
+        if (!inRowPattern.test(text)) return false;
+        const topKey = Math.round(rect.top / 8) * 8;
+        if (seenTops.has(topKey)) return false;
+        seenTops.add(topKey);
+        return true;
+    })
+    .sort((left, right) => left.getBoundingClientRect().top - right.getBoundingClientRect().top);
+cards.forEach((card, position) => {
+    const text = (card.innerText || '').trim();
+    const id = text.match(idPattern);
+    const status = (text.match(inRowPattern) || [])[1] || '';
+    if (status) result[id ? id[1] : String(position + 1)] = status;
+});
 return result;
 """
 
@@ -381,18 +417,33 @@ class TripleIterationRWGReviewQueuePage(MajorActionEvidenceMixin, RWGReviewQueue
         pending_approved_ids = [
             item_id
             for item_id in approved_item_ids
-            if row_statuses.get(item_id, "").casefold() in {"pending", "under review"}
+            # Iteration 3 reviews items the teacher has just revised, so they
+            # sit at "Revised" here - omitting it left the approve lane
+            # untouched and Submit RWG Review disabled.
+            if row_statuses.get(item_id, "").casefold()
+            in {"pending", "under review", "revised"}
         ]
         if pending_approved_ids:
             self.approve_items_with_yes(item_set_id, pending_approved_ids)
         else:
             self.click_item(approved_item_ids[0])
 
-        self.click_required_and_confirm(
-            self.SUBMIT_REVIEW_LOCATORS,
-            "Submit RWG Review",
-            timeout=30,
-        )
+        try:
+            self.click_required_and_confirm(
+                self.SUBMIT_REVIEW_LOCATORS,
+                "Submit RWG Review",
+                timeout=30,
+            )
+        except TimeoutException as error:
+            # Submit only enables once every row is actioned, so a disabled
+            # button means an item was left alone - say which. The same failure
+            # came from a status reader that returned nothing (see the module
+            # note on item-ID formats), and that was invisible from the error.
+            raise TimeoutException(
+                f"{error.msg} Rows now read {self.get_review_item_statuses(item_set_id)}; "
+                f"approve lane {approved_item_ids} of which this iteration "
+                f"approved {pending_approved_ids}; reject lane {rejected_item_ids}."
+            ) from error
         # Return every item RWG leaves approved, not only the ones this
         # iteration had to action: a lane approved in an earlier iteration is
         # already "Approved" here, so it is filtered out of
