@@ -406,14 +406,24 @@ class TripleIterationRWGReviewQueuePage(MajorActionEvidenceMixin, RWGReviewQueue
         item_set_url="",
     ):
         self.open_review_item_set(item_set_id, item_set_url)
+        # Decide the approve lane from the item table, read now, before any
+        # item is opened. Afterwards the page stays in the split view, whose
+        # rail is read by card position, and whose badges do not change while
+        # the review is open: on QA (2026-10-06, IS1605) i3/i4 still read
+        # "Revised" after they were rejected. The table carries each row's own
+        # ID and read i1-i4 Revised, i5 Approved: the decision needed.
+        statuses_before_actions = self.get_review_item_statuses(item_set_id)
         rejected = []
         for item_id in rejected_item_ids:
             self.return_to_item_set_if_needed(item_set_id)
             self.click_item(item_id)
             rejected.append(self.reject_open_item_after_iteration_limit(item_id))
 
-        self.return_to_item_set_if_needed(item_set_id)
-        row_statuses = self.get_review_item_statuses(item_set_id)
+        if statuses_before_actions:
+            row_statuses = statuses_before_actions
+        else:
+            self.return_to_item_set_if_needed(item_set_id)
+            row_statuses = self.get_review_item_statuses(item_set_id)
         pending_approved_ids = [
             item_id
             for item_id in approved_item_ids
@@ -424,7 +434,16 @@ class TripleIterationRWGReviewQueuePage(MajorActionEvidenceMixin, RWGReviewQueue
             in {"pending", "under review", "revised"}
         ]
         if pending_approved_ids:
-            self.approve_items_with_yes(item_set_id, pending_approved_ids)
+            try:
+                self.approve_items_with_yes(item_set_id, pending_approved_ids)
+            except TimeoutException as error:
+                # Name the decision and the item on screen, so a wrong pick
+                # is visible from the error rather than only from a screenshot.
+                raise TimeoutException(
+                    f"{error.msg} Statuses read {row_statuses}; approving "
+                    f"{pending_approved_ids}; open item "
+                    f"{self.get_open_item_title()!r}."
+                ) from error
         else:
             self.click_item(approved_item_ids[0])
 
@@ -522,21 +541,47 @@ class TripleIterationPITReviewQueuePage(MajorActionEvidenceMixin, PITReviewQueue
         )
         return all_item_ids, pending_item_ids, row_statuses
 
+    # What the PIT queue's "Item Set Status" column shows for a set that has
+    # some PIT votes but not the quorum. QA shows "Approved" there (IS1606 and
+    # IS1607 after vote 1, 2026-10-06), though the queue has no Approved tab;
+    # "Pending Review" is what the tab is called. Either means "not yet
+    # published", which is the requirement before the last vote.
+    AWAITING_QUORUM_STATUSES = ("Approved", "Pending Review")
+
     def get_item_set_queue_status(self, item_set_id):
+        """The set's "Item Set Status" cell in the PIT queue, read by column.
+
+        The row is found by its "IS<number>-" prefix: the queue truncates the
+        ID cell ("IS1606-G1-Mathematics-C..."), and it renders the chapter as
+        "CH-1" where the upload-time ID says "Ch29", so the full ID never
+        matched and this read '' (2026-10-06). The status is then read from
+        its own column, since QA shows "Approved" there, a word a pattern
+        over the whole row did not list.
+        """
+        set_prefix = re.match(r"IS\d+", item_set_id, re.IGNORECASE).group(0) + "-"
         return self.driver.execute_script(
             r"""
-            const itemSetId = arguments[0].toLowerCase();
-            const row = Array.from(document.querySelectorAll('table tbody tr')).find(
-                candidate => (candidate.innerText || candidate.textContent || '')
-                    .toLowerCase()
-                    .includes(itemSetId)
+            const setPrefix = arguments[0].toLowerCase();
+            const rowMatches = candidate => (candidate.innerText || candidate.textContent || '')
+                .toLowerCase()
+                .includes(setPrefix);
+            const table = Array.from(document.querySelectorAll('table')).find(
+                candidate => Array.from(candidate.querySelectorAll('tbody tr')).some(rowMatches)
             );
-            if (!row) return '';
+            if (!table) return '';
+            const row = Array.from(table.querySelectorAll('tbody tr')).find(rowMatches);
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                .map(th => (th.innerText || th.textContent || '').trim().toLowerCase());
+            const column = headers.indexOf('item set status');
+            const cells = row.querySelectorAll('td');
+            if (column >= 0 && cells[column]) {
+                return (cells[column].innerText || cells[column].textContent || '').trim();
+            }
             const text = row.innerText || row.textContent || '';
-            const match = text.match(/\b(Published|Pending Review|Rejected)\b/i);
+            const match = text.match(/\b(Published|Pending Review|Rejected|Approved)\b/i);
             return match ? match[1] : '';
             """,
-            item_set_id,
+            set_prefix,
         )
 
 
@@ -1808,10 +1853,15 @@ class TestE2ETeacherExcelTripleRevisionRejectionToPITPublication:
             )
             completed_pit_approvals.append(pit_username)
             pit_item_set_status = pit_page.get_item_set_queue_status(item_set_id)
-            expected_pit_status = "Published" if pit_index == 3 else "Pending Review"
-            assert pit_item_set_status.casefold() == expected_pit_status.casefold(), (
+            expected_pit_statuses = (
+                ("Published",) if pit_index == 3
+                else TripleIterationPITReviewQueuePage.AWAITING_QUORUM_STATUSES
+            )
+            assert pit_item_set_status.casefold() in {
+                status.casefold() for status in expected_pit_statuses
+            }, (
                 f"After PIT vote {pit_index}, {item_set_id} status was "
-                f"{pit_item_set_status!r}; expected {expected_pit_status!r}."
+                f"{pit_item_set_status!r}; expected one of {expected_pit_statuses}."
             )
             evidence_screenshot = pit_page.capture_review_screenshot(
                 request.node.name,

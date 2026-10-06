@@ -448,9 +448,16 @@ class BaseReviewQueuePage(BasePage):
         " | //*[self::button or self::label or self::span or @role='button' or @role='radio']"
         "[normalize-space()='Y' or normalize-space()='Yes'][not(@disabled)]",
     )
+    # Not a button whose text says "Approved": each card in the split view's
+    # left rail is a <button> carrying its status badge, and an approved card
+    # ("5 ... MCQ 1m Approved") contains "Approve" and comes before the real
+    # Approve in the DOM. RWG iteration 3 clicked that card instead, which
+    # just opened the approved item and saved nothing (probed on QA,
+    # 2026-10-06, IS1605) - every earlier iteration had no approved card yet.
     APPROVE_ITEM_BUTTON = (
         By.XPATH,
-        "//button[contains(normalize-space(),'Approve') and not(@disabled)]",
+        "//button[contains(normalize-space(),'Approve') "
+        "and not(contains(normalize-space(),'Approved')) and not(@disabled)]",
     )
     SEND_BACK_ITEM_LOCATORS = [
         (By.XPATH, "//button[contains(normalize-space(),'Mark for Revision') and not(@disabled)]"),
@@ -501,7 +508,7 @@ class BaseReviewQueuePage(BasePage):
     )
     SAVE_ITEM_REVIEW_LOCATORS = [
         (By.XPATH, "//button[contains(normalize-space(),'Save') and not(@disabled)]"),
-        (By.XPATH, "//button[contains(normalize-space(),'Approve') and not(@disabled)]"),
+        APPROVE_ITEM_BUTTON,
         (By.XPATH, "//button[contains(normalize-space(),'Next') and not(@disabled)]"),
     ]
     CONFIRM_LOCATORS = [

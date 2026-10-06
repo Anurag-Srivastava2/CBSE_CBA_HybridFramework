@@ -357,6 +357,27 @@ def test_sr_rwg_submit_locator_cannot_match_an_approved_item_card(record_propert
     assert not any("contains(normalize-space(),'Approve')" in locator for locator in locator_texts)
 
 
+def test_item_approve_locator_cannot_match_an_approved_item_card(record_property):
+    # Plain-English orientation for the report, for a reader who does
+    # not know this test. One line per step, in the order they happen.
+    record_property(
+        "test_summary",
+        "Read the locators that find an item's Approve button.\n"
+        "Check each one skips buttons whose text says 'Approved': the split "
+        "view's rail cards are buttons, and an approved card was clicked in "
+        "place of Approve in RWG iteration 3 (2026-10-06).",
+    )
+    approve_locators = [BaseReviewQueuePage.APPROVE_ITEM_BUTTON[1]] + [
+        locator
+        for _by, locator in BaseReviewQueuePage.SAVE_ITEM_REVIEW_LOCATORS
+        if "'Approve'" in locator
+    ]
+
+    assert len(approve_locators) == 2
+    for locator in approve_locators:
+        assert "not(contains(normalize-space(),'Approved'))" in locator, locator
+
+
 def test_open_item_title_accepts_question_stems_without_legacy_prefixes(record_property):
     # Plain-English orientation for the report, for a reader who does
     # not know this test. One line per step, in the order they happen.

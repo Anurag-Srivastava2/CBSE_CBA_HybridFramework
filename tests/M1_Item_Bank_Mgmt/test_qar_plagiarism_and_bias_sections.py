@@ -432,9 +432,11 @@ class QARBankCopyReport:
 @pytest.mark.serial
 @pytest.mark.usefixtures("setup")
 class TestQARPlagiarismAndBiasSections(QARBankCopyReport):
-    # TC-IBMM-06-N01 (Plagiarism Detection flags the bank copy) lives in
-    # tests/_unit/M1_Item_Bank_Mgmt/test_qar_plagiarism_flags_bank_copy.py,
-    # out of the daily run, since 2026-10-01 - see that file.
+    # TC-IBMM-06-N01 (Plagiarism Detection flags the bank copy) and
+    # TC-IBMM-03-N01 (Duplicate Detection flags it) live in
+    # tests/_unit/M1_Item_Bank_Mgmt/test_qar_plagiarism_flags_bank_copy.py and
+    # test_qar_duplicate_flags_bank_copy.py, out of the daily run since
+    # 2026-10-01 and 2026-10-06 - see those files.
 
     def test_tc_ibmm_06_plagiarism_check_reports_a_score(
         self, qar_report, record_property, page_evidence
@@ -549,29 +551,6 @@ class TestQARPlagiarismAndBiasSections(QARBankCopyReport):
         assert not absent, (
             "Bias section did not name every category TC-IBMM-07-P01 requires. "
             f"Missing: {absent}. Bias card text: {card[:300]!r}"
-        )
-
-    def test_tc_ibmm_03_n01_duplicate_check_flags_copied_items(
-        self, qar_report, page_evidence, record_property
-    ):
-        """Duplicate Detection must not report a clean result on items copied out of IB1."""
-        # Plain-English orientation for the report, for a reader who does
-        # not know this test. One line per step, in the order they happen.
-        record_property(
-            "test_summary",
-            "Open the QAR report for a set holding a reworded copy of an item bank "
-            "question ('Convert 2 hours into minutes.').\n"
-            "Expect Duplicate Detection to notice: it must not hand that item a "
-            "clean 0%.",
-        )
-        report, _ = qar_report
-        score = self.assert_check_is_not_clean(
-            page_evidence, report, self.DUPLICATE_CHECK, record_property
-        )
-        record_property(
-            "result_description",
-            f"Duplicate Detection scored {score}% on a rewording of the item bank "
-            "question, so the duplicate content was detected.",
         )
 
     def test_every_qar_check_reports_a_verdict(
