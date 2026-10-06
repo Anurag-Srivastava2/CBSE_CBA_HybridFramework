@@ -1293,8 +1293,38 @@ def build_allure_results():
         result_path.write_text(json.dumps(allure_result, indent=2), encoding="utf-8")
 
 
-def open_extent_report_if_enabled(report_path):
+def is_full_run(config):
+    """True when the run targeted whole folders: a module, several, or the suite.
+
+    A single file or a single test (a quick unit check, one rerun) is not a
+    full run. Run with no paths, pytest uses testpaths (tests/), which is.
+    """
+    base = Path(str(config.invocation_params.dir))
+    for arg in config.args:
+        if "::" in str(arg):
+            continue
+        path = Path(str(arg))
+        if not path.is_absolute():
+            path = base / path
+        if path.is_dir():
+            return True
+    return False
+
+
+def open_extent_report_if_enabled(report_path, config=None):
+    """Open the Extent report after a full local run.
+
+    Not after single files or tests: each pytest session opened a tab, down to
+    one-second unit checks (2026-10-06). Not under Jenkins either, which
+    publishes the report and mails the summary, and whose lanes would otherwise
+    open tabs on this desktop from a hidden build.
+    """
     if not ReadConfig.should_auto_open_extent():
+        return
+    if os.getenv("JENKINS_URL") or os.getenv("BUILD_NUMBER"):
+        return
+    if config is not None and not is_full_run(config):
+        print(f"Extent report: {report_path} (not opened: not a full run).")
         return
     if not report_path or not Path(report_path).exists():
         print("Extent report was not generated; nothing to auto-open.")
@@ -1896,7 +1926,7 @@ def pytest_sessionfinish(session, exitstatus):
     extent_report_path = build_extent_report()
     build_excel_report()
     build_allure_results()
-    open_extent_report_if_enabled(extent_report_path)
+    open_extent_report_if_enabled(extent_report_path, session.config)
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):

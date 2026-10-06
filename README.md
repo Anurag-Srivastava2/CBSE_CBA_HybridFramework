@@ -265,10 +265,12 @@ Auto-open is controlled from `config/config.ini`:
 
 ```ini
 [reports]
-auto_open_extent = false
+auto_open_extent = true
 ```
 
-Off by default since 2026-10-06: every pytest session opened a browser tab, including
-one-second unit runs and the Jenkins lanes, which run on the same desktop. Set it to `true`
-to have the report open when a run finishes. Allure-compatible
+It opens only after a **full run** - one that targets whole folders (`pytest tests`,
+`pytest tests/M1_Item_Bank_Mgmt`, or no path at all). Single files and single tests
+(`pytest tests/_unit/.../test_x.py`, `...::test_name`) write the report without opening it,
+and Jenkins never opens it (it publishes the report and mails the summary instead). Set it
+to `false` to never open the report. Allure-compatible
 JSON results are still written to `reports/allure-results`, but Allure is not auto-opened.
