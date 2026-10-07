@@ -14,13 +14,13 @@ exercised.
 
 The bank item, its rewordings, the upload and the report snapshot all come
 from QARBankCopyReport in
-tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py. It is
+tests/_unit/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py. It is
 imported through the module rather than by name, because a test class
 imported by name into this module would be collected here a second time.
 """
 import pytest
 
-from tests.M1_Item_Bank_Mgmt import test_qar_plagiarism_and_bias_sections as bank_copy
+from tests._unit.M1_Item_Bank_Mgmt import test_qar_plagiarism_and_bias_sections as bank_copy
 
 
 @pytest.mark.rtm

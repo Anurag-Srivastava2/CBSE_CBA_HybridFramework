@@ -22,6 +22,12 @@ on the category test below.
 Covers:
   TC-IBMM-06-P01/N01  QAR Report shows a plagiarism score
   TC-IBMM-07-P01      Bias section present, with per-category detail (xfail)
+
+Moved out of the daily run into tests/_unit on 2026-10-07, at the team's
+request, after its tests errored in the daily runs (the shared rewording
+upload stalls in QAR, KI-M1-QAR-005, and every test here depends on it). The
+cbse-M1 module job still runs tests/_unit. Move it back into
+tests/M1_Item_Bank_Mgmt once the upload is reliable.
 """
 from datetime import date
 from pathlib import Path
@@ -433,10 +439,9 @@ class QARBankCopyReport:
 @pytest.mark.usefixtures("setup")
 class TestQARPlagiarismAndBiasSections(QARBankCopyReport):
     # TC-IBMM-06-N01 (Plagiarism Detection flags the bank copy) and
-    # TC-IBMM-03-N01 (Duplicate Detection flags it) live in
-    # tests/_unit/M1_Item_Bank_Mgmt/test_qar_plagiarism_flags_bank_copy.py and
-    # test_qar_duplicate_flags_bank_copy.py, out of the daily run since
-    # 2026-10-01 and 2026-10-06 - see those files.
+    # TC-IBMM-03-N01 (Duplicate Detection flags it) live beside this file in
+    # test_qar_plagiarism_flags_bank_copy.py and
+    # test_qar_duplicate_flags_bank_copy.py - see those files.
 
     def test_tc_ibmm_06_plagiarism_check_reports_a_score(
         self, qar_report, record_property, page_evidence

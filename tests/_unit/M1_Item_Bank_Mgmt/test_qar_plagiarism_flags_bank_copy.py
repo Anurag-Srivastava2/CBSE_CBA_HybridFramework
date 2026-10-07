@@ -5,21 +5,21 @@ copy of bank content scores Plagiarism Detection 0% - near-verbatim copies of
 "Convert 2 hours into minutes." (IS1531-IS1535) and the rewording "2 hours is
 equal to how many minutes?" (IS1536) alike - so this test was red on every run
 for a reason that sits with the backend team, not the suite. Duplicate
-Detection does flag the rewording (86%), and that test stays in the daily run.
+Detection does flag the rewording (86%).
 
 The cbse-M1 module job still runs tests/_unit, so the requirement is still
-exercised. Move it back into
-tests/M1_Item_Bank_Mgmt/test_qar_plagiarism_and_bias_sections.py once the
-plagiarism check recognises bank content.
+exercised. Move this test, with test_qar_plagiarism_and_bias_sections.py beside
+it, back into tests/M1_Item_Bank_Mgmt once the plagiarism check recognises bank
+content.
 
 The bank item, its rewordings, the upload and the report snapshot all come
-from QARBankCopyReport in that file. It is imported through the module rather
+from QARBankCopyReport in test_qar_plagiarism_and_bias_sections.py. It is imported through the module rather
 than by name, because a test class imported by name into this module would be
 collected here a second time.
 """
 import pytest
 
-from tests.M1_Item_Bank_Mgmt import test_qar_plagiarism_and_bias_sections as bank_copy
+from tests._unit.M1_Item_Bank_Mgmt import test_qar_plagiarism_and_bias_sections as bank_copy
 
 
 @pytest.mark.rtm
